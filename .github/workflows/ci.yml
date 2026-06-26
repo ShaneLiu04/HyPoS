@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libopenmpi-dev openmpi-bin libomp-dev cmake
+
+    - name: Build (Release)
+      run: |
+        cmake -B build -DCMAKE_BUILD_TYPE=Release
+        cmake --build build --parallel $(nproc)
+
+    - name: Run small-scale integration test
+      run: |
+        mpirun --allow-run-as-root -np 4 ./build/hypos \
+          --nx 128 --ny 128 --max-iter 100
+
+    - name: Run serial test
+      run: |
+        mpirun --allow-run-as-root -np 1 ./build/hypos \
+          --nx 64 --ny 64 --max-iter 100
+
+    - name: Build (Debug + Sanitizers)
+      run: |
+        cmake -B build-debug -DCMAKE_BUILD_TYPE=Debug
+        cmake --build build-debug --parallel $(nproc)
+
+    - name: Run debug test
+      run: |
+        mpirun --allow-run-as-root -np 4 ./build-debug/hypos \
+          --nx 32 --ny 32 --max-iter 50

@@ -50,7 +50,10 @@ public:
     AlignedBuffer<Real>& rhs() noexcept { return rhs_; }
     const AlignedBuffer<Real>& rhs() const noexcept { return rhs_; }
 
-    // Neighbor ranks in Cartesian topology
+    // Swap u and uNext (used after each iteration)
+    void swapU() noexcept {
+        std::swap(u_, uNext_);
+    }
     int neighborLeft() const noexcept { return neighborLeft_; }
     int neighborRight() const noexcept { return neighborRight_; }
     int neighborDown() const noexcept { return neighborDown_; }
