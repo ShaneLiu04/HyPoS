@@ -13,10 +13,13 @@
 #include "utils/logger.hpp"
 #include "utils/cmdline_parser.hpp"
 #include <mpi.h>
+#include <algorithm>
 #include <cmath>
+#include <filesystem>
+#include <iostream>
 #include <memory>
 #include <string>
-#include <iostream>
+#include <system_error>
 
 // For M_PI on Windows/MSVC
 #ifndef _USE_MATH_DEFINES
@@ -130,6 +133,7 @@ int main(int argc, char* argv[]) {
     std::string outputFormat = parser.get<std::string>("output-format", "json");
     std::string outputDir = parser.get<std::string>("output-dir", "./output");
     int saveInterval = parser.get<int>("save-interval", 0);
+    (void)saveInterval; // reserved: intermediate saves are not implemented yet
     bool enableProfiling = parser.has("enable-profiling");
     bool overlapComm = parser.has("overlap-comm");
 
@@ -141,15 +145,16 @@ int main(int argc, char* argv[]) {
     }
 
     if (rank == 0) {
+        std::string threadInfo;
+#ifdef _OPENMP
+        threadInfo = ", OMP threads: " + std::to_string(omp_get_max_threads());
+#else
+        threadInfo = ", OMP disabled";
+#endif
         HYPOS_INFO("HyPoS — Hybrid Poisson Solver");
         HYPOS_INFO("Grid: " << grid.nx << "x" << grid.ny << "x" << grid.nz
                    << ", MPI procs: " << size
-#ifdef _OPENMP
-                   << ", OMP threads: " << omp_get_max_threads()
-#else
-                   << ", OMP disabled"
-#endif
-        );
+                   << threadInfo);
     }
 
     // Partition grid
@@ -177,7 +182,7 @@ int main(int argc, char* argv[]) {
     // Create solver and exchanger
     std::unique_ptr<PoissonSolver> solver;
     if (solverName == "jacobi") {
-        solver = std::make_unique<JacobiSolver>();
+        solver = std::make_unique<JacobiSolver>(overlapComm);
     } else {
         HYPOS_ERROR("Unknown solver: " << solverName);
         MPI_Finalize();
@@ -212,12 +217,18 @@ int main(int argc, char* argv[]) {
 
     // Main solve loop
     Index actualIter = 0;
-    Real finalResidual = 0.0;
     {
         HYPOS_PROFILE("solver_total");
         actualIter = solver->solve(subgrid, *exchanger, maxIter, tolerance);
     }
     totalTimer.stop();
+
+    std::error_code dirError;
+    std::filesystem::create_directories(outputDir, dirError);
+    if (dirError) {
+        HYPOS_WARN("Cannot create output directory: " << outputDir
+                   << " (" << dirError.message() << ")");
+    }
 
     double totalTime = totalTimer.elapsedSeconds();
 
@@ -253,8 +264,20 @@ int main(int argc, char* argv[]) {
     metrics.totalTimeSec = totalTime;
     metrics.iterTimeMs = iterTime * 1000.0;
     metrics.iterations = actualIter;
-    metrics.finalResidual = finalResidual;
+    metrics.finalResidual = solver->lastResidual();
     metrics.flopsPerSec = flopsPerSec;
+
+    const Profiler& profiler = Profiler::instance();
+    const double haloPostSec = profiler.stats("halo_exchange").totalSeconds;
+    const double haloWaitSec = profiler.stats("halo_wait").totalSeconds;
+    const double commSec = haloPostSec + haloWaitSec;
+    const double iterCount = static_cast<double>(std::max(actualIter, Index(1)));
+    metrics.commTimeMs = commSec / iterCount * 1000.0;
+    if (overlapComm && commSec > 0.0) {
+        metrics.overlapRatio = std::clamp(1.0 - haloWaitSec / commSec, 0.0, 1.0);
+    } else {
+        metrics.overlapRatio = 0.0;
+    }
 
     Reporter reporter(config);
     reporter.setMetrics(metrics);

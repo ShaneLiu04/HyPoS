@@ -1,0 +1,29 @@
+[
+  {
+    "procs": 1,
+    "omp_threads": 1,
+    "total_time_sec": 0.4507,
+    "iter_time_ms": 0.0451,
+    "speedup": 1.0,
+    "efficiency": 1.0,
+    "iterations": 10000
+  },
+  {
+    "procs": 2,
+    "omp_threads": 1,
+    "total_time_sec": 0.2687,
+    "iter_time_ms": 0.0269,
+    "speedup": 1.6773353181987347,
+    "efficiency": 0.8386676590993674,
+    "iterations": 10000
+  },
+  {
+    "procs": 4,
+    "omp_threads": 1,
+    "total_time_sec": 0.2043,
+    "iter_time_ms": 0.0204,
+    "speedup": 2.2060695056289767,
+    "efficiency": 0.5515173764072442,
+    "iterations": 10000
+  }
+]

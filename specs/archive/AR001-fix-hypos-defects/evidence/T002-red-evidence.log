@@ -1,0 +1,158 @@
+Note: Google Test filter = HaloExchangeTest.DirectionSemanticsSelfLoop2D
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from HaloExchangeTest
+[ RUN      ] HaloExchangeTest.DirectionSemanticsSelfLoop2D
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_halo_exchange.cpp:40: Failure
+Expected equality of these values:
+  sg.at(sg.iEnd(), j)
+    Which is: 4001
+  expectedValue(static_cast<long long>(sg.iBegin()), static_cast<long long>(j))
+    Which is: 1001
+right halo at (iEnd, 1)
+
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_halo_exchange.cpp:40: Failure
+Expected equality of these values:
+  sg.at(sg.iEnd(), j)
+    Which is: 4002
+  expectedValue(static_cast<long long>(sg.iBegin()), static_cast<long long>(j))
+    Which is: 1002
+right halo at (iEnd, 2)
+
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_halo_exchange.cpp:40: Failure
+Expected equality of these values:
+  sg.at(sg.iEnd(), j)
+    Which is: 4003
+  expectedValue(static_cast<long long>(sg.iBegin()), static_cast<long long>(j))
+    Which is: 1003
+right halo at (iEnd, 3)
+
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_halo_exchange.cpp:40: Failure
+Expected equality of these values:
+  sg.at(sg.iEnd(), j)
+    Which is: 0
+  expectedValue(static_cast<long long>(sg.iBegin()), static_cast<long long>(j))
+    Which is: 1004
+right halo at (iEnd, 4)
+
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_halo_exchange.cpp:45: Failure
+Expected equality of these values:
+  sg.at(0, j)
+    Which is: 1001
+  expectedValue(static_cast<long long>(sg.iEnd() - 1), static_cast<long long>(j))
+    Which is: 4001
+left halo at (0, 1)
+
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_halo_exchange.cpp:45: Failure
+Expected equality of these values:
+  sg.at(0, j)
+    Which is: 1002
+  expectedValue(static_cast<long long>(sg.iEnd() - 1), static_cast<long long>(j))
+    Which is: 4002
+left halo at (0, 2)
+
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_halo_exchange.cpp:45: Failure
+Expected equality of these values:
+  sg.at(0, j)
+    Which is: 1003
+  expectedValue(static_cast<long long>(sg.iEnd() - 1), static_cast<long long>(j))
+    Which is: 4003
+left halo at (0, 3)
+
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_halo_exchange.cpp:45: Failure
+Expected equality of these values:
+  sg.at(0, j)
+    Which is: 0
+  expectedValue(static_cast<long long>(sg.iEnd() - 1), static_cast<long long>(j))
+    Which is: 4004
+left halo at (0, 4)
+
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_halo_exchange.cpp:50: Failure
+Expected equality of these values:
+  sg.at(i, sg.jEnd())
+    Which is: 1004
+  expectedValue(static_cast<long long>(i), static_cast<long long>(sg.jBegin()))
+    Which is: 1001
+up halo at (1, jEnd)
+
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_halo_exchange.cpp:50: Failure
+Expected equality of these values:
+  sg.at(i, sg.jEnd())
+    Which is: 2004
+  expectedValue(static_cast<long long>(i), static_cast<long long>(sg.jBegin()))
+    Which is: 2001
+up halo at (2, jEnd)
+
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_halo_exchange.cpp:50: Failure
+Expected equality of these values:
+  sg.at(i, sg.jEnd())
+    Which is: 3004
+  expectedValue(static_cast<long long>(i), static_cast<long long>(sg.jBegin()))
+    Which is: 3001
+up halo at (3, jEnd)
+
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_halo_exchange.cpp:50: Failure
+Expected equality of these values:
+  sg.at(i, sg.jEnd())
+    Which is: 0
+  expectedValue(static_cast<long long>(i), static_cast<long long>(sg.jBegin()))
+    Which is: 4001
+up halo at (4, jEnd)
+
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_halo_exchange.cpp:55: Failure
+Expected equality of these values:
+  sg.at(i, 0)
+    Which is: 1001
+  expectedValue(static_cast<long long>(i), static_cast<long long>(sg.jEnd() - 1))
+    Which is: 1004
+down halo at (1, 0)
+
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_halo_exchange.cpp:55: Failure
+Expected equality of these values:
+  sg.at(i, 0)
+    Which is: 2001
+  expectedValue(static_cast<long long>(i), static_cast<long long>(sg.jEnd() - 1))
+    Which is: 2004
+down halo at (2, 0)
+
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_halo_exchange.cpp:55: Failure
+Expected equality of these values:
+  sg.at(i, 0)
+    Which is: 3001
+  expectedValue(static_cast<long long>(i), static_cast<long long>(sg.jEnd() - 1))
+    Which is: 3004
+down halo at (3, 0)
+
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_halo_exchange.cpp:55: Failure
+Expected equality of these values:
+  sg.at(i, 0)
+    Which is: 0
+  expectedValue(static_cast<long long>(i), static_cast<long long>(sg.jEnd() - 1))
+    Which is: 4004
+down halo at (4, 0)
+
+free(): invalid size
+[ROG:00034] *** Process received signal ***
+[ROG:00034] Signal: Aborted (6)
+[ROG:00034] Signal code:  (-6)
+[ROG:00034] [ 0] /usr/lib/x86_64-linux-gnu/libc.so.6(+0x45cb0) [0x744beb645cb0]
+[ROG:00034] [ 1] /usr/lib/x86_64-linux-gnu/libc.so.6(pthread_kill+0x11c) [0x744beb6a648c]
+[ROG:00034] [ 2] /usr/lib/x86_64-linux-gnu/libc.so.6(gsignal+0x1e) [0x744beb645b7e]
+[ROG:00034] [ 3] /usr/lib/x86_64-linux-gnu/libc.so.6(abort+0x27) [0x744beb6288ec]
+[ROG:00034] [ 4] /usr/lib/x86_64-linux-gnu/libc.so.6(+0x29979) [0x744beb629979]
+[ROG:00034] [ 5] /usr/lib/x86_64-linux-gnu/libc.so.6(+0xb0bac) [0x744beb6b0bac]
+[ROG:00034] [ 6] /usr/lib/x86_64-linux-gnu/libc.so.6(+0xb0bc4) [0x744beb6b0bc4]
+[ROG:00034] [ 7] ./build/test_hypos(+0x1ab57) [0x5f6ed41d0b57]
+[ROG:00034] [ 8] ./build/test_hypos(+0x66407) [0x5f6ed421c407]
+[ROG:00034] [ 9] ./build/test_hypos(+0x4b6ee) [0x5f6ed42016ee]
+[ROG:00034] [10] ./build/test_hypos(+0x4b875) [0x5f6ed4201875]
+[ROG:00034] [11] ./build/test_hypos(+0x56687) [0x5f6ed420c687]
+[ROG:00034] [12] ./build/test_hypos(+0x5b7fc) [0x5f6ed42117fc]
+[ROG:00034] [13] ./build/test_hypos(+0x66a67) [0x5f6ed421ca67]
+[ROG:00034] [14] ./build/test_hypos(+0x4b90a) [0x5f6ed420190a]
+[ROG:00034] [15] ./build/test_hypos(+0x13d2b) [0x5f6ed41c9d2b]
+[ROG:00034] [16] /usr/lib/x86_64-linux-gnu/libc.so.6(+0x2a601) [0x744beb62a601]
+[ROG:00034] [17] /usr/lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0x88) [0x744beb62a718]
+[ROG:00034] [18] ./build/test_hypos(+0x15535) [0x5f6ed41cb535]
+[ROG:00034] *** End of error message ***
+TEST_EXIT=True

@@ -1,6 +1,8 @@
 #include "utils/cmdline_parser.hpp"
 #include <algorithm>
+#include <cctype>
 #include <cstdlib>
+#include <iostream>
 
 namespace hypo {
 

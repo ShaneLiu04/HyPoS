@@ -3,6 +3,7 @@
 #include "core/types.hpp"
 #include "grid/grid.hpp"
 #include <mpi.h>
+#include <string>
 #include <vector>
 
 namespace hypo {

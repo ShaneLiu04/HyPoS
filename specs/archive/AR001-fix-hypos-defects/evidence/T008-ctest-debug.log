@@ -1,0 +1,15 @@
+Test project /mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/build-debug
+    Start 1: unit
+1/5 Test #1: unit .............................   Passed    1.09 sec
+    Start 2: halo_2d_mpi
+2/5 Test #2: halo_2d_mpi ......................   Passed    0.19 sec
+    Start 3: halo_3d_mpi
+3/5 Test #3: halo_3d_mpi ......................   Passed    0.26 sec
+    Start 4: solver_mpi
+4/5 Test #4: solver_mpi .......................   Passed    2.07 sec
+    Start 5: overlap_consistency
+5/5 Test #5: overlap_consistency ..............   Passed    2.43 sec
+
+100% tests passed, 0 tests failed out of 5
+
+Total Test time (real) =   6.10 sec

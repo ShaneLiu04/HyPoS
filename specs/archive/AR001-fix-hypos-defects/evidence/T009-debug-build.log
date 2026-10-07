@@ -1,0 +1,7 @@
+[  4%] Building CXX object CMakeFiles/hypos_core.dir/src/perf/reporter.cpp.o
+[  8%] Linking CXX static library libhypos_core.a
+[ 60%] Built target hypos_core
+[ 64%] Linking CXX executable hypos
+[ 68%] Linking CXX executable test_hypos
+[ 72%] Built target hypos
+[100%] Built target test_hypos

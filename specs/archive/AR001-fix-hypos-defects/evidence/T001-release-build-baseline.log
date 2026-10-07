@@ -1,0 +1,129 @@
+-- The CXX compiler identification is GNU 15.2.0
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Found OpenMP_CXX: -fopenmp (found version "4.5")
+-- Found OpenMP: TRUE (found version "4.5")
+-- Found MPI_CXX: /usr/lib/x86_64-linux-gnu/openmpi/lib/libmpi.so (found version "3.1")
+-- Found MPI: TRUE (found version "3.1")
+CMake Warning at CMakeLists.txt:39 (find_package):
+  By not providing "FindPAPI.cmake" in CMAKE_MODULE_PATH this project has
+  asked CMake to find a package configuration file provided by "PAPI", but
+  CMake did not find one.
+
+  Could not find a package configuration file provided by "PAPI" with any of
+  the following names:
+
+    PAPIConfig.cmake
+    papi-config.cmake
+
+  Add the installation prefix of "PAPI" to CMAKE_PREFIX_PATH or set
+  "PAPI_DIR" to a directory containing one of the above files.  If "PAPI"
+  provides a separate development package or SDK, be sure it has been
+  installed.
+
+
+-- Found GTest: /usr/lib/x86_64-linux-gnu/cmake/GTest/GTestConfig.cmake (found version "1.17.0")
+-- Configuring done (7.1s)
+-- Generating done (0.3s)
+-- Build files have been written to: /mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/build
+[  9%] Building CXX object CMakeFiles/hypos_core.dir/src/core/memory_pool.cpp.o
+[  9%] Building CXX object CMakeFiles/hypos_core.dir/src/grid/subgrid.cpp.o
+[ 18%] Building CXX object CMakeFiles/hypos_core.dir/src/grid/partition.cpp.o
+[ 27%] Building CXX object CMakeFiles/hypos_core.dir/src/solver/jacobi_solver.cpp.o
+[ 27%] Building CXX object CMakeFiles/hypos_core.dir/src/comm/p2p_exchanger.cpp.o
+[ 31%] Building CXX object CMakeFiles/hypos_core.dir/src/comm/collective_exchanger.cpp.o
+[ 31%] Building CXX object CMakeFiles/hypos_core.dir/src/perf/timer.cpp.o
+<command-line>: warning: ‘_OPENMP’ redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: ‘_OPENMP’ redefined
+[ 36%] Building CXX object CMakeFiles/hypos_core.dir/src/perf/profiler.cpp.o
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: ‘_OPENMP’ redefined
+<built-in>: note: this is the location of the previous definition
+[ 45%] Building CXX object CMakeFiles/hypos_core.dir/src/perf/reporter.cpp.o
+<command-line>: warning: ‘_OPENMP’ redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: ‘_OPENMP’ redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: ‘_OPENMP’ redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: ‘_OPENMP’ redefined
+<built-in>: note: this is the location of the previous definition
+[ 54%] Building CXX object CMakeFiles/hypos_core.dir/src/utils/logger.cpp.o
+[ 54%] Building CXX object CMakeFiles/hypos_core.dir/src/utils/mpi_env.cpp.o
+[ 54%] Building CXX object CMakeFiles/hypos_core.dir/src/utils/cmdline_parser.cpp.o
+<command-line>: warning: ‘_OPENMP’ redefined
+<built-in>: note: this is the location of the previous definition
+[ 63%] Building CXX object CMakeFiles/hypos_core.dir/src/io/binary_io.cpp.o
+[ 63%] Building CXX object CMakeFiles/hypos_core.dir/src/io/vtk_io.cpp.o
+<command-line>: warning: ‘_OPENMP’ redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: ‘_OPENMP’ redefined
+<command-line>: warning: ‘_OPENMP’ redefined
+<built-in>: note: this is the location of the previous definition
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: ‘_OPENMP’ redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: ‘_OPENMP’ redefined
+<command-line>: warning: ‘_OPENMP’ redefined
+<built-in>: note: this is the location of the previous definition
+<built-in>: note: this is the location of the previous definition
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/comm/p2p_exchanger.cpp: In member function ‘virtual void hypo::PointToPointExchanger::initialize(hypo::Subgrid&)’:
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/comm/p2p_exchanger.cpp:16:11: warning: unused variable ‘faceSizeBF’ [-Wunused-variable]
+   16 |     Index faceSizeBF = subgrid.nxLocal() * subgrid.nyLocal() * subgrid.haloWidth();
+      |           ^~~~~~~~~~
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/comm/p2p_exchanger.cpp: In member function ‘virtual void hypo::CollectiveExchanger::exchange(hypo::Subgrid&)’:
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/comm/p2p_exchanger.cpp:241:10: warning: variable ‘pack_face’ set but not used [-Wunused-but-set-variable]
+  241 |     auto pack_face = [&](auto index_fn, Index count) {
+      |          ^~~~~~~~~
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/comm/p2p_exchanger.cpp:294:10: warning: variable ‘post_recv’ set but not used [-Wunused-but-set-variable]
+  294 |     auto post_recv = [&](int neighbor, Index count) {
+      |          ^~~~~~~~~
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/comm/p2p_exchanger.cpp:301:10: warning: variable ‘post_send’ set but not used [-Wunused-but-set-variable]
+  301 |     auto post_send = [&](int neighbor, Index start, Index count) {
+      |          ^~~~~~~~~
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/comm/p2p_exchanger.cpp: In member function ‘virtual void hypo::CollectiveExchanger::endExchange(hypo::Subgrid&)’:
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/comm/p2p_exchanger.cpp:324:48: warning: unused parameter ‘subgrid’ [-Wunused-parameter]
+  324 | void CollectiveExchanger::endExchange(Subgrid& subgrid) {
+      |                                       ~~~~~~~~~^~~~~~~
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/solver/jacobi_solver.cpp: In member function ‘hypo::Real hypo::JacobiSolver::jacobiUpdate(hypo::Subgrid&) const’:
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/solver/jacobi_solver.cpp:27:17: warning: unused variable ‘nzT’ [-Wunused-variable]
+   27 |     const Index nzT = subgrid.nzTotal();
+      |                 ^~~
+[ 68%] Linking CXX static library libhypos_core.a
+[ 68%] Built target hypos_core
+[ 72%] Building CXX object CMakeFiles/hypos.dir/src/main.cpp.o
+[ 81%] Building CXX object CMakeFiles/test_hypos.dir/tests/test_grid.cpp.o
+[ 81%] Building CXX object CMakeFiles/test_hypos.dir/tests/test_solver.cpp.o
+[ 90%] Building CXX object CMakeFiles/test_hypos.dir/tests/test_halo_exchange.cpp.o
+[ 90%] Building CXX object CMakeFiles/test_hypos.dir/tests/test_performance.cpp.o
+<command-line>: warning: ‘_OPENMP’ redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: ‘_OPENMP’ redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: ‘_OPENMP’ redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: ‘_OPENMP’ redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: ‘_OPENMP’ redefined
+<built-in>: note: this is the location of the previous definition
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/main.cpp:147:1: warning: embedding a directive within macro arguments is not portable [-Wpedantic]
+  147 | #ifdef _OPENMP
+      | ^
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/main.cpp:149:1: warning: embedding a directive within macro arguments is not portable [-Wpedantic]
+  149 | #else
+      | ^
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/main.cpp:151:1: warning: embedding a directive within macro arguments is not portable [-Wpedantic]
+  151 | #endif
+      | ^
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/main.cpp: In function ‘int main(int, char**)’:
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/main.cpp:132:9: warning: unused variable ‘saveInterval’ [-Wunused-variable]
+  132 |     int saveInterval = parser.get<int>("save-interval", 0);
+      |         ^~~~~~~~~~~~
+[ 95%] Linking CXX executable hypos
+[100%] Linking CXX executable test_hypos
+[100%] Built target hypos
+[100%] Built target test_hypos

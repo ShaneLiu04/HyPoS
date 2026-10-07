@@ -1,0 +1,44 @@
+Note: Google Test filter = HaloExchangeTest.MpiNonUniform4RanksHalos
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from HaloExchangeTest
+Note: Google Test filter = HaloExchangeTest.MpiNonUniform4RanksHalos
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from HaloExchangeTest
+[ RUN      ] HaloExchangeTest.MpiNonUniform4RanksHalos
+Note: Google Test filter = HaloExchangeTest.MpiNonUniform4RanksHalos
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from HaloExchangeTest
+[ RUN      ] HaloExchangeTest.MpiNonUniform4RanksHalos
+[ RUN      ] HaloExchangeTest.MpiNonUniform4RanksHalos
+Note: Google Test filter = HaloExchangeTest.MpiNonUniform4RanksHalos
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from HaloExchangeTest
+[ RUN      ] HaloExchangeTest.MpiNonUniform4RanksHalos
+[       OK ] HaloExchangeTest.MpiNonUniform4RanksHalos (1 ms)
+[----------] [       OK ] HaloExchangeTest.MpiNonUniform4RanksHalos (1 ms)
+[----------] 1 test from HaloExchangeTest (1 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (1 ms total)
+[  PASSED  ] 1 test.
+[       OK ] HaloExchangeTest.MpiNonUniform4RanksHalos (1 ms)
+[----------] 1 test from HaloExchangeTest (1 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (1 ms total)
+[  PASSED  ] 1 test.
+[       OK ] HaloExchangeTest.MpiNonUniform4RanksHalos (1 ms)
+[----------] 1 test from HaloExchangeTest (1 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (1 ms total)
+[  PASSED  ] 1 test.
+1 test from HaloExchangeTest (1 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (1 ms total)
+[  PASSED  ] 1 test.

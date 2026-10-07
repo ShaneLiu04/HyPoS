@@ -1,0 +1,53 @@
+[2026-10-07 23:15:43.378] [RANK 0] [INFO] HyPoS — Hybrid Poisson Solver
+[2026-10-07 23:15:43.378] [RANK 0] [INFO] Grid: 64x64x1, MPI procs: 1, OMP threads: 4
+[2026-10-07 23:15:43.416] [RANK 0] [INFO] Iteration 500, residual = 86.4915
+[2026-10-07 23:15:43.422] [RANK 0] [INFO] Iteration 1000, residual = 48.2085
+[2026-10-07 23:15:43.433] [RANK 0] [INFO] Iteration 1500, residual = 26.8767
+[2026-10-07 23:15:43.437] [RANK 0] [INFO] Iteration 2000, residual = 14.9846
+[2026-10-07 23:15:43.437] [RANK 0] [INFO] Solver finished in 2000 iterations, time = 0.0582362 s
+[2026-10-07 23:15:43.437] [RANK 0] [INFO] Total time: 0.0582446 s, Iterations: 2000, Est. FLOP/s: 2.81296e+08
+{
+  "solver_total": {
+    "total_sec": 0.058243,
+    "calls": 1,
+    "avg_ms": 58.242622,
+    "min_ms": 58.242622,
+    "max_ms": 58.242622
+  },
+  "jacobi_iteration": {
+    "total_sec": 0.058030,
+    "calls": 2000,
+    "avg_ms": 0.029015,
+    "min_ms": 0.005096,
+    "max_ms": 10.618223
+  },
+  "residual_allreduce": {
+    "total_sec": 0.009972,
+    "calls": 4000,
+    "avg_ms": 0.002493,
+    "min_ms": 0.000041,
+    "max_ms": 5.934723
+  },
+  "stencil_boundary": {
+    "total_sec": 0.018205,
+    "calls": 2000,
+    "avg_ms": 0.009103,
+    "min_ms": 0.002426,
+    "max_ms": 3.915935
+  },
+  "stencil_interior": {
+    "total_sec": 0.028023,
+    "calls": 2000,
+    "avg_ms": 0.014011,
+    "min_ms": 0.001049,
+    "max_ms": 7.994638
+  },
+  "halo_exchange": {
+    "total_sec": 0.000216,
+    "calls": 2000,
+    "avg_ms": 0.000108,
+    "min_ms": 0.000041,
+    "max_ms": 0.046266
+  }
+}
+

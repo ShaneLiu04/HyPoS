@@ -1,0 +1,4 @@
+[2026-10-07 22:41:43.128] [RANK 0] [INFO] HyPoS — Hybrid Poisson Solver
+[2026-10-07 22:41:43.129] [RANK 0] [INFO] Grid: 64x64x1, MPI procs: 1, OMP threads: 4
+[2026-10-07 22:41:43.132] [RANK 0] [INFO] Solver finished in 200 iterations, time = 0.00203169 s
+[2026-10-07 22:41:43.135] [RANK 0] [INFO] Total time: 0.00504521 s, Iterations: 200, Est. FLOP/s: 3.24743e+08

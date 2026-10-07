@@ -1,0 +1,120 @@
+[==========] Running 21 tests from 7 test suites.
+[----------] Global test environment set-up.
+[----------] 2 tests from GridTest
+[ RUN      ] GridTest.Dimensions
+[       OK ] GridTest.Dimensions (0 ms)
+[ RUN      ] GridTest.PartitionUniform
+[       OK ] GridTest.PartitionUniform (0 ms)
+[----------] 2 tests from GridTest (0 ms total)
+
+[----------] 1 test from SubgridTest
+[ RUN      ] SubgridTest.MemoryAllocation
+[       OK ] SubgridTest.MemoryAllocation (0 ms)
+[----------] 1 test from SubgridTest (1 ms total)
+
+[----------] 1 test from SolverTest
+[ RUN      ] SolverTest.JacobiConvergence
+[2026-10-07 22:41:40.296] [RANK 0] [INFO] Iteration 500, residual = 0.693532
+[2026-10-07 22:41:40.306] [RANK 0] [INFO] Iteration 1000, residual = 0.0717091
+[2026-10-07 22:41:40.318] [RANK 0] [INFO] Iteration 1500, residual = 0.0074145
+[2026-10-07 22:41:40.324] [RANK 0] [INFO] Iteration 2000, residual = 0.000766636
+[2026-10-07 22:41:40.327] [RANK 0] [INFO] Iteration 2500, residual = 7.92678e-05
+[2026-10-07 22:41:40.334] [RANK 0] [INFO] Converged at iteration 2957, residual = 9.96223e-06
+[2026-10-07 22:41:40.334] [RANK 0] [INFO] Solver finished in 2957 iterations, time = 0.0451503 s
+[       OK ] SolverTest.JacobiConvergence (45 ms)
+[----------] 1 test from SolverTest (45 ms total)
+
+[----------] 6 tests from SolverApiTest
+[ RUN      ] SolverApiTest.OverlapFlagDefaultsAndGetter
+[       OK ] SolverApiTest.OverlapFlagDefaultsAndGetter (0 ms)
+[ RUN      ] SolverApiTest.LastResidualZeroBeforeSolve
+[       OK ] SolverApiTest.LastResidualZeroBeforeSolve (0 ms)
+[ RUN      ] SolverApiTest.ZeroMaxIterations
+[2026-10-07 22:41:40.337] [RANK 0] [INFO] Solver finished in 0 iterations, time = 1.14e-07 s
+[       OK ] SolverApiTest.ZeroMaxIterations (0 ms)
+[ RUN      ] SolverApiTest.FirstIterationConvergenceSemantics
+[2026-10-07 22:41:40.337] [RANK 0] [INFO] Converged at iteration 1, residual = 0
+[2026-10-07 22:41:40.337] [RANK 0] [INFO] Solver finished in 1 iterations, time = 0.000217115 s
+[       OK ] SolverApiTest.FirstIterationConvergenceSemantics (0 ms)
+[ RUN      ] SolverApiTest.LastResidualAfterConvergence
+[2026-10-07 22:41:40.344] [RANK 0] [INFO] Iteration 500, residual = 0.693532
+[2026-10-07 22:41:40.348] [RANK 0] [INFO] Iteration 1000, residual = 0.0717091
+[2026-10-07 22:41:40.355] [RANK 0] [INFO] Iteration 1500, residual = 0.0074145
+[2026-10-07 22:41:40.358] [RANK 0] [INFO] Iteration 2000, residual = 0.000766636
+[2026-10-07 22:41:40.362] [RANK 0] [INFO] Iteration 2500, residual = 7.92678e-05
+[2026-10-07 22:41:40.365] [RANK 0] [INFO] Converged at iteration 2957, residual = 9.96223e-06
+[2026-10-07 22:41:40.365] [RANK 0] [INFO] Solver finished in 2957 iterations, time = 0.0268422 s
+[       OK ] SolverApiTest.LastResidualAfterConvergence (27 ms)
+[ RUN      ] SolverApiTest.BaseClassLastResidualDefault
+[       OK ] SolverApiTest.BaseClassLastResidualDefault (0 ms)
+[----------] 6 tests from SolverApiTest (30 ms total)
+
+[----------] 2 tests from OverlapTest
+[ RUN      ] OverlapTest.SelfLoopOnOffConsistency
+[2026-10-07 22:41:40.370] [RANK 0] [INFO] Iteration 500, residual = 4
+[2026-10-07 22:41:40.375] [RANK 0] [INFO] Iteration 1000, residual = 4
+[2026-10-07 22:41:40.378] [RANK 0] [INFO] Iteration 1500, residual = 4
+[2026-10-07 22:41:40.383] [RANK 0] [INFO] Iteration 2000, residual = 4
+[2026-10-07 22:41:40.386] [RANK 0] [INFO] Iteration 2500, residual = 4
+[2026-10-07 22:41:40.389] [RANK 0] [INFO] Iteration 3000, residual = 4
+[2026-10-07 22:41:40.395] [RANK 0] [INFO] Iteration 3500, residual = 4
+[2026-10-07 22:41:40.399] [RANK 0] [INFO] Iteration 4000, residual = 4
+[2026-10-07 22:41:40.402] [RANK 0] [INFO] Iteration 4500, residual = 4
+[2026-10-07 22:41:40.405] [RANK 0] [INFO] Iteration 5000, residual = 4
+[2026-10-07 22:41:40.406] [RANK 0] [INFO] Solver finished in 5000 iterations, time = 0.0391392 s
+[2026-10-07 22:41:40.408] [RANK 0] [INFO] Iteration 500, residual = 4
+[2026-10-07 22:41:40.411] [RANK 0] [INFO] Iteration 1000, residual = 4
+[2026-10-07 22:41:40.415] [RANK 0] [INFO] Iteration 1500, residual = 4
+[2026-10-07 22:41:40.419] [RANK 0] [INFO] Iteration 2000, residual = 4
+[2026-10-07 22:41:40.423] [RANK 0] [INFO] Iteration 2500, residual = 4
+[2026-10-07 22:41:40.426] [RANK 0] [INFO] Iteration 3000, residual = 4
+[2026-10-07 22:41:40.429] [RANK 0] [INFO] Iteration 3500, residual = 4
+[2026-10-07 22:41:40.438] [RANK 0] [INFO] Iteration 4000, residual = 4
+[2026-10-07 22:41:40.443] [RANK 0] [INFO] Iteration 4500, residual = 4
+[2026-10-07 22:41:40.447] [RANK 0] [INFO] Iteration 5000, residual = 4
+[2026-10-07 22:41:40.447] [RANK 0] [INFO] Solver finished in 5000 iterations, time = 0.0412653 s
+[       OK ] OverlapTest.SelfLoopOnOffConsistency (80 ms)
+[ RUN      ] OverlapTest.MpiFourRanksOnOffConsistency
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_overlap.cpp:68: Skipped
+MpiFourRanksOnOffConsistency requires exactly 4 processes
+
+[  SKIPPED ] OverlapTest.MpiFourRanksOnOffConsistency (0 ms)
+[----------] 2 tests from OverlapTest (81 ms total)
+
+[----------] 7 tests from HaloExchangeTest
+[ RUN      ] HaloExchangeTest.DirectionSemanticsSelfLoop2D
+[       OK ] HaloExchangeTest.DirectionSemanticsSelfLoop2D (0 ms)
+[ RUN      ] HaloExchangeTest.FaceBuffersSafeSelfLoop2DMultiHalo
+[       OK ] HaloExchangeTest.FaceBuffersSafeSelfLoop2DMultiHalo (0 ms)
+[ RUN      ] HaloExchangeTest.ProcNullKeepsHaloUnchanged
+[       OK ] HaloExchangeTest.ProcNullKeepsHaloUnchanged (0 ms)
+[ RUN      ] HaloExchangeTest.MpiNonUniform4RanksHalos
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_halo_exchange.cpp:135: Skipped
+MpiNonUniform4RanksHalos requires exactly 4 processes
+
+[  SKIPPED ] HaloExchangeTest.MpiNonUniform4RanksHalos (0 ms)
+[ RUN      ] HaloExchangeTest.SelfLoop3DDirectionSemantics
+[       OK ] HaloExchangeTest.SelfLoop3DDirectionSemantics (0 ms)
+[ RUN      ] HaloExchangeTest.SelfLoop3DMultiHaloSmoke
+[       OK ] HaloExchangeTest.SelfLoop3DMultiHaloSmoke (0 ms)
+[ RUN      ] HaloExchangeTest.MpiNonUniform8RanksHalos3D
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_halo_exchange.cpp:355: Skipped
+MpiNonUniform8RanksHalos3D requires exactly 8 processes
+
+[  SKIPPED ] HaloExchangeTest.MpiNonUniform8RanksHalos3D (0 ms)
+[----------] 7 tests from HaloExchangeTest (2 ms total)
+
+[----------] 2 tests from PerfTest
+[ RUN      ] PerfTest.TimerAccuracy
+[       OK ] PerfTest.TimerAccuracy (100 ms)
+[ RUN      ] PerfTest.ProfilerRegions
+[       OK ] PerfTest.ProfilerRegions (10 ms)
+[----------] 2 tests from PerfTest (112 ms total)
+
+[----------] Global test environment tear-down
+[==========] 21 tests from 7 test suites ran. (279 ms total)
+[  PASSED  ] 18 tests.
+[  SKIPPED ] 3 tests, listed below:
+[  SKIPPED ] OverlapTest.MpiFourRanksOnOffConsistency
+[  SKIPPED ] HaloExchangeTest.MpiNonUniform4RanksHalos
+[  SKIPPED ] HaloExchangeTest.MpiNonUniform8RanksHalos3D

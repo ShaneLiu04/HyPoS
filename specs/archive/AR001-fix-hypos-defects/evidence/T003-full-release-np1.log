@@ -1,0 +1,62 @@
+[==========] Running 13 tests from 5 test suites.
+[----------] Global test environment set-up.
+[----------] 2 tests from GridTest
+[ RUN      ] GridTest.Dimensions
+[       OK ] GridTest.Dimensions (0 ms)
+[ RUN      ] GridTest.PartitionUniform
+[       OK ] GridTest.PartitionUniform (0 ms)
+[----------] 2 tests from GridTest (0 ms total)
+
+[----------] 1 test from SubgridTest
+[ RUN      ] SubgridTest.MemoryAllocation
+[       OK ] SubgridTest.MemoryAllocation (0 ms)
+[----------] 1 test from SubgridTest (0 ms total)
+
+[----------] 1 test from SolverTest
+[ RUN      ] SolverTest.JacobiConvergence
+[2026-10-07 22:17:45.876] [RANK 0] [INFO] Iteration 0, residual = 8
+[2026-10-07 22:17:50.011] [RANK 0] [INFO] Iteration 500, residual = 0.690392
+[2026-10-07 22:17:52.842] [RANK 0] [INFO] Iteration 1000, residual = 0.0713844
+[2026-10-07 22:17:55.477] [RANK 0] [INFO] Iteration 1500, residual = 0.00738092
+[2026-10-07 22:17:58.602] [RANK 0] [INFO] Iteration 2000, residual = 0.000763165
+[2026-10-07 22:18:01.564] [RANK 0] [INFO] Iteration 2500, residual = 7.89089e-05
+[2026-10-07 22:18:04.477] [RANK 0] [INFO] Solver finished in 2956 iterations, time = 18.6997 s
+[       OK ] SolverTest.JacobiConvergence (18702 ms)
+[----------] 1 test from SolverTest (18706 ms total)
+
+[----------] 7 tests from HaloExchangeTest
+[ RUN      ] HaloExchangeTest.DirectionSemanticsSelfLoop2D
+[       OK ] HaloExchangeTest.DirectionSemanticsSelfLoop2D (0 ms)
+[ RUN      ] HaloExchangeTest.FaceBuffersSafeSelfLoop2DMultiHalo
+[       OK ] HaloExchangeTest.FaceBuffersSafeSelfLoop2DMultiHalo (0 ms)
+[ RUN      ] HaloExchangeTest.ProcNullKeepsHaloUnchanged
+[       OK ] HaloExchangeTest.ProcNullKeepsHaloUnchanged (0 ms)
+[ RUN      ] HaloExchangeTest.MpiNonUniform4RanksHalos
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_halo_exchange.cpp:135: Skipped
+MpiNonUniform4RanksHalos requires exactly 4 processes
+
+[  SKIPPED ] HaloExchangeTest.MpiNonUniform4RanksHalos (0 ms)
+[ RUN      ] HaloExchangeTest.SelfLoop3DDirectionSemantics
+[       OK ] HaloExchangeTest.SelfLoop3DDirectionSemantics (0 ms)
+[ RUN      ] HaloExchangeTest.SelfLoop3DMultiHaloSmoke
+[       OK ] HaloExchangeTest.SelfLoop3DMultiHaloSmoke (0 ms)
+[ RUN      ] HaloExchangeTest.MpiNonUniform8RanksHalos3D
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_halo_exchange.cpp:355: Skipped
+MpiNonUniform8RanksHalos3D requires exactly 8 processes
+
+[  SKIPPED ] HaloExchangeTest.MpiNonUniform8RanksHalos3D (0 ms)
+[----------] 7 tests from HaloExchangeTest (4 ms total)
+
+[----------] 2 tests from PerfTest
+[ RUN      ] PerfTest.TimerAccuracy
+[       OK ] PerfTest.TimerAccuracy (100 ms)
+[ RUN      ] PerfTest.ProfilerRegions
+[       OK ] PerfTest.ProfilerRegions (10 ms)
+[----------] 2 tests from PerfTest (111 ms total)
+
+[----------] Global test environment tear-down
+[==========] 13 tests from 5 test suites ran. (18827 ms total)
+[  PASSED  ] 11 tests.
+[  SKIPPED ] 2 tests, listed below:
+[  SKIPPED ] HaloExchangeTest.MpiNonUniform4RanksHalos
+[  SKIPPED ] HaloExchangeTest.MpiNonUniform8RanksHalos3D

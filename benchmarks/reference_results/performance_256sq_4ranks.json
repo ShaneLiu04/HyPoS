@@ -1,0 +1,33 @@
+{
+  "run_id": "hypo_20261007_231319",
+  "config": {
+    "nx": 256,
+    "ny": 256,
+    "nz": 1,
+    "mpi_procs": 4,
+    "omp_threads": 1,
+    "solver": "jacobi",
+    "partition": "uniform",
+    "comm_mode": "p2p",
+    "max_iter": 10000,
+    "tolerance": 1e-06,
+    "overlap_comm": false
+  },
+  "performance": {
+    "total_time_sec": 0.2043,
+    "iter_time_ms": 0.0204,
+    "compute_time_ms": 0.0000,
+    "comm_time_ms": 0.0027,
+    "comm_overhead_ratio": 0.0000,
+    "overlap_ratio": 0.0000,
+    "flops_per_sec": 6.4144e+09,
+    "memory_bandwidth_gbps": 0.0000,
+    "iterations": 10000,
+    "final_residual": 204.6127
+  },
+  "scaling": {
+    "strong_efficiency": 0.0000,
+    "weak_efficiency": 0.0000,
+    "speedup": 0.0000
+  }
+}

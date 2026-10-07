@@ -42,7 +42,7 @@ def run_test(nx, ny, nz, mpi_procs, omp_threads, output_dir, solver="jacobi", ma
     return None
 
 
-def strong_scaling_test(output_dir, nx=1024, ny=1024, nz=1, max_procs=16):
+def strong_scaling_test(output_dir, nx=1024, ny=1024, nz=1, max_procs=16, omp_threads_override=0):
     """Strong scaling: fixed problem size, increasing processes."""
     print(f"\n{'='*60}")
     print("STRONG SCALING TEST")
@@ -56,7 +56,10 @@ def strong_scaling_test(output_dir, nx=1024, ny=1024, nz=1, max_procs=16):
     base_time = None
     
     for procs in procs_list:
-        omp_threads = max(1, 4 // procs)  # Adjust threads per process
+        if omp_threads_override > 0:
+            omp_threads = omp_threads_override
+        else:
+            omp_threads = max(1, 4 // procs)  # Adjust threads per process
         
         test_dir = os.path.join(output_dir, f"strong_p{procs}")
         os.makedirs(test_dir, exist_ok=True)
@@ -95,7 +98,7 @@ def strong_scaling_test(output_dir, nx=1024, ny=1024, nz=1, max_procs=16):
     return results
 
 
-def weak_scaling_test(output_dir, per_proc_n=512, max_procs=16):
+def weak_scaling_test(output_dir, per_proc_n=512, max_procs=16, omp_threads_override=0):
     """Weak scaling: fixed per-process workload, increasing processes."""
     print(f"\n{'='*60}")
     print("WEAK SCALING TEST")
@@ -112,7 +115,7 @@ def weak_scaling_test(output_dir, per_proc_n=512, max_procs=16):
         nx = per_proc_n * procs  # Increase total grid with procs
         ny = per_proc_n
         nz = 1
-        omp_threads = 1
+        omp_threads = omp_threads_override if omp_threads_override > 0 else 1
         
         test_dir = os.path.join(output_dir, f"weak_p{procs}")
         os.makedirs(test_dir, exist_ok=True)
@@ -179,6 +182,8 @@ if __name__ == "__main__":
     parser.add_argument("--max-procs", type=int, default=16, help="Maximum MPI processes to test")
     parser.add_argument("--strong-nx", type=int, default=1024, help="Grid size for strong scaling")
     parser.add_argument("--weak-n", type=int, default=512, help="Per-process grid size for weak scaling")
+    parser.add_argument("--omp-threads", type=int, default=0,
+                        help="Fixed OpenMP threads per process (0=auto: strong=4//procs, weak=1)")
     parser.add_argument("--strong-only", action="store_true", help="Run only strong scaling")
     parser.add_argument("--weak-only", action="store_true", help="Run only weak scaling")
     
@@ -192,11 +197,13 @@ if __name__ == "__main__":
     if not args.weak_only:
         strong_results = strong_scaling_test(args.output_dir, 
                                               nx=args.strong_nx, ny=args.strong_nx, 
-                                              max_procs=args.max_procs)
+                                              max_procs=args.max_procs,
+                                              omp_threads_override=args.omp_threads)
     
     if not args.strong_only:
         weak_results = weak_scaling_test(args.output_dir, 
                                           per_proc_n=args.weak_n, 
-                                          max_procs=args.max_procs)
+                                          max_procs=args.max_procs,
+                                          omp_threads_override=args.omp_threads)
     
     print_summary(strong_results, weak_results)

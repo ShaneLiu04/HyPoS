@@ -1,0 +1,29 @@
+[
+  {
+    "procs": 1,
+    "total_nx": 128,
+    "total_ny": 128,
+    "total_time_sec": 0.1277,
+    "iter_time_ms": 0.0128,
+    "efficiency": 1.0,
+    "iterations": 10000
+  },
+  {
+    "procs": 2,
+    "total_nx": 256,
+    "total_ny": 128,
+    "total_time_sec": 0.1263,
+    "iter_time_ms": 0.0126,
+    "efficiency": 1.0110847189231988,
+    "iterations": 10000
+  },
+  {
+    "procs": 4,
+    "total_nx": 512,
+    "total_ny": 128,
+    "total_time_sec": 0.2251,
+    "iter_time_ms": 0.0225,
+    "efficiency": 0.5673034207019103,
+    "iterations": 10000
+  }
+]

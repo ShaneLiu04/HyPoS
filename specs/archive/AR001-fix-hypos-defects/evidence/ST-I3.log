@@ -1,0 +1,11 @@
+[2026-10-07 23:28:35.106] [RANK 0] [INFO] HyPoS — Hybrid Poisson Solver
+[2026-10-07 23:28:35.106] [RANK 0] [INFO] Grid: 64x64x16, MPI procs: 4, OMP threads: 4
+[2026-10-07 23:28:35.116] [RANK 0] [INFO] Converged at iteration 1, residual = 0
+[2026-10-07 23:28:35.116] [RANK 0] [INFO] Solver finished in 1 iterations, time = 0.0095601 s
+[2026-10-07 23:28:35.116] [RANK 3] [INFO] Converged at iteration 1, residual = 0
+[2026-10-07 23:28:35.116] [RANK 3] [INFO] Solver finished in 1 iterations, time = 0.00955425 s
+[2026-10-07 23:28:35.116] [RANK 1] [INFO] Converged at iteration 1, residual = 0
+[2026-10-07 23:28:35.116] [RANK 1] [INFO] Solver finished in 1 iterations, time = 0.009557 s
+[2026-10-07 23:28:35.116] [RANK 2] [INFO] Converged at iteration 1, residual = 0
+[2026-10-07 23:28:35.116] [RANK 2] [INFO] Solver finished in 1 iterations, time = 0.0095581 s
+[2026-10-07 23:28:35.116] [RANK 0] [INFO] Total time: 0.00957432 s, Iterations: 1, Est. FLOP/s: 1.369e+07

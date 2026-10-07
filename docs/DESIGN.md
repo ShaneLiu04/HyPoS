@@ -45,15 +45,16 @@ Grid (全局描述) --> GridPartition (策略) --> Subgrid (本地子域 + Halo)
   - 3D 七点 stencil：除以 6.0
   - OpenMP 并行：`#pragma omp parallel for` + `#pragma omp simd`
   - 残差计算：内点 L2 范数，通过 `MPI_Allreduce` 全局聚合
+  - 通信-计算重叠（可选，`JacobiSolver(true)`）：`beginExchange` → 内点盒计算 → `endExchange` → 边界 6 slab；残差使用**独立全内点扫描**，保证 overlap on/off 的迭代数与解 bit 级一致（`lastResidual()` 暴露最近残差）
 
 ### 2.4 通信层（comm/）
 
 - **HaloExchanger**: 抽象基类，定义 `beginExchange()` / `endExchange()` 接口
 - **PointToPointExchanger**: 非阻塞 MPI 实现
   - `MPI_Isend` / `MPI_Irecv` + `MPI_Waitall`
-  - 4 方向（2D）或 6 方向（3D）同时通信
-  - 独立的 send/recv 缓冲区，避免数据竞争
-- **CollectiveExchanger**: 预留接口，基于 `MPI_Neighbor_allgather`
+  - 6 个方向（左/右/下/上/后/前）共 12 个非阻塞请求；tag 按发送面编号 0-5
+  - 每个方向的独立 send/recv 缓冲区；仅交换内点面范围（2D 数据位于 k=0 平面）
+- **CollectiveExchanger**: P2P 回退实现（委托 `PointToPointExchanger` 并记录告警）；真 `MPI_Neighbor_allgatherv` 为路线图
 
 ### 2.5 性能层（perf/）
 
@@ -142,11 +143,12 @@ Interior: i = [halo, nx_local+halo-1]
 
 ```
 迭代开始
-├── beginExchange()          // 启动 halo 通信
-├── compute inner points     // 计算与边界无关的内点
-├── endExchange()            // 等待通信完成
-├── compute boundary points  // 计算边界点（需要 halo 数据）
-└── 完成一次迭代
+├── beginExchange()          // 打包 6 面 + 12 个非阻塞请求（halo_exchange）
+├── 内点盒计算                // 不依赖 halo 的区域（stencil_interior）
+├── endExchange()            // MPI_Waitall + 解包（halo_wait，仅 overlap 模式单独记录）
+├── 边界带计算                // 6 个 slab 补齐（stencil_boundary）
+├── 独立残差扫描 + Allreduce  // 与 overlap 无关，保证 on/off 结果一致
+└── swapU()，完成一次迭代
 ```
 
 ---
@@ -167,6 +169,8 @@ Interior: i = [halo, nx_local+halo-1]
 
 ## 6. 扩展性预留
 
+> 本表所列能力均为**路线图 / 未实现**；当前版本的实际实现范围以上文 §2 模块架构为准。
+
 | 预留扩展 | 接口位置 | 实现复杂度 |
 |---|---|---|
 | CG/SOR 求解器 | `solver/solver.hpp` | 中（需要预处理子、Krylov 子空间） |
@@ -182,10 +186,10 @@ Interior: i = [halo, nx_local+halo-1]
 ## 7. 构建系统
 
 CMake 配置支持：
-- 多编译器（GCC/Clang/Intel）
-- 多模式（Release / Debug / RelWithDebInfo）
-- 可选依赖（OpenMP、PAPI、GoogleTest）
-- 自动检测平台特性（AVX2/AVX-512）
+- 多编译器（GCC/Clang/Intel；MSVC 显式报错，项目为 POSIX-only）
+- 多模式（Release / Debug）
+- 可选依赖（OpenMP、GoogleTest）
+- Release 使用 `-march=native`（GNU/Clang）/ `-xHost`（Intel）；Debug 自动启用 Address/UB sanitizers（GNU/Clang）
 
 ---
 

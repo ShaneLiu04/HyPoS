@@ -1,0 +1,56 @@
+-- The CXX compiler identification is GNU 15.2.0
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Found OpenMP_CXX: -fopenmp (found version "4.5")
+-- Found OpenMP: TRUE (found version "4.5")
+-- Found MPI_CXX: /usr/lib/x86_64-linux-gnu/openmpi/lib/libmpi.so (found version "3.1")
+-- Found MPI: TRUE (found version "3.1")
+-- Found GTest: /usr/lib/x86_64-linux-gnu/cmake/GTest/GTestConfig.cmake (found version "1.17.0")
+-- Configuring done (8.3s)
+-- Generating done (0.8s)
+-- Build files have been written to: /mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/build
+[  4%] Building CXX object CMakeFiles/hypos_core.dir/src/core/memory_pool.cpp.o
+[ 12%] Building CXX object CMakeFiles/hypos_core.dir/src/grid/subgrid.cpp.o
+[ 12%] Building CXX object CMakeFiles/hypos_core.dir/src/grid/partition.cpp.o
+[ 16%] Building CXX object CMakeFiles/hypos_core.dir/src/solver/jacobi_solver.cpp.o
+[ 24%] Building CXX object CMakeFiles/hypos_core.dir/src/comm/p2p_exchanger.cpp.o
+[ 28%] Building CXX object CMakeFiles/hypos_core.dir/src/comm/collective_exchanger.cpp.o
+[ 32%] Building CXX object CMakeFiles/hypos_core.dir/src/perf/timer.cpp.o
+[ 36%] Building CXX object CMakeFiles/hypos_core.dir/src/perf/profiler.cpp.o
+[ 40%] Building CXX object CMakeFiles/hypos_core.dir/src/perf/reporter.cpp.o
+[ 40%] Building CXX object CMakeFiles/hypos_core.dir/src/utils/mpi_env.cpp.o
+[ 48%] Building CXX object CMakeFiles/hypos_core.dir/src/utils/logger.cpp.o
+[ 48%] Building CXX object CMakeFiles/hypos_core.dir/src/utils/cmdline_parser.cpp.o
+[ 56%] Building CXX object CMakeFiles/hypos_core.dir/src/io/binary_io.cpp.o
+[ 56%] Building CXX object CMakeFiles/hypos_core.dir/src/io/vtk_io.cpp.o
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/comm/p2p_exchanger.cpp: In member function ‘virtual void hypo::CollectiveExchanger::exchange(hypo::Subgrid&)’:
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/comm/p2p_exchanger.cpp:287:10: warning: variable ‘pack_face’ set but not used [-Wunused-but-set-variable]
+  287 |     auto pack_face = [&](auto index_fn, Index count) {
+      |          ^~~~~~~~~
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/comm/p2p_exchanger.cpp:340:10: warning: variable ‘post_recv’ set but not used [-Wunused-but-set-variable]
+  340 |     auto post_recv = [&](int neighbor, Index count) {
+      |          ^~~~~~~~~
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/comm/p2p_exchanger.cpp:347:10: warning: variable ‘post_send’ set but not used [-Wunused-but-set-variable]
+  347 |     auto post_send = [&](int neighbor, Index start, Index count) {
+      |          ^~~~~~~~~
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/comm/p2p_exchanger.cpp: In member function ‘virtual void hypo::CollectiveExchanger::endExchange(hypo::Subgrid&)’:
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/comm/p2p_exchanger.cpp:370:48: warning: unused parameter ‘subgrid’ [-Wunused-parameter]
+  370 | void CollectiveExchanger::endExchange(Subgrid& subgrid) {
+      |                                       ~~~~~~~~~^~~~~~~
+[ 60%] Linking CXX static library libhypos_core.a
+[ 60%] Built target hypos_core
+[ 64%] Building CXX object CMakeFiles/hypos.dir/src/main.cpp.o
+[ 68%] Building CXX object CMakeFiles/test_hypos.dir/tests/gtest_main_mpi.cpp.o
+[ 80%] Building CXX object CMakeFiles/test_hypos.dir/tests/test_solver.cpp.o
+[ 80%] Building CXX object CMakeFiles/test_hypos.dir/tests/test_grid.cpp.o
+[ 84%] Building CXX object CMakeFiles/test_hypos.dir/tests/test_overlap.cpp.o
+[ 88%] Building CXX object CMakeFiles/test_hypos.dir/tests/test_halo_exchange.cpp.o
+[ 88%] Building CXX object CMakeFiles/test_hypos.dir/tests/test_solver_mpi.cpp.o
+[ 92%] Building CXX object CMakeFiles/test_hypos.dir/tests/test_performance.cpp.o
+[ 96%] Linking CXX executable hypos
+[100%] Linking CXX executable test_hypos
+[100%] Built target hypos
+[100%] Built target test_hypos

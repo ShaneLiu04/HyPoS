@@ -12,38 +12,17 @@ endif()
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
 
-# Compiler options
-add_compile_options(
-    -Wall
-    -Wextra
-    -Wpedantic
-    $<$<CONFIG:Release>:-O3>
-    $<$<CONFIG:Release>:-march=native>
-    $<$<CONFIG:Release>:-DNDEBUG>
-    $<$<CONFIG:Debug>:-O0>
-    $<$<CONFIG:Debug>:-g>
-    $<$<CONFIG:Debug>:-fsanitize=address,undefined>
-)
+# Compiler options (GNU / Clang / Intel; explicit failure otherwise)
+include(CompilerWarnings)
 
 # OpenMP
 find_package(OpenMP)
-if(OpenMP_CXX_FOUND)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-    add_definitions(-D_OPENMP)
-endif()
 
 # MPI
 find_package(MPI REQUIRED)
 
-# PAPI (optional)
-find_package(PAPI)
-if(PAPI_FOUND)
-    add_definitions(-DHYPOS_ENABLE_PAPI)
-endif()
-
 # Source files
-set(HYPOS_SOURCES
-    src/main.cpp
+set(HYPOS_CORE_SOURCES
     src/core/memory_pool.cpp
     src/grid/subgrid.cpp
     src/grid/partition.cpp
@@ -60,34 +39,77 @@ set(HYPOS_SOURCES
     src/io/vtk_io.cpp
 )
 
-# Main executable
-add_executable(hypos ${HYPOS_SOURCES})
-target_include_directories(hypos PRIVATE ${CMAKE_SOURCE_DIR}/src)
-target_link_libraries(hypos PRIVATE MPI::MPI_CXX)
+# Core library shared by the executable and tests
+add_library(hypos_core STATIC ${HYPOS_CORE_SOURCES})
+target_include_directories(hypos_core PUBLIC ${CMAKE_SOURCE_DIR}/src)
+target_link_libraries(hypos_core PUBLIC MPI::MPI_CXX)
 if(OpenMP_CXX_FOUND)
-    target_link_libraries(hypos PRIVATE OpenMP::OpenMP_CXX)
-endif()
-if(PAPI_FOUND)
-    target_include_directories(hypos PRIVATE ${PAPI_INCLUDE_DIRS})
-    target_link_libraries(hypos PRIVATE ${PAPI_LIBRARIES})
+    target_link_libraries(hypos_core PUBLIC OpenMP::OpenMP_CXX)
 endif()
 
+# Main executable
+add_executable(hypos src/main.cpp)
+target_link_libraries(hypos PRIVATE hypos_core)
+
 # Tests
+option(HYPOS_BUILD_TESTS "Build tests when GTest is available" ON)
 enable_testing()
-find_package(GTest)
+if(HYPOS_BUILD_TESTS)
+    find_package(GTest)
+else()
+    set(GTest_FOUND FALSE)
+endif()
 if(GTest_FOUND)
     add_executable(test_hypos
+        tests/gtest_main_mpi.cpp
         tests/test_grid.cpp
         tests/test_solver.cpp
+        tests/test_overlap.cpp
         tests/test_halo_exchange.cpp
+        tests/test_solver_mpi.cpp
         tests/test_performance.cpp
     )
-    target_include_directories(test_hypos PRIVATE ${CMAKE_SOURCE_DIR}/src)
-    target_link_libraries(test_hypos PRIVATE GTest::gtest GTest::gtest_main MPI::MPI_CXX)
-    if(OpenMP_CXX_FOUND)
-        target_link_libraries(test_hypos PRIVATE OpenMP::OpenMP_CXX)
+    target_link_libraries(test_hypos PRIVATE hypos_core GTest::gtest)
+
+    set(HYPOS_TEST_ENV
+        "OMP_NUM_THREADS=4;ASAN_OPTIONS=detect_leaks=0;OMPI_ALLOW_RUN_AS_ROOT=1;OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1")
+
+    add_test(NAME unit COMMAND $<TARGET_FILE:test_hypos>)
+    set_tests_properties(unit PROPERTIES ENVIRONMENT "${HYPOS_TEST_ENV}" TIMEOUT 120)
+
+    if(MPIEXEC_EXECUTABLE)
+        # Launcher must match the MPI implementation the binary is linked
+        # against; MPICH's mpiexec does not accept --oversubscribe (which
+        # keeps the np=8 test runnable on machines with fewer cores).
+        set(HYPOS_MPIEXEC "${MPIEXEC_EXECUTABLE}")
+        set(HYPOS_MPIEXEC_FLAGS "")
+        if(MPI_CXX_COMPILER MATCHES "mpich")
+            find_program(HYPOS_MPIEXEC_MPICH NAMES mpiexec.mpich mpirun.mpich)
+            if(HYPOS_MPIEXEC_MPICH)
+                set(HYPOS_MPIEXEC "${HYPOS_MPIEXEC_MPICH}")
+            endif()
+        else()
+            set(HYPOS_MPIEXEC_FLAGS --oversubscribe)
+        endif()
+
+        add_test(NAME halo_2d_mpi
+            COMMAND ${HYPOS_MPIEXEC} ${HYPOS_MPIEXEC_FLAGS} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} 4
+                    $<TARGET_FILE:test_hypos> --gtest_filter=HaloExchangeTest.MpiNonUniform4RanksHalos)
+        add_test(NAME halo_3d_mpi
+            COMMAND ${HYPOS_MPIEXEC} ${HYPOS_MPIEXEC_FLAGS} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} 8
+                    $<TARGET_FILE:test_hypos> --gtest_filter=HaloExchangeTest.MpiNonUniform8RanksHalos3D)
+        add_test(NAME solver_mpi
+            COMMAND ${HYPOS_MPIEXEC} ${HYPOS_MPIEXEC_FLAGS} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} 4
+                    $<TARGET_FILE:test_hypos> --gtest_filter=SolverMpiTest.*)
+        add_test(NAME overlap_consistency
+            COMMAND ${HYPOS_MPIEXEC} ${HYPOS_MPIEXEC_FLAGS} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} 4
+                    $<TARGET_FILE:test_hypos> --gtest_filter=OverlapTest.*)
+
+        set_tests_properties(halo_2d_mpi halo_3d_mpi solver_mpi overlap_consistency
+            PROPERTIES ENVIRONMENT "${HYPOS_TEST_ENV}" TIMEOUT 300)
     endif()
-    add_test(NAME HyPoS_UnitTests COMMAND test_hypos)
+elseif(HYPOS_BUILD_TESTS)
+    message(WARNING "GTest not found: tests are disabled")
 endif()
 
 # Installation

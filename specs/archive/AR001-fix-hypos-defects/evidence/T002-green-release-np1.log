@@ -1,0 +1,22 @@
+Note: Google Test filter = HaloExchangeTest.*
+[==========] Running 4 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 4 tests from HaloExchangeTest
+[ RUN      ] HaloExchangeTest.DirectionSemanticsSelfLoop2D
+[       OK ] HaloExchangeTest.DirectionSemanticsSelfLoop2D (1 ms)
+[ RUN      ] HaloExchangeTest.FaceBuffersSafeSelfLoop2DMultiHalo
+[       OK ] HaloExchangeTest.FaceBuffersSafeSelfLoop2DMultiHalo (0 ms)
+[ RUN      ] HaloExchangeTest.ProcNullKeepsHaloUnchanged
+[       OK ] HaloExchangeTest.ProcNullKeepsHaloUnchanged (0 ms)
+[ RUN      ] HaloExchangeTest.MpiNonUniform4RanksHalos
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_halo_exchange.cpp:135: Skipped
+MpiNonUniform4RanksHalos requires exactly 4 processes
+
+[  SKIPPED ] HaloExchangeTest.MpiNonUniform4RanksHalos (0 ms)
+[----------] 4 tests from HaloExchangeTest (4 ms total)
+
+[----------] Global test environment tear-down
+[==========] 4 tests from 1 test suite ran. (6 ms total)
+[  PASSED  ] 3 tests.
+[  SKIPPED ] 1 test, listed below:
+[  SKIPPED ] HaloExchangeTest.MpiNonUniform4RanksHalos

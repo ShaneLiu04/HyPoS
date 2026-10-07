@@ -1,0 +1,44 @@
+[0;33mNote: Google Test filter = HaloExchangeTest.MpiNonUniform4RanksHalos
+[m[0;32m[==========] [mRunning 1 test from 1 test suite.
+[0;32m[----------] [mGlobal test environment set-up.
+[0;32m[----------] [m1 test from HaloExchangeTest
+[0;32m[ RUN      ] [mHaloExchangeTest.MpiNonUniform4RanksHalos
+[0;33mNote: Google Test filter = HaloExchangeTest.MpiNonUniform4RanksHalos
+[m[0;32m[==========] [mRunning 1 test from 1 test suite.
+[0;32m[----------] [mGlobal test environment set-up.
+[0;32m[----------] [m1 test from HaloExchangeTest
+[0;32m[ RUN      ] [mHaloExchangeTest.MpiNonUniform4RanksHalos
+[0;33mNote: Google Test filter = HaloExchangeTest.MpiNonUniform4RanksHalos
+[m[0;32m[==========] [mRunning 1 test from 1 test suite.
+[0;32m[----------] [mGlobal test environment set-up.
+[0;32m[----------] [m1 test from HaloExchangeTest
+[0;32m[ RUN      ] [mHaloExchangeTest.MpiNonUniform4RanksHalos
+[0;33mNote: Google Test filter = HaloExchangeTest.MpiNonUniform4RanksHalos
+[m[0;32m[==========] [mRunning 1 test from 1 test suite.
+[0;32m[----------] [mGlobal test environment set-up.
+[0;32m[----------] [m1 test from HaloExchangeTest
+[0;32m[ RUN      ] [mHaloExchangeTest.MpiNonUniform4RanksHalos
+[0;32m[       OK ] [mHaloExchangeTest.MpiNonUniform4RanksHalos (1 ms)
+[0;32m[----------] [m1 test from HaloExchangeTest (1 ms total)
+
+[0;32m[----------] [mGlobal test environment tear-down
+[0;32m[==========] [m1 test from 1 test suite ran. (1 ms total)
+[0;32m[  PASSED  ] [m1 test.
+[0;32m[       OK ] [mHaloExchangeTest.MpiNonUniform4RanksHalos (1 ms)
+[0;32m[----------] [m1 test from HaloExchangeTest (1 ms total)
+
+[0;32m[----------] [mGlobal test environment tear-down
+[0;32m[==========] [m1 test from 1 test suite ran. (1 ms total)
+[0;32m[  PASSED  ] [m1 test.
+[0;32m[       OK ] [mHaloExchangeTest.MpiNonUniform4RanksHalos (0 ms)
+[0;32m[----------] [m1 test from HaloExchangeTest (0 ms total)
+
+[0;32m[----------] [mGlobal test environment tear-down
+[0;32m[==========] [m1 test from 1 test suite ran. (1 ms total)
+[0;32m[  PASSED  ] [m1 test.
+[0;32m[       OK ] [mHaloExchangeTest.MpiNonUniform4RanksHalos (1 ms)
+[0;32m[----------] [m1 test from HaloExchangeTest (1 ms total)
+
+[0;32m[----------] [mGlobal test environment tear-down
+[0;32m[==========] [m1 test from 1 test suite ran. (1 ms total)
+[0;32m[  PASSED  ] [m1 test.

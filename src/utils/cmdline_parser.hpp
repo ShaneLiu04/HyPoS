@@ -37,10 +37,10 @@ private:
     T convert(const std::string& str) const;
 };
 
-// Explicit instantiations for common types
-extern template int    CommandLineParser::get<int>   (const std::string&, const int&)    const;
-extern template double CommandLineParser::get<double>(const std::string&, const double&) const;
-extern template std::string CommandLineParser::get<std::string>(const std::string&, const std::string&) const;
-extern template bool   CommandLineParser::get<bool>  (const std::string&, const bool&)   const;
+// Explicit specializations for common types (defined in cmdline_parser.cpp)
+template <> int    CommandLineParser::get<int>   (const std::string& key, const int& defaultValue)    const;
+template <> double CommandLineParser::get<double>(const std::string& key, const double& defaultValue) const;
+template <> std::string CommandLineParser::get<std::string>(const std::string& key, const std::string& defaultValue) const;
+template <> bool   CommandLineParser::get<bool>  (const std::string& key, const bool& defaultValue)   const;
 
 } // namespace hypo

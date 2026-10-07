@@ -1,0 +1,28 @@
+# Build directories
+build/
+build-*/
+cmake-build-*/
+
+# Local run outputs
+output/
+benchmark_results/
+scaling_tmp/
+
+# Generated field outputs
+solution_*.vti
+solution_*.pvti
+solution_*.bin
+performance_report.*
+
+# Object files and binaries
+*.o
+*.obj
+*.a
+*.so
+*.dylib
+*.exe
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp

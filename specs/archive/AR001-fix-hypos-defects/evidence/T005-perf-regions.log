@@ -1,0 +1,15 @@
+Note: Google Test filter = PerfTest.SolveRecords*
+[==========] Running 2 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 2 tests from PerfTest
+[ RUN      ] PerfTest.SolveRecordsProfilerRegionsOffMode
+[2026-10-07 22:43:08.175] [RANK 0] [INFO] Solver finished in 10 iterations, time = 0.00148611 s
+[       OK ] PerfTest.SolveRecordsProfilerRegionsOffMode (6 ms)
+[ RUN      ] PerfTest.SolveRecordsProfilerRegionsOverlapMode
+[2026-10-07 22:43:08.180] [RANK 0] [INFO] Solver finished in 10 iterations, time = 0.000154118 s
+[       OK ] PerfTest.SolveRecordsProfilerRegionsOverlapMode (0 ms)
+[----------] 2 tests from PerfTest (7 ms total)
+
+[----------] Global test environment tear-down
+[==========] 2 tests from 1 test suite ran. (9 ms total)
+[  PASSED  ] 2 tests.

@@ -1,0 +1,224 @@
+[0;33mNote: Google Test filter = OverlapTest.*:HaloExchangeTest.MpiNonUniform4RanksHalos
+[m[0;32m[==========] [mRunning 3 tests from 2 test suites.
+[0;32m[----------] [mGlobal test environment set-up.
+[0;32m[----------] [m2 tests from OverlapTest
+[0;32m[ RUN      ] [mOverlapTest.SelfLoopOnOffConsistency
+[0;33mNote: Google Test filter = OverlapTest.*:HaloExchangeTest.MpiNonUniform4RanksHalos
+[m[0;32m[==========] [mRunning 3 tests from 2 test suites.
+[0;32m[----------] [mGlobal test environment set-up.
+[0;32m[----------] [m2 tests from OverlapTest
+[0;32m[ RUN      ] [mOverlapTest.SelfLoopOnOffConsistency
+[0;33mNote: Google Test filter = OverlapTest.*:HaloExchangeTest.MpiNonUniform4RanksHalos
+[m[0;32m[==========] [mRunning 3 tests from 2 test suites.
+[0;32m[----------] [mGlobal test environment set-up.
+[0;32m[----------] [m2 tests from OverlapTest
+[0;32m[ RUN      ] [mOverlapTest.SelfLoopOnOffConsistency
+[0;33mNote: Google Test filter = OverlapTest.*:HaloExchangeTest.MpiNonUniform4RanksHalos
+[m[0;32m[==========] [mRunning 3 tests from 2 test suites.
+[0;32m[----------] [mGlobal test environment set-up.
+[0;32m[----------] [m2 tests from OverlapTest
+[0;32m[ RUN      ] [mOverlapTest.SelfLoopOnOffConsistency
+[2026-10-07 22:41:41.714] [RANK 0] [INFO] Iteration 500, residual = 8
+[2026-10-07 22:41:41.714] [RANK 0] [INFO] Iteration 500, residual = 8
+[2026-10-07 22:41:41.714] [RANK 0] [INFO] Iteration 500, residual = 8
+[2026-10-07 22:41:41.714] [RANK 0] [INFO] Iteration 500, residual = 8
+[2026-10-07 22:41:41.735] [RANK 0] [INFO] Iteration 1000, residual = 8
+[2026-10-07 22:41:41.735] [RANK 0] [INFO] Iteration 1000, residual = 8
+[2026-10-07 22:41:41.735] [RANK 0] [INFO] Iteration 1000, residual = 8
+[2026-10-07 22:41:41.735] [RANK 0] [INFO] Iteration 1000, residual = 8
+[2026-10-07 22:41:41.763] [RANK 0] [INFO] Iteration 1500, residual = 8
+[2026-10-07 22:41:41.763] [RANK 0] [INFO] Iteration 1500, residual = 8
+[2026-10-07 22:41:41.763] [RANK 0] [INFO] Iteration 1500, residual = 8
+[2026-10-07 22:41:41.763] [RANK 0] [INFO] Iteration 1500, residual = 8
+[2026-10-07 22:41:41.772] [RANK 0] [INFO] Iteration 2000, residual = 8
+[2026-10-07 22:41:41.772] [RANK 0] [INFO] Iteration 2000, residual = 8
+[2026-10-07 22:41:41.772] [RANK 0] [INFO] Iteration 2000, residual = 8
+[2026-10-07 22:41:41.772] [RANK 0] [INFO] Iteration 2000, residual = 8
+[2026-10-07 22:41:41.777] [RANK 0] [INFO] Iteration 2500, residual = 8
+[2026-10-07 22:41:41.777] [RANK 0] [INFO] Iteration 2500, residual = 8
+[2026-10-07 22:41:41.777] [RANK 0] [INFO] Iteration 2500, residual = 8
+[2026-10-07 22:41:41.777] [RANK 0] [INFO] Iteration 2500, residual = 8
+[2026-10-07 22:41:41.787] [RANK 0] [INFO] Iteration 3000, residual = 8
+[2026-10-07 22:41:41.787] [RANK 0] [INFO] Iteration 3000, residual = 8
+[2026-10-07 22:41:41.787] [RANK 0] [INFO] Iteration 3000, residual = 8
+[2026-10-07 22:41:41.787] [RANK 0] [INFO] Iteration 3000, residual = 8
+[2026-10-07 22:41:41.797] [RANK 0] [INFO] Iteration 3500, residual = 8
+[2026-10-07 22:41:41.797] [RANK 0] [INFO] Iteration 3500, residual = 8
+[2026-10-07 22:41:41.797] [RANK 0] [INFO] Iteration 3500, residual = 8
+[2026-10-07 22:41:41.797] [RANK 0] [INFO] Iteration 3500, residual = 8
+[2026-10-07 22:41:41.807] [RANK 0] [INFO] Iteration 4000, residual = 8
+[2026-10-07 22:41:41.807] [RANK 0] [INFO] Iteration 4000, residual = 8
+[2026-10-07 22:41:41.807] [RANK 0] [INFO] Iteration 4000, residual = 8
+[2026-10-07 22:41:41.807] [RANK 0] [INFO] Iteration 4000, residual = 8
+[2026-10-07 22:41:41.814] [RANK 0] [INFO] Iteration 4500, residual = 8
+[2026-10-07 22:41:41.814] [RANK 0] [INFO] Iteration 4500, residual = 8
+[2026-10-07 22:41:41.814] [RANK 0] [INFO] Iteration 4500, residual = 8
+[2026-10-07 22:41:41.814] [RANK 0] [INFO] Iteration 4500, residual = 8
+[2026-10-07 22:41:41.822] [RANK 0] [INFO] Iteration 5000, residual = 8
+[2026-10-07 22:41:41.822] [RANK 0] [INFO] Solver finished in 5000 iterations, time = 0.957387 s
+[2026-10-07 22:41:41.822] [RANK 0] [INFO] Iteration 5000, residual = 8
+[2026-10-07 22:41:41.822] [RANK 0] [INFO] Solver finished in 5000 iterations, time = 0.957229 s
+[2026-10-07 22:41:41.822] [RANK 0] [INFO] Iteration 5000, residual = 8
+[2026-10-07 22:41:41.822] [RANK 0] [INFO] Solver finished in 5000 iterations, time = 0.957455 s
+[2026-10-07 22:41:41.822] [RANK 0] [INFO] Iteration 5000, residual = 8
+[2026-10-07 22:41:41.822] [RANK 0] [INFO] Solver finished in 5000 iterations, time = 0.957474 s
+[2026-10-07 22:41:41.828] [RANK 0] [INFO] Iteration 500, residual = 8
+[2026-10-07 22:41:41.828] [RANK 0] [INFO] Iteration 500, residual = 8
+[2026-10-07 22:41:41.828] [RANK 0] [INFO] Iteration 500, residual = 8
+[2026-10-07 22:41:41.828] [RANK 0] [INFO] Iteration 500, residual = 8
+[2026-10-07 22:41:41.836] [RANK 0] [INFO] Iteration 1000, residual = 8
+[2026-10-07 22:41:41.836] [RANK 0] [INFO] Iteration 1000, residual = 8
+[2026-10-07 22:41:41.836] [RANK 0] [INFO] Iteration 1000, residual = 8
+[2026-10-07 22:41:41.836] [RANK 0] [INFO] Iteration 1000, residual = 8
+[2026-10-07 22:41:41.845] [RANK 0] [INFO] Iteration 1500, residual = 8
+[2026-10-07 22:41:41.845] [RANK 0] [INFO] Iteration 1500, residual = 8
+[2026-10-07 22:41:41.845] [RANK 0] [INFO] Iteration 1500, residual = 8
+[2026-10-07 22:41:41.845] [RANK 0] [INFO] Iteration 1500, residual = 8
+[2026-10-07 22:41:41.852] [RANK 0] [INFO] Iteration 2000, residual = 8
+[2026-10-07 22:41:41.852] [RANK 0] [INFO] Iteration 2000, residual = 8
+[2026-10-07 22:41:41.852] [RANK 0] [INFO] Iteration 2000, residual = 8
+[2026-10-07 22:41:41.852] [RANK 0] [INFO] Iteration 2000, residual = 8
+[2026-10-07 22:41:41.860] [RANK 0] [INFO] Iteration 2500, residual = 8
+[2026-10-07 22:41:41.860] [RANK 0] [INFO] Iteration 2500, residual = 8
+[2026-10-07 22:41:41.860] [RANK 0] [INFO] Iteration 2500, residual = 8
+[2026-10-07 22:41:41.860] [RANK 0] [INFO] Iteration 2500, residual = 8
+[2026-10-07 22:41:41.866] [RANK 0] [INFO] Iteration 3000, residual = 8
+[2026-10-07 22:41:41.866] [RANK 0] [INFO] Iteration 3000, residual = 8
+[2026-10-07 22:41:41.866] [RANK 0] [INFO] Iteration 3000, residual = 8
+[2026-10-07 22:41:41.866] [RANK 0] [INFO] Iteration 3000, residual = 8
+[2026-10-07 22:41:41.874] [RANK 0] [INFO] Iteration 3500, residual = 8
+[2026-10-07 22:41:41.874] [RANK 0] [INFO] Iteration 3500, residual = 8
+[2026-10-07 22:41:41.874] [RANK 0] [INFO] Iteration 3500, residual = 8
+[2026-10-07 22:41:41.874] [RANK 0] [INFO] Iteration 3500, residual = 8
+[2026-10-07 22:41:41.880] [RANK 0] [INFO] Iteration 4000, residual = 8
+[2026-10-07 22:41:41.880] [RANK 0] [INFO] Iteration 4000, residual = 8
+[2026-10-07 22:41:41.880] [RANK 0] [INFO] Iteration 4000, residual = 8
+[2026-10-07 22:41:41.880] [RANK 0] [INFO] Iteration 4000, residual = 8
+[2026-10-07 22:41:41.884] [RANK 0] [INFO] Iteration 4500, residual = 8
+[2026-10-07 22:41:41.884] [RANK 0] [INFO] Iteration 4500, residual = 8
+[2026-10-07 22:41:41.884] [RANK 0] [INFO] Iteration 4500, residual = 8
+[2026-10-07 22:41:41.884] [RANK 0] [INFO] Iteration 4500, residual = 8
+[2026-10-07 22:41:41.894] [RANK 0] [INFO] Iteration 5000, residual = 8
+[2026-10-07 22:41:41.894] [RANK 0] [INFO] Solver finished in 5000 iterations, time = 0.0717307 s
+[0;32m[       OK ] [mOverlapTest.SelfLoopOnOffConsistency (1030 ms)
+[0;32m[ RUN      ] [mOverlapTest.MpiFourRanksOnOffConsistency
+[2026-10-07 22:41:41.894] [RANK 0] [INFO] Iteration 5000, residual = 8
+[2026-10-07 22:41:41.894] [RANK 0] [INFO] Solver finished in 5000 iterations, time = 0.0717286 s
+[0;32m[       OK ] [mOverlapTest.SelfLoopOnOffConsistency (1030 ms)
+[0;32m[ RUN      ] [mOverlapTest.MpiFourRanksOnOffConsistency
+[2026-10-07 22:41:41.894] [RANK 0] [INFO] Iteration 5000, residual = 8
+[2026-10-07 22:41:41.894] [RANK 0] [INFO] Solver finished in 5000 iterations, time = 0.0717307 s
+[0;32m[       OK ] [mOverlapTest.SelfLoopOnOffConsistency (1029 ms)
+[0;32m[ RUN      ] [mOverlapTest.MpiFourRanksOnOffConsistency
+[2026-10-07 22:41:41.894] [RANK 0] [INFO] Iteration 5000, residual = 8
+[2026-10-07 22:41:41.894] [RANK 0] [INFO] Solver finished in 5000 iterations, time = 0.0717298 s
+[0;32m[       OK ] [mOverlapTest.SelfLoopOnOffConsistency (1030 ms)
+[0;32m[ RUN      ] [mOverlapTest.MpiFourRanksOnOffConsistency
+[2026-10-07 22:41:41.903] [RANK 0] [INFO] Iteration 500, residual = 0.693532
+[2026-10-07 22:41:41.903] [RANK 0] [INFO] Iteration 500, residual = 0.693532
+[2026-10-07 22:41:41.903] [RANK 0] [INFO] Iteration 500, residual = 0.693532
+[2026-10-07 22:41:41.903] [RANK 0] [INFO] Iteration 500, residual = 0.693532
+[2026-10-07 22:41:41.909] [RANK 0] [INFO] Iteration 1000, residual = 0.0717091
+[2026-10-07 22:41:41.909] [RANK 0] [INFO] Iteration 1000, residual = 0.0717091
+[2026-10-07 22:41:41.909] [RANK 0] [INFO] Iteration 1000, residual = 0.0717091
+[2026-10-07 22:41:41.909] [RANK 0] [INFO] Iteration 1000, residual = 0.0717091
+[2026-10-07 22:41:41.913] [RANK 0] [INFO] Iteration 1500, residual = 0.0074145
+[2026-10-07 22:41:41.913] [RANK 0] [INFO] Iteration 1500, residual = 0.0074145
+[2026-10-07 22:41:41.913] [RANK 0] [INFO] Iteration 1500, residual = 0.0074145
+[2026-10-07 22:41:41.913] [RANK 0] [INFO] Iteration 1500, residual = 0.0074145
+[2026-10-07 22:41:41.918] [RANK 0] [INFO] Iteration 2000, residual = 0.000766636
+[2026-10-07 22:41:41.918] [RANK 0] [INFO] Iteration 2000, residual = 0.000766636
+[2026-10-07 22:41:41.918] [RANK 0] [INFO] Iteration 2000, residual = 0.000766636
+[2026-10-07 22:41:41.918] [RANK 0] [INFO] Iteration 2000, residual = 0.000766636
+[2026-10-07 22:41:41.923] [RANK 0] [INFO] Iteration 2500, residual = 7.92678e-05
+[2026-10-07 22:41:41.923] [RANK 0] [INFO] Iteration 2500, residual = 7.92678e-05
+[2026-10-07 22:41:41.923] [RANK 0] [INFO] Iteration 2500, residual = 7.92678e-05
+[2026-10-07 22:41:41.923] [RANK 0] [INFO] Iteration 2500, residual = 7.92678e-05
+[2026-10-07 22:41:41.930] [RANK 0] [INFO] Iteration 3000, residual = 8.19605e-06
+[2026-10-07 22:41:41.930] [RANK 0] [INFO] Iteration 3000, residual = 8.19605e-06
+[2026-10-07 22:41:41.930] [RANK 0] [INFO] Iteration 3000, residual = 8.19605e-06
+[2026-10-07 22:41:41.930] [RANK 0] [INFO] Iteration 3000, residual = 8.19605e-06
+[2026-10-07 22:41:41.935] [RANK 0] [INFO] Converged at iteration 3464, residual = 9.97855e-07
+[2026-10-07 22:41:41.935] [RANK 0] [INFO] Solver finished in 3464 iterations, time = 0.0402819 s
+[2026-10-07 22:41:41.935] [RANK 0] [INFO] Converged at iteration 3464, residual = 9.97855e-07
+[2026-10-07 22:41:41.935] [RANK 0] [INFO] Solver finished in 3464 iterations, time = 0.040289 s
+[2026-10-07 22:41:41.935] [RANK 0] [INFO] Converged at iteration 3464, residual = 9.97855e-07
+[2026-10-07 22:41:41.935] [RANK 0] [INFO] Solver finished in 3464 iterations, time = 0.0401822 s
+[2026-10-07 22:41:41.935] [RANK 0] [INFO] Converged at iteration 3464, residual = 9.97855e-07
+[2026-10-07 22:41:41.935] [RANK 0] [INFO] Solver finished in 3464 iterations, time = 0.040281 s
+[2026-10-07 22:41:41.944] [RANK 0] [INFO] Iteration 500, residual = 0.693532
+[2026-10-07 22:41:41.944] [RANK 0] [INFO] Iteration 500, residual = 0.693532
+[2026-10-07 22:41:41.944] [RANK 0] [INFO] Iteration 500, residual = 0.693532
+[2026-10-07 22:41:41.944] [RANK 0] [INFO] Iteration 500, residual = 0.693532
+[2026-10-07 22:41:41.951] [RANK 0] [INFO] Iteration 1000, residual = 0.0717091
+[2026-10-07 22:41:41.951] [RANK 0] [INFO] Iteration 1000, residual = 0.0717091
+[2026-10-07 22:41:41.951] [RANK 0] [INFO] Iteration 1000, residual = 0.0717091
+[2026-10-07 22:41:41.951] [RANK 0] [INFO] Iteration 1000, residual = 0.0717091
+[2026-10-07 22:41:41.956] [RANK 0] [INFO] Iteration 1500, residual = 0.0074145
+[2026-10-07 22:41:41.956] [RANK 0] [INFO] Iteration 1500, residual = 0.0074145
+[2026-10-07 22:41:41.956] [RANK 0] [INFO] Iteration 1500, residual = 0.0074145
+[2026-10-07 22:41:41.956] [RANK 0] [INFO] Iteration 1500, residual = 0.0074145
+[2026-10-07 22:41:41.962] [RANK 0] [INFO] Iteration 2000, residual = 0.000766636
+[2026-10-07 22:41:41.962] [RANK 0] [INFO] Iteration 2000, residual = 0.000766636
+[2026-10-07 22:41:41.962] [RANK 0] [INFO] Iteration 2000, residual = 0.000766636
+[2026-10-07 22:41:41.962] [RANK 0] [INFO] Iteration 2000, residual = 0.000766636
+[2026-10-07 22:41:41.966] [RANK 0] [INFO] Iteration 2500, residual = 7.92678e-05
+[2026-10-07 22:41:41.966] [RANK 0] [INFO] Iteration 2500, residual = 7.92678e-05
+[2026-10-07 22:41:41.966] [RANK 0] [INFO] Iteration 2500, residual = 7.92678e-05
+[2026-10-07 22:41:41.966] [RANK 0] [INFO] Iteration 2500, residual = 7.92678e-05
+[2026-10-07 22:41:41.973] [RANK 0] [INFO] Iteration 3000, residual = 8.19605e-06
+[2026-10-07 22:41:41.973] [RANK 0] [INFO] Iteration 3000, residual = 8.19605e-06
+[2026-10-07 22:41:41.973] [RANK 0] [INFO] Iteration 3000, residual = 8.19605e-06
+[2026-10-07 22:41:41.973] [RANK 0] [INFO] Iteration 3000, residual = 8.19605e-06
+[2026-10-07 22:41:41.977] [RANK 0] [INFO] Converged at iteration 3464, residual = 9.97855e-07
+[2026-10-07 22:41:41.977] [RANK 0] [INFO] Solver finished in 3464 iterations, time = 0.0421896 s
+[0;32m[       OK ] [mOverlapTest.MpiFourRanksOnOffConsistency (83 ms)
+[0;32m[----------] [m2 tests from OverlapTest (1113 ms total)
+
+[0;32m[----------] [m1 test from HaloExchangeTest
+[0;32m[ RUN      ] [mHaloExchangeTest.MpiNonUniform4RanksHalos
+[2026-10-07 22:41:41.977] [RANK 0] [INFO] Converged at iteration 3464, residual = 9.97855e-07
+[2026-10-07 22:41:41.977] [RANK 0] [INFO] Solver finished in 3464 iterations, time = 0.0421917 s
+[0;32m[       OK ] [mOverlapTest.MpiFourRanksOnOffConsistency (83 ms)
+[0;32m[----------] [m2 tests from OverlapTest (1113 ms total)
+
+[0;32m[----------] [m1 test from HaloExchangeTest
+[0;32m[ RUN      ] [mHaloExchangeTest.MpiNonUniform4RanksHalos
+[2026-10-07 22:41:41.977] [RANK 0] [INFO] Converged at iteration 3464, residual = 9.97855e-07
+[2026-10-07 22:41:41.977] [RANK 0] [INFO] Solver finished in 3464 iterations, time = 0.0421882 s
+[0;32m[       OK ] [mOverlapTest.MpiFourRanksOnOffConsistency (83 ms)
+[0;32m[----------] [m2 tests from OverlapTest (1113 ms total)
+
+[0;32m[----------] [m1 test from HaloExchangeTest
+[0;32m[ RUN      ] [mHaloExchangeTest.MpiNonUniform4RanksHalos
+[2026-10-07 22:41:41.977] [RANK 0] [INFO] Converged at iteration 3464, residual = 9.97855e-07
+[2026-10-07 22:41:41.977] [RANK 0] [INFO] Solver finished in 3464 iterations, time = 0.04219 s
+[0;32m[       OK ] [mOverlapTest.MpiFourRanksOnOffConsistency (83 ms)
+[0;32m[----------] [m2 tests from OverlapTest (1113 ms total)
+
+[0;32m[----------] [m1 test from HaloExchangeTest
+[0;32m[ RUN      ] [mHaloExchangeTest.MpiNonUniform4RanksHalos
+[0;32m[       OK ] [mHaloExchangeTest.MpiNonUniform4RanksHalos (0 ms)
+[0;32m[----------] [m1 test from HaloExchangeTest (0 ms total)
+
+[0;32m[----------] [mGlobal test environment tear-down
+[0;32m[==========] [m3 tests from 2 test suites ran. (1113 ms total)
+[0;32m[  PASSED  ] [m3 tests.
+[0;32m[       OK ] [mHaloExchangeTest.MpiNonUniform4RanksHalos (0 ms)
+[0;32m[----------] [m1 test from HaloExchangeTest (0 ms total)
+
+[0;32m[----------] [mGlobal test environment tear-down
+[0;32m[==========] [m3 tests from 2 test suites ran. (1113 ms total)
+[0;32m[  PASSED  ] [m3 tests.
+[0;32m[       OK ] [mHaloExchangeTest.MpiNonUniform4RanksHalos (0 ms)
+[0;32m[----------] [m1 test from HaloExchangeTest (0 ms total)
+
+[0;32m[----------] [mGlobal test environment tear-down
+[0;32m[==========] [m3 tests from 2 test suites ran. (1113 ms total)
+[0;32m[  PASSED  ] [m3 tests.
+[0;32m[       OK ] [mHaloExchangeTest.MpiNonUniform4RanksHalos (0 ms)
+[0;32m[----------] [m1 test from HaloExchangeTest (0 ms total)
+
+[0;32m[----------] [mGlobal test environment tear-down
+[0;32m[==========] [m3 tests from 2 test suites ran. (1113 ms total)
+[0;32m[  PASSED  ] [m3 tests.

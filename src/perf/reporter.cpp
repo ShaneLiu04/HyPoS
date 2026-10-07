@@ -47,6 +47,7 @@ std::string Reporter::toJson() const {
     oss << "  },\n";
     oss << "  \"performance\": {\n";
     oss << "    \"total_time_sec\": " << std::fixed << std::setprecision(4) << metrics_.totalTimeSec << ",\n";
+    oss << std::defaultfloat;
     oss << "    \"iter_time_ms\": " << metrics_.iterTimeMs << ",\n";
     oss << "    \"compute_time_ms\": " << metrics_.computeTimeMs << ",\n";
     oss << "    \"comm_time_ms\": " << metrics_.commTimeMs << ",\n";

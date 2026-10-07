@@ -1,0 +1,15 @@
+[  4%] Building CXX object CMakeFiles/hypos_core.dir/src/solver/jacobi_solver.cpp.o
+[ 12%] Building CXX object CMakeFiles/hypos_core.dir/src/comm/p2p_exchanger.cpp.o
+[ 12%] Building CXX object CMakeFiles/hypos_core.dir/src/comm/collective_exchanger.cpp.o
+[ 16%] Linking CXX static library libhypos_core.a
+[ 60%] Built target hypos_core
+[ 64%] Building CXX object CMakeFiles/hypos.dir/src/main.cpp.o
+[ 68%] Building CXX object CMakeFiles/test_hypos.dir/tests/test_halo_exchange.cpp.o
+[ 72%] Building CXX object CMakeFiles/test_hypos.dir/tests/test_overlap.cpp.o
+[ 84%] Building CXX object CMakeFiles/test_hypos.dir/tests/test_solver_mpi.cpp.o
+[ 84%] Building CXX object CMakeFiles/test_hypos.dir/tests/test_performance.cpp.o
+[ 84%] Building CXX object CMakeFiles/test_hypos.dir/tests/test_solver.cpp.o
+[ 88%] Linking CXX executable hypos
+[ 92%] Linking CXX executable test_hypos
+[ 92%] Built target hypos
+[100%] Built target test_hypos

@@ -1,0 +1,37 @@
+[  4%] Building CXX object CMakeFiles/hypos_core.dir/src/utils/cmdline_parser.cpp.o
+<command-line>: warning: ‘_OPENMP’ redefined
+<built-in>: note: this is the location of the previous definition
+[  9%] Linking CXX static library libhypos_core.a
+[ 68%] Built target hypos_core
+[ 72%] Building CXX object CMakeFiles/hypos.dir/src/main.cpp.o
+<command-line>: warning: ‘_OPENMP’ redefined
+<built-in>: note: this is the location of the previous definition
+[ 77%] Building CXX object CMakeFiles/test_hypos.dir/tests/test_grid.cpp.o
+[ 81%] Building CXX object CMakeFiles/test_hypos.dir/tests/test_halo_exchange.cpp.o
+[ 86%] Building CXX object CMakeFiles/test_hypos.dir/tests/test_performance.cpp.o
+[ 90%] Building CXX object CMakeFiles/test_hypos.dir/tests/test_solver.cpp.o
+<command-line>: warning: ‘_OPENMP’ redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: ‘_OPENMP’ redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: ‘_OPENMP’ redefined
+<built-in>: note: this is the location of the previous definition
+<command-line>: warning: ‘_OPENMP’ redefined
+<built-in>: note: this is the location of the previous definition
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/main.cpp:147:1: warning: embedding a directive within macro arguments is not portable [-Wpedantic]
+  147 | #ifdef _OPENMP
+      | ^
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/main.cpp:149:1: warning: embedding a directive within macro arguments is not portable [-Wpedantic]
+  149 | #else
+      | ^
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/main.cpp:151:1: warning: embedding a directive within macro arguments is not portable [-Wpedantic]
+  151 | #endif
+      | ^
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/main.cpp: In function ‘int main(int, char**)’:
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/main.cpp:132:9: warning: unused variable ‘saveInterval’ [-Wunused-variable]
+  132 |     int saveInterval = parser.get<int>("save-interval", 0);
+      |         ^~~~~~~~~~~~
+[ 95%] Linking CXX executable hypos
+[100%] Linking CXX executable test_hypos
+[100%] Built target hypos
+[100%] Built target test_hypos

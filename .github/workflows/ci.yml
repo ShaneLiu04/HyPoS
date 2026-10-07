@@ -16,29 +16,28 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y libopenmpi-dev openmpi-bin libomp-dev cmake
+        sudo apt-get install -y cmake libomp-dev libgtest-dev \
+          openmpi-bin libopenmpi-dev mpich libmpich-dev
 
-    - name: Build (Release)
+    - name: Build Release (OpenMPI)
       run: |
         cmake -B build -DCMAKE_BUILD_TYPE=Release
         cmake --build build --parallel $(nproc)
 
-    - name: Run small-scale integration test
-      run: |
-        mpirun --allow-run-as-root -np 4 ./build/hypos \
-          --nx 128 --ny 128 --max-iter 100
+    - name: Run tests (Release)
+      run: ctest --test-dir build --output-on-failure
 
-    - name: Run serial test
+    - name: Run small-scale integration tests
       run: |
-        mpirun --allow-run-as-root -np 1 ./build/hypos \
-          --nx 64 --ny 64 --max-iter 100
+        ./build/hypos --nx 128 --ny 128 --max-iter 100 --output-dir ./out-serial
+        mpirun --allow-run-as-root --oversubscribe -np 4 ./build/hypos \
+          --nx 128 --ny 128 --max-iter 100 --overlap-comm --output-dir ./out-parallel
 
-    - name: Build (Debug + Sanitizers)
+    - name: Build Debug with sanitizers (MPICH)
       run: |
-        cmake -B build-debug -DCMAKE_BUILD_TYPE=Debug
+        cmake -B build-debug -DCMAKE_BUILD_TYPE=Debug \
+          -DCMAKE_CXX_COMPILER=/usr/bin/mpicxx.mpich
         cmake --build build-debug --parallel $(nproc)
 
-    - name: Run debug test
-      run: |
-        mpirun --allow-run-as-root -np 4 ./build-debug/hypos \
-          --nx 32 --ny 32 --max-iter 50
+    - name: Run tests (Debug + Address/UB sanitizers)
+      run: ctest --test-dir build-debug --output-on-failure

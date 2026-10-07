@@ -3,6 +3,8 @@
 #include "core/types.hpp"
 #include "grid/subgrid.hpp"
 #include <mpi.h>
+#include <array>
+#include <string>
 #include <vector>
 
 namespace hypo {
@@ -43,6 +45,9 @@ public:
 
 /**
  * @brief Non-blocking point-to-point halo exchange using MPI_Isend/Irecv.
+ * Supports 6 directions (left/right/down/up/back/front); each direction
+ * exchanges one interior face layer of width haloWidth. Tags identify the
+ * face being sent (0=left, 1=right, 2=down, 3=up, 4=back, 5=front).
  */
 class PointToPointExchanger : public HaloExchanger {
 public:
@@ -53,23 +58,21 @@ public:
     std::string name() const override { return "p2p"; }
 
 private:
+    static constexpr int kNumDirections = 6;
+
     MPI_Comm comm_ = MPI_COMM_NULL;
     std::vector<MPI_Request> requests_;
-    std::vector<Real> sendBufLeft_;
-    std::vector<Real> sendBufRight_;
-    std::vector<Real> sendBufDown_;
-    std::vector<Real> sendBufUp_;
-    std::vector<Real> recvBufLeft_;
-    std::vector<Real> recvBufRight_;
-    std::vector<Real> recvBufDown_;
-    std::vector<Real> recvBufUp_;
+    std::array<std::vector<Real>, kNumDirections> sendBufs_;
+    std::array<std::vector<Real>, kNumDirections> recvBufs_;
 
-    void packSend(Subgrid& subgrid, int direction, std::vector<Real>& buf) const;
-    void unpackRecv(Subgrid& subgrid, int direction, const std::vector<Real>& buf) const;
+    void packFace(Subgrid& subgrid, int direction, std::vector<Real>& buf) const;
+    void unpackFace(Subgrid& subgrid, int direction, const std::vector<Real>& buf) const;
 };
 
 /**
- * @brief Collective halo exchange using MPI_Neighbor_allgather.
+ * @brief Collective halo exchange placeholder.
+ * In this version it delegates to PointToPointExchanger; a true
+ * MPI_Neighbor_allgatherv implementation remains a roadmap item.
  */
 class CollectiveExchanger : public HaloExchanger {
 public:
@@ -80,14 +83,7 @@ public:
     std::string name() const override { return "collective"; }
 
 private:
-    MPI_Comm comm_ = MPI_COMM_NULL;
-    MPI_Request request_ = MPI_REQUEST_NULL;
-    std::vector<Real> sendBuf_;
-    std::vector<Real> recvBuf_;
-    std::vector<int> sendCounts_;
-    std::vector<int> recvCounts_;
-    std::vector<int> sendDispls_;
-    std::vector<int> recvDispls_;
+    PointToPointExchanger delegate_;
 };
 
 } // namespace hypo

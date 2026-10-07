@@ -1,11 +1,24 @@
 #include "comm/halo_exchanger.hpp"
+#include "utils/logger.hpp"
 
 namespace hypo {
 
-// This file is intentionally left with minimal content.
-// The CollectiveExchanger implementation is included in p2p_exchanger.cpp
-// as a reference fallback to avoid linker issues with incomplete implementations.
-// In a production build, this file would contain a proper MPI_Neighbor_allgatherv
-// implementation using a dedicated cartesian communicator.
+void CollectiveExchanger::initialize(Subgrid& subgrid) {
+    delegate_.initialize(subgrid);
+    HYPOS_WARN("CollectiveExchanger currently falls back to PointToPointExchanger "
+               "(MPI_Neighbor_allgatherv is a roadmap item)");
+}
+
+void CollectiveExchanger::exchange(Subgrid& subgrid) {
+    delegate_.exchange(subgrid);
+}
+
+void CollectiveExchanger::beginExchange(Subgrid& subgrid) {
+    delegate_.beginExchange(subgrid);
+}
+
+void CollectiveExchanger::endExchange(Subgrid& subgrid) {
+    delegate_.endExchange(subgrid);
+}
 
 } // namespace hypo

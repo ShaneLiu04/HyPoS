@@ -11,7 +11,7 @@
 | 技术模块 | 对应 AI Infra 技能 | 实现细节 |
 |---|---|---|
 | **MPI 域分解** | 数据并行 (Data Parallelism) | 2D/3D Cartesian 拓扑，自动负载均衡 |
-| **Halo Exchange** | 集合通信 (Collective Communication) | 非阻塞 MPI_Isend/Irecv + 集体通信 |
+| **Halo Exchange** | 集合通信 (Collective Communication) | 非阻塞 MPI_Isend/Irecv（6 方向）；`collective` 模式为 P2P 回退（见路线图） |
 | **通信-计算重叠** | 异步流水线 | 内点计算与边界通信重叠 |
 | **OpenMP 加速** | 多线程 Kernel | SIMD 向量化、First-touch 策略 |
 | **内存池管理** | 高效内存管理 | 64 字节对齐、Bump Allocator、RAII |
@@ -32,18 +32,13 @@
 ### 编译
 
 ```bash
-# 标准编译（Release）
-mkdir build && cd build
-cmake .. -DCMAKE_BUILD_TYPE=Release
-make -j$(nproc)
+# 标准编译（Release，自动检测 OpenMP）
+cmake -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build -j$(nproc)
 
-# 带 OpenMP 优化
-cmake .. -DCMAKE_BUILD_TYPE=Release -DENABLE_OPENMP=ON
-make -j$(nproc)
-
-# 调试模式
-cmake .. -DCMAKE_BUILD_TYPE=Debug
-make -j$(nproc)
+# 调试模式（GCC/Clang 下启用 Address/UB sanitizers）
+cmake -B build-debug -DCMAKE_BUILD_TYPE=Debug
+cmake --build build-debug -j$(nproc)
 ```
 
 ### 运行
@@ -69,7 +64,7 @@ mpirun -np 16 ./build/hypos --nx 2048 --ny 2048 --max-iter 10000 --enable-profil
 | `--max-iter` | 10000 | 最大迭代次数 |
 | `--tol` | 1e-6 | 收敛容差 |
 | `--omp-threads` | 系统核心数 | OpenMP 线程数 |
-| `--comm-mode` | p2p | 通信模式（p2p / collective） |
+| `--comm-mode` | p2p | 通信模式（p2p / collective；collective 当前为 P2P 回退） |
 | `--enable-profiling` | false | 启用详细性能分析 |
 | `--overlap-comm` | false | 启用通信-计算重叠 |
 | `--output-format` | json | 输出格式（json / csv / vtk / binary） |
@@ -138,12 +133,12 @@ HyPoS/
 ## 测试
 
 ```bash
-# 构建并运行测试
+# 构建并运行全部测试（含 4/8 进程 MPI 用例，经 ctest 自动用 mpirun 注册）
 cmake -B build -DCMAKE_BUILD_TYPE=Release
-make -C build test_hypos
-./build/test_hypos
+cmake --build build
+ctest --test-dir build --output-on-failure
 
-# 运行小规模集成测试
+# 小规模集成冒烟
 mpirun -np 4 ./build/hypos --nx 128 --ny 128 --max-iter 100
 ```
 
@@ -253,6 +248,17 @@ chmod +x scripts/benchmark.sh
 | 构建 | CMake | ≥ 3.16 |
 | 测试 | GoogleTest | 可选 |
 | 可视化 | matplotlib / ParaView | Python 3 |
+
+---
+
+## 路线图（当前版本未实现）
+
+以下能力在早期文档中被提及，但**当前版本未实现**，在此明示避免误导：
+
+- RMA（单边通信）Exchanger
+- 真集合通信（`MPI_Neighbor_allgatherv`）——`--comm-mode collective` 当前委托 P2P 实现
+- HDF5 输出、PAPI 硬件计数器
+- Red-Black GS / CG / SOR 求解器、Hilbert 曲线分区
 
 ---
 
