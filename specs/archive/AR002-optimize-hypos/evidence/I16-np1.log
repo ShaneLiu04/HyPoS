@@ -1,0 +1,6 @@
+[2026-10-08 00:49:02.943] [RANK 0] [INFO] HyPoS — Hybrid Poisson Solver
+[2026-10-08 00:49:02.943] [RANK 0] [INFO] Grid: 32x32x1, MPI procs: 1, OMP threads: 4
+[2026-10-08 00:49:02.945] [RANK 0] [INFO] Solver finished in 50 iterations, time = 0.000583189 s
+[2026-10-08 00:49:02.945] [RANK 0] [INFO] Total time: 0.000774933 s, Iterations: 50, Est. FLOP/s: 5.28562e+08
+[2026-10-08 00:49:02.945] [RANK 0] [INFO] Wrote VTK piece to /tmp/i16a/solution_50_r0.vti
+[2026-10-08 00:49:02.945] [RANK 0] [INFO] Wrote VTK parallel index to /tmp/i16a/solution_50.pvti

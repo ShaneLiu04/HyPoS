@@ -88,7 +88,7 @@
 | `iter_time_ms` | 0.0204 | 每迭代平均 |
 | `comm_time_ms` | 0.0027 | Profiler `halo_exchange+halo_wait` ÷ 迭代数（rank0） |
 | 通信占比 | ≈13% | comm/iter |
-| 估算 FLOP/s | 6.41e9 | `2·nx·ny·nz·iters/total_time`（粗估） |
+| 估算 FLOP/s | 6.41e9 | `8/11 flops·格点⁻¹（2D/3D）× nx·ny·nz × iters / total_time` |
 | `final_residual` | 204.6 | 未达 1e-6（固定 10000 次） |
 
 > `comm_time_ms` 与 Profiler 报告同源（rank0），可由 `--enable-profiling` 输出精确对账（ST 用例 I5，np=1 与 np=4 均验证 ±5%）。

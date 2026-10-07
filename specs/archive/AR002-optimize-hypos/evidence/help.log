@@ -1,0 +1,27 @@
+Usage: ./build/hypos [OPTIONS]
+
+Grid Options:
+  --nx, --ny, --nz <int>       Global grid dimensions (default: 1024 1024 1)
+  --halo-width <int>           Halo layer width (default: 1)
+
+Solver Options:
+  --solver <string>            Solver type: jacobi, red_black_gs, cg (default: jacobi)
+  --max-iter <int>             Maximum iterations (default: 10000)
+  --tol <double>               Convergence tolerance (default: 1e-6)
+  --bc <string>                Physical BC: dirichlet, neumann (default: dirichlet)
+
+Parallel Options:
+  --omp-threads <int>          OpenMP threads per process (default: all cores)
+  --comm-mode <string>         Communication mode: p2p, collective (default: p2p)
+
+Performance Options:
+  --enable-profiling           Enable detailed performance profiling
+  --overlap-comm               Enable communication-computation overlap
+
+I/O Options:
+  --output-format <string>     Output format: json, csv, vtk, binary (default: json)
+  --output-dir <path>          Output directory (default: ./output)
+  --save-interval <int>        Save intermediate results every N steps (0=none)
+
+Other:
+  --help, -h                   Show this help message

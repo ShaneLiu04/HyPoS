@@ -21,10 +21,10 @@ void CommandLineParser::parse(int argc, char* argv[]) {
         while (dashCount < arg.size() && arg[dashCount] == '-') ++dashCount;
         std::string key = arg.substr(dashCount);
 
-        // Check for --help
+        // Check for --help (recorded as a flag; the application prints usage)
         if (key == "help" || key == "h") {
-            printHelp();
-            std::exit(0);
+            args_[key] = "true";
+            continue;
         }
 
         // Check for =value

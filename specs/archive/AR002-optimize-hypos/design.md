@@ -165,7 +165,7 @@ elseif (solver == RBGS?) then (是)
 else (CG)
   :exchange(sg, p.data());
   :ap = L*p（stencil matvec）;
-  :Allreduce[(p,ap), (r,r)] 合并;
+  :Allreduce[(p,ap)]（步长）; 更新后 :Allreduce[(r,r)]（beta）;
   :x += αp; r -= αap; β=(r,r)new/(r,r)old; p = r+βp;
 endif
 :subgrid.applyPhysicalBoundary()（Neumann 镜像/Dirichlet 幂等）;
@@ -226,7 +226,7 @@ stop
 #### （1）输出（R1/R2）
 
 - **命名约定**：`solution_<step>_r<rank>.vti|.bin`；索引 `solution_<step>.pvti`（仅 rank0）；最终解 step=实际迭代数；中间解 step=k×saveInterval。
-- **VTI 分片结构**：`ImageData` → `WholeExtent="0..nxG-1, 0..nyG-1, 0..nzG-1"`（全局点域）、`Origin="offsetX*dx offsetY*dy offsetZ*dz"`、`Spacing`；`Piece Extent` = 本 rank 内点全局范围（`offset .. offset+nLocal-1`）；`DataArray` ascii Float64 写内点值。
+- **VTI 分片结构**：`ImageData` → `WholeExtent` 取**该分片自身的全局 Extent**（`offsetX..offsetX+nxLocal-1` 等，符合 VTK 分片惯例；全局域由 `.pvti` 的 `WholeExtent=0..nxG-1...` 承载）、`Origin="offsetX*dx ..."`、`Spacing`；`Piece Extent` 同分片范围；`DataArray` ascii Float64 写内点值。
 - **PVTI 索引**：`PImageData WholeExtent` 同全局；每个 Piece 一行 `Extent` + `Source="solution_<step>_r<i>.vti"`；pieces 由 main `MPI_Gather` 汇总（每 rank 6 个 Index）。
 - **Binary**：头 7×Index（nx,ny,nz,hw,offsetX,Y,Z）——offset 改为真实值；其余同现状。
 - **回调时机**：`notifyProgress(iter)` 在迭代号自增、残差与边界刷新完成后调用；回调内做 IO（捕获 outputDir/format/io 指针与 pieces 汇总逻辑，封装为 main 内 lambda）。
@@ -270,7 +270,7 @@ stop
 #### （6）求解器（R7）
 
 - **RBGS**：迭代 = 红扫（(gi+gj+gk) 偶）+ 交换 + 黑扫 + （下一迭代起始交换）；gi=i+offsetX-1+hw 等全局坐标；原地更新 + 旧值捕获残差；`solve()` 同 Jacobi 骨架（Allreduce 后置）。忽略 overlap（main 对非 Jacobi + `--overlap-comm` 打印一次告警）。
-- **CG**：状态 `r,p,ap`（AlignedBuffer，solve 内分配一次）；matvec `L p = Σ邻居p − 4p/6p`（2D 4 点系数/3D 6）；每迭代 1 次 `exchange(sg, p.data())`、1 次合并双标量 `MPI_Allreduce`（(p,ap) 与 (r,r)）；`lastResidual`=||r||₂；`x` 即 `subgrid.u()`；`iterate()` 基于成员状态（未初始化时告警返回 0）。
+- **CG**：状态 `r,p,ap`（AlignedBuffer，solve 内分配一次）；matvec `L p = Σ邻居p − 4p/6p`（2D 4 点系数/3D 6）；每迭代 1 次 `exchange(sg, p.data())` 与 2 次标量 `MPI_Allreduce`（先 `(p,ap)` 求步长、更新后再 `(r,r)` 求 beta；无法合并因 alpha 需先于更新）；`lastResidual`=||r||₂；`x` 即 `subgrid.u()`；`iterate()` 基于成员状态（未初始化时告警返回 0）。
 - CLI：`--solver jacobi|red_black_gs|cg`（别名 `rbgs` 可选，design 以 `red_black_gs` 为准）；非法值退出码 1。
 
 #### （7）工程化（R8）
@@ -300,6 +300,8 @@ stop
 | 签名 | `enum class BoundaryCondition { Dirichlet, Neumann };` `void setBoundaryCondition(BoundaryCondition bc) noexcept;` `void applyPhysicalBoundary(Real dirichletValue = 0.0) noexcept;` |
 | 行为 | 仅处理 `MPI_PROC_NULL` 面；Dirichlet 置值（整带）、Neumann 镜像（横向夹取）；2D 跳过 k 面 |
 | 边界 | 全部邻居有效时为空操作；重复调用幂等（Dirichlet）/收敛一致（Neumann） |
+
+**I-2b `Subgrid::applyPhysicalBoundary(Real* data, Real dirichletValue = 0)`**：对任意 padded 缓冲执行同样的物理边界刷新（CG 的 `p` 等辅助向量使用）；`applyPhysicalBoundary(Real)` 为 `u()` 上的便捷包装。
 
 **I-3 `PoissonSolver` 进度回调**
 | 项 | 内容 |

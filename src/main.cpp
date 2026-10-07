@@ -98,6 +98,8 @@ int main(int argc, char* argv[]) {
     const int rank = mpiEnv.rank();
     const int size = mpiEnv.size();
 
+    try {
+
     // Setup logger
     Logger::instance().setRank(rank);
     Logger::instance().setLogLevel(LogLevel::INFO);
@@ -367,4 +369,8 @@ int main(int argc, char* argv[]) {
     io.reset();
     MPI_Comm_free(&cartComm);
     return 0;
+    } catch (const std::exception& error) {
+        HYPOS_ERROR("Fatal: " << error.what());
+        return 1;
+    }
 }

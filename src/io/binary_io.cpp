@@ -11,8 +11,10 @@ namespace hypo {
 void BinaryIOBackend::write(const Subgrid& subgrid, const std::string& filename, int step) {
     (void)step;
     std::string fname = filename;
-    if (fname.find(".") == std::string::npos) {
-        fname += ".bin";
+    const std::string suffix = ".bin";
+    if (fname.size() < suffix.size() ||
+        fname.compare(fname.size() - suffix.size(), suffix.size(), suffix) != 0) {
+        fname += suffix;
     }
 
     std::ofstream ofs(fname, std::ios::binary);

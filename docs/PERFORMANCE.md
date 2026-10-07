@@ -71,7 +71,7 @@ for (Index jj = jBegin; jj < jEnd; jj += BLOCK)
 ```cpp
 #pragma omp parallel for schedule(static)
 for (Index j = jBegin; j < jEnd; ++j) {
-    #pragma omp simd safelen(8) aligned(u, u_new: 64)
+    #pragma omp simd   // 注意：内点带偏移，不保证 64B 对齐，勿用 aligned 断言
     for (Index i = iBegin; i < iEnd; ++i) {
         // stencil update
     }

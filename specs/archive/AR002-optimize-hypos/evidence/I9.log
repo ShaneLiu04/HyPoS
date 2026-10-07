@@ -1,0 +1,10 @@
+[2026-10-08 00:49:02.739] [RANK 0] [INFO] HyPoS — Hybrid Poisson Solver
+[2026-10-08 00:49:02.739] [RANK 0] [INFO] Grid: 32x32x1, MPI procs: 1, OMP threads: 4
+[2026-10-08 00:49:02.741] [RANK 0] [INFO] Wrote VTK piece to /tmp/i9/solution_50_r0.vti
+[2026-10-08 00:49:02.741] [RANK 0] [INFO] Wrote VTK parallel index to /tmp/i9/solution_50.pvti
+[2026-10-08 00:49:02.742] [RANK 0] [INFO] Wrote VTK piece to /tmp/i9/solution_100_r0.vti
+[2026-10-08 00:49:02.743] [RANK 0] [INFO] Wrote VTK parallel index to /tmp/i9/solution_100.pvti
+[2026-10-08 00:49:02.743] [RANK 0] [INFO] Solver finished in 120 iterations, time = 0.00293194 s
+[2026-10-08 00:49:02.743] [RANK 0] [INFO] Total time: 0.00310745 s, Iterations: 120, Est. FLOP/s: 3.1635e+08
+[2026-10-08 00:49:02.744] [RANK 0] [INFO] Wrote VTK piece to /tmp/i9/solution_120_r0.vti
+[2026-10-08 00:49:02.745] [RANK 0] [INFO] Wrote VTK parallel index to /tmp/i9/solution_120.pvti

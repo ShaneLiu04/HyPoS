@@ -134,10 +134,9 @@ Interior: i = [halo, nx_local+halo-1]
 2. Pack right face  -> sendBufRight
 3. Pack bottom face -> sendBufDown
 4. Pack top face    -> sendBufUp
-5. MPI_Isend (left, right, down, up)   — 非阻塞发送
-6. MPI_Irecv (left, right, down, up)   — 非阻塞接收
-7. [可选] 内点计算（与通信重叠）
-8. MPI_Waitall                         — 等待所有通信完成
+5. MPI_Startall                        — 启动 12 个持久化请求（Send_init/Recv_init 预注册）
+6. [可选] 内点计算（与通信重叠）
+7. MPI_Waitall                         — 等待所有通信完成
 9. Unpack recvBuf -> halo cells
 ```
 
@@ -149,7 +148,7 @@ Interior: i = [halo, nx_local+halo-1]
 ├── 内点盒计算                // 不依赖 halo 的区域（stencil_interior）
 ├── endExchange()            // MPI_Waitall + 解包（halo_wait，仅 overlap 模式单独记录）
 ├── 边界带计算                // 6 个 slab 补齐（stencil_boundary）
-├── 独立残差扫描 + Allreduce  // 与 overlap 无关，保证 on/off 结果一致
+├── 融合残差 + Allreduce       // 更新循环内固定区域序累积，与 overlap 无关
 └── swapU()，完成一次迭代
 ```
 

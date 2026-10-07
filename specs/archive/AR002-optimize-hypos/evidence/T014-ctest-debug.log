@@ -1,0 +1,23 @@
+Test project /mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/build-debug
+    Start 1: unit
+1/9 Test #1: unit .............................   Passed    5.50 sec
+    Start 2: parse_error
+2/9 Test #2: parse_error ......................   Passed    0.19 sec
+    Start 3: halo_2d_mpi
+3/9 Test #3: halo_2d_mpi ......................   Passed    0.15 sec
+    Start 4: halo_3d_mpi
+4/9 Test #4: halo_3d_mpi ......................   Passed    0.17 sec
+    Start 5: solver_mpi
+5/9 Test #5: solver_mpi .......................   Passed    4.92 sec
+    Start 6: overlap_consistency
+6/9 Test #6: overlap_consistency ..............   Passed    1.23 sec
+    Start 7: solver_alt_mpi
+7/9 Test #7: solver_alt_mpi ...................   Passed    4.07 sec
+    Start 8: collective_mpi
+8/9 Test #8: collective_mpi ...................   Passed    0.15 sec
+    Start 9: ranks3_smoke
+9/9 Test #9: ranks3_smoke .....................   Passed    0.15 sec
+
+100% tests passed, 0 tests failed out of 9
+
+Total Test time (real) =  16.60 sec

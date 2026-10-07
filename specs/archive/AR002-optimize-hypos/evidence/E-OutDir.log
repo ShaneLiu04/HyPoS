@@ -1,0 +1,7 @@
+[2026-10-08 00:49:03.422] [RANK 0] [INFO] HyPoS — Hybrid Poisson Solver
+[2026-10-08 00:49:03.422] [RANK 0] [INFO] Grid: 16x16x1, MPI procs: 1, OMP threads: 4
+[2026-10-08 00:49:03.423] [RANK 0] [WARN] Cannot create output directory: /proc/1/hypos_bad (No such file or directory)
+[2026-10-08 00:49:03.423] [RANK 0] [INFO] Solver finished in 5 iterations, time = 0.000212142 s
+[2026-10-08 00:49:03.423] [RANK 0] [INFO] Total time: 0.00039748 s, Iterations: 5, Est. FLOP/s: 2.57623e+07
+[2026-10-08 00:49:03.424] [RANK 0] [WARN] Cannot open VTK output file: /proc/1/hypos_bad/solution_5_r0.vti
+[2026-10-08 00:49:03.424] [RANK 0] [WARN] Cannot open VTK parallel index file: /proc/1/hypos_bad/solution_5.pvti

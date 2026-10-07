@@ -1,0 +1,3 @@
+[2026-10-08 00:49:01.708] [RANK 0] [INFO] HyPoS — Hybrid Poisson Solver
+[2026-10-08 00:49:01.708] [RANK 0] [INFO] Grid: 1024x1024x1, MPI procs: 1, OMP threads: 4
+[2026-10-08 00:49:01.742] [RANK 0] [ERROR] Unknown boundary condition: foo

@@ -79,6 +79,9 @@ if(GTest_FOUND)
     add_test(NAME unit COMMAND $<TARGET_FILE:test_hypos>)
     set_tests_properties(unit PROPERTIES ENVIRONMENT "${HYPOS_TEST_ENV}" TIMEOUT 120)
 
+    add_test(NAME parse_error COMMAND $<TARGET_FILE:hypos> --save-interval abc)
+    set_tests_properties(parse_error PROPERTIES WILL_FAIL TRUE TIMEOUT 60)
+
     if(MPIEXEC_EXECUTABLE)
         # Launcher must match the MPI implementation the binary is linked
         # against; MPICH's mpiexec does not accept --oversubscribe (which
