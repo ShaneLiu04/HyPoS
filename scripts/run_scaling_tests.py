@@ -11,7 +11,7 @@ from datetime import datetime
 import argparse
 
 
-def run_test(nx, ny, nz, mpi_procs, omp_threads, output_dir, solver="jacobi", max_iter=10000):
+def run_test(nx, ny, nz, mpi_procs, omp_threads, output_dir, solver="jacobi", max_iter=10000, tol="1e-6"):
     """Run a single HyPoS instance and collect performance metrics."""
     cmd = [
         "mpirun", "-np", str(mpi_procs),
@@ -20,7 +20,7 @@ def run_test(nx, ny, nz, mpi_procs, omp_threads, output_dir, solver="jacobi", ma
         "--omp-threads", str(omp_threads),
         "--solver", solver,
         "--max-iter", str(max_iter),
-        "--tol", "1e-6",
+        "--tol", str(tol),
         "--output-format", "json",
         "--output-dir", output_dir
     ]
@@ -42,7 +42,8 @@ def run_test(nx, ny, nz, mpi_procs, omp_threads, output_dir, solver="jacobi", ma
     return None
 
 
-def strong_scaling_test(output_dir, nx=1024, ny=1024, nz=1, max_procs=16, omp_threads_override=0):
+def strong_scaling_test(output_dir, nx=1024, ny=1024, nz=1, max_procs=16, omp_threads_override=0,
+                        max_iter=10000, tol="1e-6"):
     """Strong scaling: fixed problem size, increasing processes."""
     print(f"\n{'='*60}")
     print("STRONG SCALING TEST")
@@ -65,7 +66,7 @@ def strong_scaling_test(output_dir, nx=1024, ny=1024, nz=1, max_procs=16, omp_th
         os.makedirs(test_dir, exist_ok=True)
         
         print(f"\nRunning with {procs} MPI processes, {omp_threads} OMP threads each...")
-        report = run_test(nx, ny, nz, procs, omp_threads, test_dir)
+        report = run_test(nx, ny, nz, procs, omp_threads, test_dir, max_iter=max_iter, tol=tol)
         
         if report:
             total_time = report["performance"]["total_time_sec"]
@@ -98,7 +99,8 @@ def strong_scaling_test(output_dir, nx=1024, ny=1024, nz=1, max_procs=16, omp_th
     return results
 
 
-def weak_scaling_test(output_dir, per_proc_n=512, max_procs=16, omp_threads_override=0):
+def weak_scaling_test(output_dir, per_proc_n=512, max_procs=16, omp_threads_override=0,
+                      max_iter=10000, tol="1e-6"):
     """Weak scaling: fixed per-process workload, increasing processes."""
     print(f"\n{'='*60}")
     print("WEAK SCALING TEST")
@@ -121,7 +123,7 @@ def weak_scaling_test(output_dir, per_proc_n=512, max_procs=16, omp_threads_over
         os.makedirs(test_dir, exist_ok=True)
         
         print(f"\nRunning with {procs} MPI processes, total grid {nx}x{ny}x{nz}...")
-        report = run_test(nx, ny, nz, procs, omp_threads, test_dir)
+        report = run_test(nx, ny, nz, procs, omp_threads, test_dir, max_iter=max_iter, tol=tol)
         
         if report:
             total_time = report["performance"]["total_time_sec"]
@@ -184,6 +186,8 @@ if __name__ == "__main__":
     parser.add_argument("--weak-n", type=int, default=512, help="Per-process grid size for weak scaling")
     parser.add_argument("--omp-threads", type=int, default=0,
                         help="Fixed OpenMP threads per process (0=auto: strong=4//procs, weak=1)")
+    parser.add_argument("--max-iter", type=int, default=10000, help="Maximum solver iterations per run")
+    parser.add_argument("--tol", default="1e-6", help="Solver convergence tolerance")
     parser.add_argument("--strong-only", action="store_true", help="Run only strong scaling")
     parser.add_argument("--weak-only", action="store_true", help="Run only weak scaling")
     
@@ -198,12 +202,14 @@ if __name__ == "__main__":
         strong_results = strong_scaling_test(args.output_dir, 
                                               nx=args.strong_nx, ny=args.strong_nx, 
                                               max_procs=args.max_procs,
-                                              omp_threads_override=args.omp_threads)
+                                              omp_threads_override=args.omp_threads,
+                                              max_iter=args.max_iter, tol=args.tol)
     
     if not args.strong_only:
         weak_results = weak_scaling_test(args.output_dir, 
                                           per_proc_n=args.weak_n, 
                                           max_procs=args.max_procs,
-                                          omp_threads_override=args.omp_threads)
+                                          omp_threads_override=args.omp_threads,
+                                          max_iter=args.max_iter, tol=args.tol)
     
     print_summary(strong_results, weak_results)

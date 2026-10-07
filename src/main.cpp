@@ -20,6 +20,7 @@
 #include <memory>
 #include <string>
 #include <system_error>
+#include <vector>
 
 // For M_PI on Windows/MSVC
 #ifndef _USE_MATH_DEFINES
@@ -39,9 +40,10 @@ void printUsage(const std::string& programName) {
               << "  --nx, --ny, --nz <int>       Global grid dimensions (default: 1024 1024 1)\n"
               << "  --halo-width <int>           Halo layer width (default: 1)\n\n"
               << "Solver Options:\n"
-              << "  --solver <string>            Solver type: jacobi (default: jacobi)\n"
+              << "  --solver <string>            Solver type: jacobi, red_black_gs, cg (default: jacobi)\n"
               << "  --max-iter <int>             Maximum iterations (default: 10000)\n"
-              << "  --tol <double>               Convergence tolerance (default: 1e-6)\n\n"
+              << "  --tol <double>               Convergence tolerance (default: 1e-6)\n"
+              << "  --bc <string>                Physical BC: dirichlet, neumann (default: dirichlet)\n\n"
               << "Parallel Options:\n"
               << "  --omp-threads <int>          OpenMP threads per process (default: all cores)\n"
               << "  --comm-mode <string>         Communication mode: p2p, collective (default: p2p)\n\n"
@@ -91,13 +93,10 @@ void setupProblem(Subgrid& subgrid, const Grid& globalGrid) {
 int main(int argc, char* argv[]) {
     using namespace hypo;
 
-    // MPI initialization with thread support for OpenMP
-    int provided = 0;
-    MPI_Init_thread(&argc, &argv, MPI_THREAD_FUNNELED, &provided);
-
-    int rank = 0, size = 1;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    // MPI initialization with thread support for OpenMP (RAII managed)
+    MPIEnv mpiEnv(argc, argv, MPI_THREAD_FUNNELED);
+    const int rank = mpiEnv.rank();
+    const int size = mpiEnv.size();
 
     // Setup logger
     Logger::instance().setRank(rank);
@@ -111,7 +110,6 @@ int main(int argc, char* argv[]) {
         if (rank == 0) {
             printUsage(argc > 0 ? argv[0] : "hypos");
         }
-        MPI_Finalize();
         return 0;
     }
 
@@ -132,8 +130,8 @@ int main(int argc, char* argv[]) {
     std::string commMode = parser.get<std::string>("comm-mode", "p2p");
     std::string outputFormat = parser.get<std::string>("output-format", "json");
     std::string outputDir = parser.get<std::string>("output-dir", "./output");
+    std::string bcType = parser.get<std::string>("bc", "dirichlet");
     int saveInterval = parser.get<int>("save-interval", 0);
-    (void)saveInterval; // reserved: intermediate saves are not implemented yet
     bool enableProfiling = parser.has("enable-profiling");
     bool overlapComm = parser.has("overlap-comm");
 
@@ -175,6 +173,9 @@ int main(int argc, char* argv[]) {
     // Create subdomain
     Subgrid subgrid(info.nxLocal, info.nyLocal, info.nzLocal, grid.haloWidth, cartComm);
     subgrid.setNeighbors(left, right, down, up, back, front);
+    subgrid.setOffsets(info.offsetX, info.offsetY, info.offsetZ);
+    subgrid.setBoundaryCondition(bcType == "neumann" ? BoundaryCondition::Neumann
+                                                      : BoundaryCondition::Dirichlet);
 
     // Setup test problem
     setupProblem(subgrid, grid);
@@ -183,9 +184,21 @@ int main(int argc, char* argv[]) {
     std::unique_ptr<PoissonSolver> solver;
     if (solverName == "jacobi") {
         solver = std::make_unique<JacobiSolver>(overlapComm);
+    } else if (solverName == "red_black_gs") {
+        solver = std::make_unique<RedBlackGSSolver>();
+    } else if (solverName == "cg") {
+        solver = std::make_unique<CGSolver>();
     } else {
         HYPOS_ERROR("Unknown solver: " << solverName);
-        MPI_Finalize();
+        return 1;
+    }
+
+    if (overlapComm && solverName != "jacobi" && rank == 0) {
+        HYPOS_WARN("--overlap-comm is only supported by the jacobi solver; ignored");
+    }
+
+    if (bcType != "dirichlet" && bcType != "neumann") {
+        HYPOS_ERROR("Unknown boundary condition: " << bcType);
         return 1;
     }
 
@@ -196,10 +209,16 @@ int main(int argc, char* argv[]) {
         exchanger = std::make_unique<CollectiveExchanger>();
     } else {
         HYPOS_ERROR("Unknown comm mode: " << commMode);
-        MPI_Finalize();
         return 1;
     }
     exchanger->initialize(subgrid);
+
+    std::error_code dirError;
+    std::filesystem::create_directories(outputDir, dirError);
+    if (dirError) {
+        HYPOS_WARN("Cannot create output directory: " << outputDir
+                   << " (" << dirError.message() << ")");
+    }
 
     // Setup I/O
     std::unique_ptr<IOBackend> io;
@@ -207,6 +226,43 @@ int main(int argc, char* argv[]) {
         io = std::make_unique<VTKIOBackend>(grid.dx, grid.dy, grid.dz);
     } else if (outputFormat == "binary") {
         io = std::make_unique<BinaryIOBackend>();
+    }
+
+    // Snapshot writer shared by the final output and --save-interval saves:
+    // every rank writes its piece; rank 0 writes the parallel index.
+    const auto writeSolution = [&](Index step) {
+        if (!io) {
+            return;
+        }
+        const std::string base = outputDir + "/solution_" + std::to_string(step);
+        io->write(subgrid, base + "_r" + std::to_string(rank), static_cast<int>(step));
+
+        const PieceExtent localPiece{info.offsetX, info.offsetY, info.offsetZ,
+                                     subgrid.nxLocal(), subgrid.nyLocal(), subgrid.nzLocal()};
+        std::vector<Index> flatPiece;
+        if (rank == 0) {
+            flatPiece.resize(static_cast<std::size_t>(size) * 6);
+        }
+        MPI_Gather(&localPiece, 6, MPI_UNSIGNED_LONG,
+                   flatPiece.data(), 6, MPI_UNSIGNED_LONG, 0, cartComm);
+
+        if (rank == 0) {
+            std::vector<PieceExtent> pieces(static_cast<std::size_t>(size));
+            for (int r = 0; r < size; ++r) {
+                const Index* p = &flatPiece[static_cast<std::size_t>(r) * 6];
+                pieces[static_cast<std::size_t>(r)] =
+                    PieceExtent{p[0], p[1], p[2], p[3], p[4], p[5]};
+            }
+            io->writeParallelIndex(grid, base, static_cast<int>(step), pieces);
+        }
+    };
+
+    if (saveInterval > 0 && io) {
+        solver->setProgressCallback([&writeSolution, saveInterval](Index iteration) {
+            if (iteration % static_cast<Index>(saveInterval) == 0) {
+                writeSolution(iteration);
+            }
+        });
     }
 
     // Performance tracking
@@ -223,18 +279,14 @@ int main(int argc, char* argv[]) {
     }
     totalTimer.stop();
 
-    std::error_code dirError;
-    std::filesystem::create_directories(outputDir, dirError);
-    if (dirError) {
-        HYPOS_WARN("Cannot create output directory: " << outputDir
-                   << " (" << dirError.message() << ")");
-    }
-
     double totalTime = totalTimer.elapsedSeconds();
 
     // Compute performance metrics (estimate)
     double iterTime = totalTime / std::max(actualIter, Index(1));
-    double flopsPerIter = 2.0 * grid.nx * grid.ny * grid.nz; // 5-point stencil + residual
+    // Fused stencil cost per cell: 2D five-point update (5 flops) + residual
+    // accumulation (3) = 8; 3D seven-point update (8) + residual (3) = 11.
+    const double flopsPerCell = grid.is2D() ? 8.0 : 11.0;
+    const double flopsPerIter = flopsPerCell * static_cast<double>(grid.nx * grid.ny * grid.nz);
     double flopsPerSec = flopsPerIter * actualIter / totalTime;
 
     // Gather timing stats from all ranks
@@ -279,6 +331,13 @@ int main(int argc, char* argv[]) {
         metrics.overlapRatio = 0.0;
     }
 
+    const double computeSec = profiler.stats("stencil_interior").totalSeconds +
+                              profiler.stats("stencil_boundary").totalSeconds;
+    metrics.computeTimeMs = computeSec / iterCount * 1000.0;
+    metrics.commOverheadRatio = (metrics.iterTimeMs > 0.0)
+                                    ? metrics.commTimeMs / metrics.iterTimeMs
+                                    : 0.0;
+
     Reporter reporter(config);
     reporter.setMetrics(metrics);
 
@@ -298,12 +357,14 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    // Output final field
-    if (io && rank == 0) {
-        io->write(subgrid, outputDir + "/solution", 0);
-    }
+    // Output final field (all ranks write their piece; rank 0 writes the index)
+    writeSolution(actualIter);
 
+    // Shut down resources owned by the run before MPI is finalized:
+    // persistent exchange requests must be freed while MPI is still active.
+    solver.reset();
+    exchanger.reset();
+    io.reset();
     MPI_Comm_free(&cartComm);
-    MPI_Finalize();
     return 0;
 }

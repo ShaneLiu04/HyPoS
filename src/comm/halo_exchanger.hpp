@@ -12,6 +12,8 @@ namespace hypo {
 /**
  * @brief Abstract interface for halo (ghost cell) exchange.
  * Implementations handle boundary synchronization using different MPI patterns.
+ * The primary entry points take an explicit data buffer with the subgrid
+ * padded layout; the convenience overloads default to subgrid.u().
  */
 class HaloExchanger {
 public:
@@ -23,50 +25,61 @@ public:
     virtual void initialize(Subgrid& subgrid) = 0;
 
     /**
-     * @brief Perform a halo exchange.
-     * After this call, halo cells in subgrid contain neighbor data.
-     * @param subgrid The local subdomain (u array is read/written).
+     * @brief Perform a halo exchange on the given buffer.
+     * After this call, halo cells in `data` contain neighbor interior data.
      */
-    virtual void exchange(Subgrid& subgrid) = 0;
+    virtual void exchange(Subgrid& subgrid, Real* data) = 0;
 
     /**
-     * @brief Non-blocking start of halo exchange.
-     * Use with overlapComm=true in solver.
+     * @brief Non-blocking start of halo exchange (use with overlapComm).
      */
-    virtual void beginExchange(Subgrid& subgrid) = 0;
+    virtual void beginExchange(Subgrid& subgrid, Real* data) = 0;
 
     /**
      * @brief Complete a non-blocking exchange.
      */
-    virtual void endExchange(Subgrid& subgrid) = 0;
+    virtual void endExchange(Subgrid& subgrid, Real* data) = 0;
+
+    // Convenience overloads operating on subgrid.u().
+    void exchange(Subgrid& subgrid) { exchange(subgrid, subgrid.u().data()); }
+    void beginExchange(Subgrid& subgrid) { beginExchange(subgrid, subgrid.u().data()); }
+    void endExchange(Subgrid& subgrid) { endExchange(subgrid, subgrid.u().data()); }
 
     virtual std::string name() const = 0;
 };
 
 /**
- * @brief Non-blocking point-to-point halo exchange using MPI_Isend/Irecv.
- * Supports 6 directions (left/right/down/up/back/front); each direction
- * exchanges one interior face layer of width haloWidth. Tags identify the
- * face being sent (0=left, 1=right, 2=down, 3=up, 4=back, 5=front).
+ * @brief Non-blocking point-to-point halo exchange using persistent requests.
+ * 6 directions (left/right/down/up/back/front); each direction exchanges one
+ * interior face layer of width haloWidth. Tags identify the face being sent
+ * (0=left, 1=right, 2=down, 3=up, 4=back, 5=front).
  */
 class PointToPointExchanger : public HaloExchanger {
 public:
+    using HaloExchanger::exchange;
+    using HaloExchanger::beginExchange;
+    using HaloExchanger::endExchange;
+
+    ~PointToPointExchanger() override;
+
     void initialize(Subgrid& subgrid) override;
-    void exchange(Subgrid& subgrid) override;
-    void beginExchange(Subgrid& subgrid) override;
-    void endExchange(Subgrid& subgrid) override;
+    void exchange(Subgrid& subgrid, Real* data) override;
+    void beginExchange(Subgrid& subgrid, Real* data) override;
+    void endExchange(Subgrid& subgrid, Real* data) override;
     std::string name() const override { return "p2p"; }
 
 private:
     static constexpr int kNumDirections = 6;
 
     MPI_Comm comm_ = MPI_COMM_NULL;
-    std::vector<MPI_Request> requests_;
+    bool initialized_ = false;
+    std::vector<int> activeDirs_;
+    std::vector<MPI_Request> activeReqs_;
     std::array<std::vector<Real>, kNumDirections> sendBufs_;
     std::array<std::vector<Real>, kNumDirections> recvBufs_;
 
-    void packFace(Subgrid& subgrid, int direction, std::vector<Real>& buf) const;
-    void unpackFace(Subgrid& subgrid, int direction, const std::vector<Real>& buf) const;
+    void packFace(const Subgrid& subgrid, int direction, const Real* u, std::vector<Real>& buf) const;
+    void unpackFace(Subgrid& subgrid, int direction, Real* u, const std::vector<Real>& buf) const;
 };
 
 /**
@@ -76,10 +89,14 @@ private:
  */
 class CollectiveExchanger : public HaloExchanger {
 public:
+    using HaloExchanger::exchange;
+    using HaloExchanger::beginExchange;
+    using HaloExchanger::endExchange;
+
     void initialize(Subgrid& subgrid) override;
-    void exchange(Subgrid& subgrid) override;
-    void beginExchange(Subgrid& subgrid) override;
-    void endExchange(Subgrid& subgrid) override;
+    void exchange(Subgrid& subgrid, Real* data) override;
+    void beginExchange(Subgrid& subgrid, Real* data) override;
+    void endExchange(Subgrid& subgrid, Real* data) override;
     std::string name() const override { return "collective"; }
 
 private:

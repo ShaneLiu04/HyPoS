@@ -10,8 +10,8 @@ namespace hypo {
 enum class LogLevel { TRACE, DEBUG, INFO, WARN, ERROR, FATAL };
 
 /**
- * @brief Simple thread-safe logger. Root process logs to stdout; others
- * can be silenced or redirected to per-rank files.
+ * @brief Simple logger (single-threaded use; not thread-safe).
+ * Root process logs to stdout; others can be silenced or redirected.
  */
 class Logger {
 public:

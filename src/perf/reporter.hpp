@@ -31,15 +31,8 @@ struct PerformanceMetrics {
     double commOverheadRatio = 0.0;
     double overlapRatio = 0.0;
     double flopsPerSec = 0.0;
-    double memoryBandwidthGBps = 0.0;
     Index iterations = 0;
     Real finalResidual = 0.0;
-};
-
-struct ScalingMetrics {
-    double strongEfficiency = 0.0;
-    double weakEfficiency = 0.0;
-    double speedup = 0.0;
 };
 
 class Reporter {
@@ -47,7 +40,6 @@ public:
     explicit Reporter(const RunConfig& config);
 
     void setMetrics(const PerformanceMetrics& metrics) { metrics_ = metrics; }
-    void setScaling(const ScalingMetrics& scaling) { scaling_ = scaling; }
 
     /**
      * @brief Generate JSON report string.
@@ -67,7 +59,6 @@ public:
 private:
     RunConfig config_;
     PerformanceMetrics metrics_;
-    ScalingMetrics scaling_;
     std::string runId_;
 
     std::string generateRunId() const;

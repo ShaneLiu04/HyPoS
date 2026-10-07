@@ -54,14 +54,8 @@ std::string Reporter::toJson() const {
     oss << "    \"comm_overhead_ratio\": " << metrics_.commOverheadRatio << ",\n";
     oss << "    \"overlap_ratio\": " << metrics_.overlapRatio << ",\n";
     oss << "    \"flops_per_sec\": " << std::scientific << metrics_.flopsPerSec << ",\n";
-    oss << "    \"memory_bandwidth_gbps\": " << std::fixed << metrics_.memoryBandwidthGBps << ",\n";
     oss << "    \"iterations\": " << metrics_.iterations << ",\n";
     oss << "    \"final_residual\": " << metrics_.finalResidual << "\n";
-    oss << "  },\n";
-    oss << "  \"scaling\": {\n";
-    oss << "    \"strong_efficiency\": " << scaling_.strongEfficiency << ",\n";
-    oss << "    \"weak_efficiency\": " << scaling_.weakEfficiency << ",\n";
-    oss << "    \"speedup\": " << scaling_.speedup << "\n";
     oss << "  }\n";
     oss << "}\n";
     return oss.str();

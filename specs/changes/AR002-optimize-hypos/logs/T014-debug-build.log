@@ -1,0 +1,11 @@
+-- Configuring done (2.1s)
+-- Generating done (0.4s)
+-- Build files have been written to: /mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/build-debug
+[ 59%] Built target hypos_core
+[ 62%] Building CXX object CMakeFiles/hypos.dir/src/main.cpp.o
+[ 66%] Building CXX object CMakeFiles/test_hypos.dir/tests/test_alt_solvers.cpp.o
+[ 70%] Building CXX object CMakeFiles/test_hypos.dir/tests/test_solver_mpi.cpp.o
+[ 74%] Linking CXX executable hypos
+[ 77%] Linking CXX executable test_hypos
+[ 77%] Built target hypos
+[100%] Built target test_hypos

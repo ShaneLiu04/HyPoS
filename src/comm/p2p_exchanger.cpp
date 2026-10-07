@@ -1,5 +1,7 @@
 #include "comm/halo_exchanger.hpp"
 #include "core/exception.hpp"
+#include "utils/logger.hpp"
+#include <cstring>
 
 namespace hypo {
 
@@ -77,19 +79,55 @@ void faceLayerRange(const Subgrid& subgrid, Index& kFirst, Index& kLast) {
 // PointToPointExchanger
 // ============================================================================
 
+PointToPointExchanger::~PointToPointExchanger() {
+    int finalized = 0;
+    MPI_Finalized(&finalized);
+    if (finalized) {
+        return;
+    }
+    for (MPI_Request& request : activeReqs_) {
+        if (request != MPI_REQUEST_NULL) {
+            MPI_Request_free(&request);
+        }
+    }
+    activeReqs_.clear();
+    activeDirs_.clear();
+}
+
 void PointToPointExchanger::initialize(Subgrid& subgrid) {
     comm_ = subgrid.comm();
+
+    activeDirs_.clear();
+    activeReqs_.clear();
+
     for (int direction = 0; direction < kNumDirections; ++direction) {
         const Index size = faceSize(subgrid, direction);
         const std::size_t bufIdx = static_cast<std::size_t>(direction);
         sendBufs_[bufIdx].resize(size);
         recvBufs_[bufIdx].resize(size);
+
+        const int neighbor = neighborForDirection(subgrid, direction);
+        if (neighbor == MPI_PROC_NULL) {
+            continue;
+        }
+
+        MPI_Request sendRequest = MPI_REQUEST_NULL;
+        MPI_Request recvRequest = MPI_REQUEST_NULL;
+        MPI_Send_init(sendBufs_[bufIdx].data(), static_cast<int>(size), MPI_DOUBLE,
+                      neighbor, direction, comm_, &sendRequest);
+        MPI_Recv_init(recvBufs_[bufIdx].data(), static_cast<int>(size), MPI_DOUBLE,
+                      neighbor, oppositeDirection(direction), comm_, &recvRequest);
+
+        activeDirs_.push_back(direction);
+        activeReqs_.push_back(sendRequest);
+        activeReqs_.push_back(recvRequest);
     }
-    requests_.resize(2 * static_cast<std::size_t>(kNumDirections), MPI_REQUEST_NULL);
+
+    initialized_ = true;
 }
 
-void PointToPointExchanger::packFace(Subgrid& subgrid, int direction, std::vector<Real>& buf) const {
-    const Real* u = subgrid.u().data();
+void PointToPointExchanger::packFace(const Subgrid& subgrid, int direction,
+                                     const Real* u, std::vector<Real>& buf) const {
     const Index nxT = subgrid.nxTotal();
     const Index nyT = subgrid.nyTotal();
     const Index hw = static_cast<Index>(subgrid.haloWidth());
@@ -98,43 +136,47 @@ void PointToPointExchanger::packFace(Subgrid& subgrid, int direction, std::vecto
     switch (direction) {
         case kFaceLeft:
         case kFaceRight: {
+            // Layout [k][j][h]: h is contiguous (row-wise memcpy).
             const Index srcCol = (direction == kFaceLeft) ? subgrid.iBegin()
                                                           : (subgrid.iEnd() - hw);
             Index kFirst = 0, kLast = 0;
             faceLayerRange(subgrid, kFirst, kLast);
-            for (Index h = 0; h < hw; ++h) {
-                for (Index k = kFirst; k < kLast; ++k) {
-                    for (Index j = subgrid.jBegin(); j < subgrid.jEnd(); ++j) {
-                        buf[idx++] = u[(k * nyT + j) * nxT + (srcCol + h)];
-                    }
+            for (Index k = kFirst; k < kLast; ++k) {
+                for (Index j = subgrid.jBegin(); j < subgrid.jEnd(); ++j) {
+                    std::memcpy(&buf[idx], &u[(k * nyT + j) * nxT + srcCol], hw * sizeof(Real));
+                    idx += hw;
                 }
             }
             break;
         }
         case kFaceDown:
         case kFaceUp: {
+            // Layout [h][k][i]: i is contiguous.
             const Index srcRow = (direction == kFaceDown) ? subgrid.jBegin()
                                                           : (subgrid.jEnd() - hw);
+            const Index ni = subgrid.iEnd() - subgrid.iBegin();
             Index kFirst = 0, kLast = 0;
             faceLayerRange(subgrid, kFirst, kLast);
             for (Index h = 0; h < hw; ++h) {
                 for (Index k = kFirst; k < kLast; ++k) {
-                    for (Index i = subgrid.iBegin(); i < subgrid.iEnd(); ++i) {
-                        buf[idx++] = u[(k * nyT + (srcRow + h)) * nxT + i];
-                    }
+                    std::memcpy(&buf[idx], &u[(k * nyT + (srcRow + h)) * nxT + subgrid.iBegin()],
+                                ni * sizeof(Real));
+                    idx += ni;
                 }
             }
             break;
         }
         case kFaceBack:
         case kFaceFront: {
+            // Layout [h][j][i]: i is contiguous.
             const Index srcLayer = (direction == kFaceBack) ? subgrid.kBegin()
                                                             : (subgrid.kEnd() - hw);
+            const Index ni = subgrid.iEnd() - subgrid.iBegin();
             for (Index h = 0; h < hw; ++h) {
                 for (Index j = subgrid.jBegin(); j < subgrid.jEnd(); ++j) {
-                    for (Index i = subgrid.iBegin(); i < subgrid.iEnd(); ++i) {
-                        buf[idx++] = u[((srcLayer + h) * nyT + j) * nxT + i];
-                    }
+                    std::memcpy(&buf[idx], &u[((srcLayer + h) * nyT + j) * nxT + subgrid.iBegin()],
+                                ni * sizeof(Real));
+                    idx += ni;
                 }
             }
             break;
@@ -145,8 +187,8 @@ void PointToPointExchanger::packFace(Subgrid& subgrid, int direction, std::vecto
     HYPOS_ASSERT(idx == buf.size());
 }
 
-void PointToPointExchanger::unpackFace(Subgrid& subgrid, int direction, const std::vector<Real>& buf) const {
-    Real* u = subgrid.u().data();
+void PointToPointExchanger::unpackFace(Subgrid& subgrid, int direction, Real* u,
+                                       const std::vector<Real>& buf) const {
     const Index nxT = subgrid.nxTotal();
     const Index nyT = subgrid.nyTotal();
     const Index hw = static_cast<Index>(subgrid.haloWidth());
@@ -158,11 +200,10 @@ void PointToPointExchanger::unpackFace(Subgrid& subgrid, int direction, const st
             const Index dstCol = (direction == kFaceLeft) ? 0 : subgrid.iEnd();
             Index kFirst = 0, kLast = 0;
             faceLayerRange(subgrid, kFirst, kLast);
-            for (Index h = 0; h < hw; ++h) {
-                for (Index k = kFirst; k < kLast; ++k) {
-                    for (Index j = subgrid.jBegin(); j < subgrid.jEnd(); ++j) {
-                        u[(k * nyT + j) * nxT + (dstCol + h)] = buf[idx++];
-                    }
+            for (Index k = kFirst; k < kLast; ++k) {
+                for (Index j = subgrid.jBegin(); j < subgrid.jEnd(); ++j) {
+                    std::memcpy(&u[(k * nyT + j) * nxT + dstCol], &buf[idx], hw * sizeof(Real));
+                    idx += hw;
                 }
             }
             break;
@@ -170,13 +211,14 @@ void PointToPointExchanger::unpackFace(Subgrid& subgrid, int direction, const st
         case kFaceDown:
         case kFaceUp: {
             const Index dstRow = (direction == kFaceDown) ? 0 : subgrid.jEnd();
+            const Index ni = subgrid.iEnd() - subgrid.iBegin();
             Index kFirst = 0, kLast = 0;
             faceLayerRange(subgrid, kFirst, kLast);
             for (Index h = 0; h < hw; ++h) {
                 for (Index k = kFirst; k < kLast; ++k) {
-                    for (Index i = subgrid.iBegin(); i < subgrid.iEnd(); ++i) {
-                        u[(k * nyT + (dstRow + h)) * nxT + i] = buf[idx++];
-                    }
+                    std::memcpy(&u[(k * nyT + (dstRow + h)) * nxT + subgrid.iBegin()],
+                                &buf[idx], ni * sizeof(Real));
+                    idx += ni;
                 }
             }
             break;
@@ -184,11 +226,12 @@ void PointToPointExchanger::unpackFace(Subgrid& subgrid, int direction, const st
         case kFaceBack:
         case kFaceFront: {
             const Index dstLayer = (direction == kFaceBack) ? 0 : subgrid.kEnd();
+            const Index ni = subgrid.iEnd() - subgrid.iBegin();
             for (Index h = 0; h < hw; ++h) {
                 for (Index j = subgrid.jBegin(); j < subgrid.jEnd(); ++j) {
-                    for (Index i = subgrid.iBegin(); i < subgrid.iEnd(); ++i) {
-                        u[((dstLayer + h) * nyT + j) * nxT + i] = buf[idx++];
-                    }
+                    std::memcpy(&u[((dstLayer + h) * nyT + j) * nxT + subgrid.iBegin()],
+                                &buf[idx], ni * sizeof(Real));
+                    idx += ni;
                 }
             }
             break;
@@ -199,48 +242,43 @@ void PointToPointExchanger::unpackFace(Subgrid& subgrid, int direction, const st
     HYPOS_ASSERT(idx == buf.size());
 }
 
-void PointToPointExchanger::exchange(Subgrid& subgrid) {
-    beginExchange(subgrid);
-    endExchange(subgrid);
+void PointToPointExchanger::exchange(Subgrid& subgrid, Real* data) {
+    beginExchange(subgrid, data);
+    endExchange(subgrid, data);
 }
 
-void PointToPointExchanger::beginExchange(Subgrid& subgrid) {
-    for (auto& request : requests_) {
-        request = MPI_REQUEST_NULL;
+void PointToPointExchanger::beginExchange(Subgrid& subgrid, Real* data) {
+    if (!initialized_ || comm_ == MPI_COMM_NULL || data == nullptr) {
+        HYPOS_ERROR("PointToPointExchanger::beginExchange called before initialize "
+                    "or with null data buffer; ignored");
+        return;
     }
 
-    for (int direction = 0; direction < kNumDirections; ++direction) {
-        const int neighbor = neighborForDirection(subgrid, direction);
-        if (neighbor == MPI_PROC_NULL) {
-            continue;
-        }
-        const std::size_t bufIdx = static_cast<std::size_t>(direction);
+    for (std::size_t i = 0; i < activeDirs_.size(); ++i) {
+        const int direction = activeDirs_[i];
+        packFace(subgrid, direction, data, sendBufs_[static_cast<std::size_t>(direction)]);
+    }
 
-        // Send this direction's own face (tag = direction).
-        packFace(subgrid, direction, sendBufs_[bufIdx]);
-        MPI_Isend(sendBufs_[bufIdx].data(),
-                  static_cast<int>(sendBufs_[bufIdx].size()), MPI_DOUBLE,
-                  neighbor, direction, comm_, &requests_[2 * bufIdx]);
-
-        // Receive the face the neighbor sends toward this direction, which is
-        // its opposite face (e.g. the left neighbor sends its right face).
-        MPI_Irecv(recvBufs_[bufIdx].data(),
-                  static_cast<int>(recvBufs_[bufIdx].size()), MPI_DOUBLE,
-                  neighbor, oppositeDirection(direction), comm_,
-                  &requests_[2 * bufIdx + 1]);
+    if (!activeReqs_.empty()) {
+        MPI_Startall(static_cast<int>(activeReqs_.size()), activeReqs_.data());
     }
 }
 
-void PointToPointExchanger::endExchange(Subgrid& subgrid) {
-    MPI_Waitall(static_cast<int>(requests_.size()), requests_.data(), MPI_STATUSES_IGNORE);
+void PointToPointExchanger::endExchange(Subgrid& subgrid, Real* data) {
+    if (!initialized_ || comm_ == MPI_COMM_NULL || data == nullptr) {
+        HYPOS_ERROR("PointToPointExchanger::endExchange called before initialize "
+                    "or with null data buffer; ignored");
+        return;
+    }
 
-    for (int direction = 0; direction < kNumDirections; ++direction) {
-        if (neighborForDirection(subgrid, direction) == MPI_PROC_NULL) {
-            continue;
-        }
-        unpackFace(subgrid, direction, recvBufs_[static_cast<std::size_t>(direction)]);
+    if (!activeReqs_.empty()) {
+        MPI_Waitall(static_cast<int>(activeReqs_.size()), activeReqs_.data(),
+                    MPI_STATUSES_IGNORE);
+    }
+
+    for (int direction : activeDirs_) {
+        unpackFace(subgrid, direction, data, recvBufs_[static_cast<std::size_t>(direction)]);
     }
 }
-
 
 } // namespace hypo

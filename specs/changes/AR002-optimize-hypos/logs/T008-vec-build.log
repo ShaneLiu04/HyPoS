@@ -1,0 +1,592 @@
+[  8%] Building CXX object CMakeFiles/hypos_core.dir/src/grid/subgrid.cpp.o
+[  8%] Building CXX object CMakeFiles/hypos_core.dir/src/grid/partition.cpp.o
+[ 16%] Building CXX object CMakeFiles/hypos_core.dir/src/solver/jacobi_solver.cpp.o
+[ 20%] Building CXX object CMakeFiles/hypos_core.dir/src/comm/p2p_exchanger.cpp.o
+[ 20%] Building CXX object CMakeFiles/hypos_core.dir/src/comm/collective_exchanger.cpp.o
+[ 24%] Building CXX object CMakeFiles/hypos_core.dir/src/perf/timer.cpp.o
+[ 32%] Building CXX object CMakeFiles/hypos_core.dir/src/perf/profiler.cpp.o
+[ 36%] Building CXX object CMakeFiles/hypos_core.dir/src/perf/reporter.cpp.o
+[ 36%] Building CXX object CMakeFiles/hypos_core.dir/src/utils/mpi_env.cpp.o
+[ 44%] Building CXX object CMakeFiles/hypos_core.dir/src/utils/logger.cpp.o
+[ 44%] Building CXX object CMakeFiles/hypos_core.dir/src/utils/cmdline_parser.cpp.o
+[ 48%] Building CXX object CMakeFiles/hypos_core.dir/src/io/binary_io.cpp.o
+[ 52%] Building CXX object CMakeFiles/hypos_core.dir/src/io/vtk_io.cpp.o
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/utils/mpi_env.cpp:6:64: optimized: basic block part vectorized using 8 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/grid/partition.cpp:67:23: optimized: loop vectorized using 32 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/grid/partition.cpp:63:23: optimized: loop vectorized using 32 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/grid/partition.cpp:59:23: optimized: loop vectorized using 32 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/grid/partition.cpp:18:9: optimized: basic block part vectorized using 8 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/grid/partition.cpp:17:42: optimized: basic block part vectorized using 8 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/grid/partition.cpp:31:49: optimized: basic block part vectorized using 8 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/grid/subgrid.cpp:13:17: optimized: basic block part vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/grid/subgrid.cpp:13:17: optimized: basic block part vectorized using 8 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/grid/subgrid.cpp:9:7: optimized: basic block part vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/core/aligned_buffer.hpp:18:5: optimized: basic block part vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/core/aligned_buffer.hpp:18:5: optimized: basic block part vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/core/aligned_buffer.hpp:18:5: optimized: basic block part vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/grid/subgrid.cpp:13:17: optimized: basic block part vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/core/aligned_buffer.hpp:61:19: optimized: basic block part vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/core/aligned_buffer.hpp:71:15: optimized: basic block part vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/core/aligned_buffer.hpp:61:19: optimized: basic block part vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/core/aligned_buffer.hpp:71:15: optimized: basic block part vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/core/aligned_buffer.hpp:71:15: optimized: basic block part vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/core/aligned_buffer.hpp:61:19: optimized: basic block part vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/grid/partition.cpp:10:7: optimized: basic block part vectorized using 8 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/grid/subgrid.cpp:23:20: optimized: basic block part vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/grid/subgrid.cpp:27:20: optimized: basic block part vectorized using 8 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/grid/subgrid.cpp:84:37: optimized: loop vectorized using 32 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/grid/subgrid.cpp:74:37: optimized: loop vectorized using 32 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/grid/subgrid.cpp:65:33: optimized: loop vectorized using 32 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/grid/subgrid.cpp:57:33: optimized: loop vectorized using 32 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/grid/subgrid.cpp:49:53: optimized: loop vectorized using 32 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/grid/subgrid.cpp:41:33: optimized: loop vectorized using 32 byte vectors
+/usr/include/c++/15/bits/basic_ios.h:477:2: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/sstream:814:53: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/basic_ios.h:477:2: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/sstream:814:53: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/basic_ios.h:477:2: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/sstream:814:53: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/basic_ios.h:477:2: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/sstream:814:53: optimized: basic block part vectorized using 32 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/grid/subgrid.cpp:156:46: optimized: loop vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/grid/subgrid.cpp:156:46: optimized:  loop versioned for vectorization because of possible aliasing
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/grid/subgrid.cpp:151:41: optimized: loop vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/grid/subgrid.cpp:151:41: optimized:  loop versioned for vectorization because of possible aliasing
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/grid/subgrid.cpp:156:46: optimized: loop vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/grid/subgrid.cpp:156:46: optimized:  loop versioned for vectorization because of possible aliasing
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/grid/subgrid.cpp:151:41: optimized: loop vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/grid/subgrid.cpp:151:41: optimized:  loop versioned for vectorization because of possible aliasing
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/grid/subgrid.cpp:137:42: optimized: loop vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/grid/subgrid.cpp:137:42: optimized:  loop versioned for vectorization because of possible aliasing
+/usr/include/c++/15/bits/basic_ios.h:477:2: optimized: basic block part vectorized using 32 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/grid/subgrid.cpp:132:37: optimized: loop vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/grid/subgrid.cpp:132:37: optimized:  loop versioned for vectorization because of possible aliasing
+/usr/include/c++/15/bits/basic_ios.h:477:2: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/sstream:814:53: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/fstream:918:9: optimized: /mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/grid/subgrid.cpp:137:42: basic block part vectorized using 16 byte vectors
+optimized: loop vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/perf/reporter.hpp:14:8: optimized: /mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/grid/subgrid.cpp:137:42: basic block part vectorized using 8 byte vectors
+/usr/include/c++/15/bits/basic_ios.h:477:2: optimized: optimized:  /mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/perf/reporter.hpp:14:8: optimized: basic block part vectorized using 32 byte vectors
+loop versioned for vectorization because of possible aliasing
+basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/sstream:814:53: optimized: basic block part vectorized using 32 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/perf/reporter.hpp:26:8: optimized: basic block part vectorized using 32 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/grid/subgrid.cpp:132:37: optimized: /mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/perf/reporter.hpp:26:8: optimized: /usr/include/c++/15/fstream:918:9: loop vectorized using 16 byte vectors
+basic block part vectorized using 16 byte vectors
+optimized: /mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/grid/subgrid.cpp:132:37: optimized: basic block part vectorized using 16 byte vectors
+ loop versioned for vectorization because of possible aliasing
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/grid/subgrid.cpp:119:42: optimized: loop vectorized using 32 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/grid/subgrid.cpp:119:42: optimized: loop vectorized using 32 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/grid/subgrid.cpp:119:42: optimized:  loop versioned for vectorization because of possible aliasing
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/grid/subgrid.cpp:119:42: optimized: loop vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/grid/subgrid.cpp:114:37: optimized: loop vectorized using 32 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/grid/subgrid.cpp:114:37: optimized: loop vectorized using 32 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/grid/subgrid.cpp:114:37: optimized:  loop versioned for vectorization because of possible aliasing
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/grid/subgrid.cpp:119:42: optimized: loop vectorized using 32 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/grid/subgrid.cpp:119:42: optimized: loop vectorized using 32 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/grid/subgrid.cpp:119:42: optimized:  loop versioned for vectorization because of possible aliasing
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/grid/subgrid.cpp:119:42: optimized: loop vectorized using 16 byte vectors
+/usr/include/c++/15/bits/basic_ios.h:477:2: optimized: /mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/grid/subgrid.cpp:114:37: basic block part vectorized using 32 byte vectors
+optimized: loop vectorized using 32 byte vectors
+/usr/include/c++/15/sstream:814:53: optimized: basic block part vectorized using 32 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/grid/subgrid.cpp:114:37: optimized: loop vectorized using 32 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/grid/subgrid.cpp:114:37: optimized:  loop versioned for vectorization because of possible aliasing
+/usr/include/c++/15/bits/std_mutex.h:69:15: optimized: basic block part vectorized using 4 byte vectors
+/usr/include/c++/15/bits/std_mutex.h:69:15: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/hashtable.h:513:7: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/stl_pair.h:902:35: optimized: basic block part vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/io/vtk_io.cpp:14:7: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/basic_ios.h:477:2: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/sstream:814:53: optimized: basic block part vectorized using 32 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/io/vtk_io.cpp:80:33: optimized: loop vectorized using 32 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/io/vtk_io.cpp:80:33: optimized:  loop versioned for vectorization to enhance alignment
+/usr/include/c++/15/bits/basic_ios.h:477:2: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/basic_ios.h:477:2: optimized: basic block part vectorized using 32 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/perf/profiler.cpp:42:48: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/basic_ios.h:477:2: /usr/include/c++/15/fstream:918:9: optimized: optimized: basic block part vectorized using 16 byte vectors
+basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/sstream:814:53: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/fstream:918:9: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/basic_ios.h:477:2: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/sstream:814:53: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/fstream:918:9: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/basic_ios.h:477:2: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/sstream:814:53: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/basic_ios.h:477:2: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/sstream:814:53: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/std_mutex.h:69:15: optimized: basic block part vectorized using 4 byte vectors
+/usr/include/c++/15/bits/std_mutex.h:69:15: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/hashtable.h:513:7: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/basic_ios.h:477:2: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/sstream:814:53: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/basic_ios.h:477:2: optimized: /mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/solver/jacobi_solver.cpp:40:21: basic block part vectorized using 32 byte vectors
+optimized: /usr/include/c++/15/sstream:814:53: loop vectorized using 32 byte vectors
+optimized: basic block part vectorized using 32 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/solver/jacobi_solver.cpp:42:29: optimized: loop vectorized using 32 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/utils/cmdline_parser.cpp:21:39: optimized: loop vectorized using 32 byte vectors
+/usr/include/c++/15/bits/basic_string.h:234:26: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/basic_string.h:234:26: optimized: /usr/include/c++/15/bits/basic_ios.h:477:2: optimized: basic block part vectorized using 16 byte vectors
+basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/sstream:814:53: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/tuple:2887:2: optimized: basic block part vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/solver/jacobi_solver.cpp:56:25: optimized: loop vectorized using 32 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/solver/jacobi_solver.cpp:58:33: optimized: loop vectorized using 32 byte vectors
+/usr/include/c++/15/bits/vector.tcc:895:31: optimized: basic block part vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/perf/profiler.cpp:19:6: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/vector.tcc:644:30: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/std_mutex.h:69:15: optimized: basic block part vectorized using 4 byte vectors
+/usr/include/c++/15/bits/std_mutex.h:69:15: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/hashtable.h:513:7: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/vector.tcc:644:30: optimized: basic block part vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/solver/jacobi_solver.cpp:53:17: optimized: basic block part vectorized using 32 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/solver/jacobi_solver.cpp:53:17: optimized: basic block part vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/solver/jacobi_solver.cpp:38:17: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/basic_ios.h:477:2: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/basic_ios.h:477:2: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/sstream:814:53: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/fstream:918:9: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/basic_ios.h:477:2: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/sstream:814:53: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/fstream:918:9: optimized: basic block part vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/core/aligned_buffer.hpp:43:19: optimized: basic block part vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/core/aligned_buffer.hpp:43:19: optimized: basic block part vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/solver/jacobi_solver.cpp:53:17: optimized: basic block part vectorized using 32 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/solver/jacobi_solver.cpp:53:17: optimized: basic block part vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/solver/jacobi_solver.cpp:38:17: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/basic_ios.h:477:2: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/sstream:814:53: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/basic_ios.h:477:2: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/sstream:814:53: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/basic_ios.h:477:2: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/sstream:814:53: optimized: basic block part vectorized using 32 byte vectors
+[ 56%] Linking CXX static library libhypos_core.a
+[ 56%] Built target hypos_core
+[ 60%] Building CXX object CMakeFiles/hypos.dir/src/main.cpp.o
+[ 68%] Building CXX object CMakeFiles/test_hypos.dir/tests/gtest_main_mpi.cpp.o
+[ 68%] Building CXX object CMakeFiles/test_hypos.dir/tests/test_grid.cpp.o
+[ 76%] Building CXX object CMakeFiles/test_hypos.dir/tests/test_solver.cpp.o
+[ 76%] Building CXX object CMakeFiles/test_hypos.dir/tests/test_alt_solvers.cpp.o
+[ 84%] Building CXX object CMakeFiles/test_hypos.dir/tests/test_overlap.cpp.o
+[ 84%] Building CXX object CMakeFiles/test_hypos.dir/tests/test_halo_exchange.cpp.o
+[ 92%] Building CXX object CMakeFiles/test_hypos.dir/tests/test_performance.cpp.o
+[ 92%] Building CXX object CMakeFiles/test_hypos.dir/tests/test_solver_mpi.cpp.o
+/usr/include/c++/15/bits/basic_ios.h:477:2: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/sstream:1042:69: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/basic_ios.h:477:2: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/sstream:1042:69: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/basic_ios.h:477:2: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/sstream:1042:69: optimized: basic block part vectorized using 32 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/main.cpp:243:31: optimized: loop vectorized using 32 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/main.cpp:243:31: optimized: loop vectorized using 16 byte vectors
+/usr/include/c++/15/bits/stl_uninitialized.h:875:15: optimized: loop vectorized using 32 byte vectors
+/usr/include/c++/15/bits/stl_uninitialized.h:875:15: optimized: loop vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/main.cpp:233:93: optimized: basic block part vectorized using 32 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/main.cpp:233:93: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 16 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 16 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 16 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 32 byte vectors
+/usr/include/c++/15/bits/basic_ios.h:477:2: optimized: /usr/include/c++/15/array:102:12: optimized: basic block part vectorized using 32 byte vectors
+loop vectorized using 16 byte vectors
+/usr/include/c++/15/sstream:1042:69: optimized: basic block part vectorized using 32 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_overlap.cpp:18:39: optimized: loop vectorized using 32 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_overlap.cpp:18:39: optimized: loop vectorized using 32 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_overlap.cpp:71:9: optimized: basic block part vectorized using 8 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_overlap.cpp:72:9: optimized: basic block part vectorized using 8 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/comm/halo_exchanger.hpp:57:7: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:4: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:16: optimized: basic block part vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/comm/halo_exchanger.hpp:57:7: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:4: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:16: optimized: basic block part vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_grid.cpp:25:10: optimized: basic block part vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_grid.cpp:25:10: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 16 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 16 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 16 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_overlap.cpp:18:39: optimized: loop vectorized using 32 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_overlap.cpp:18:39: optimized: loop vectorized using 32 byte vectors
+/usr/include/c++/15/bits/this_thread_sleep.h:77:20: optimized: basic block part vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/comm/halo_exchanger.hpp:57:7: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:4: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:16: optimized: basic block part vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/comm/halo_exchanger.hpp:57:7: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:4: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:16: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/basic_ios.h:477:2: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/sstream:1042:69: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/basic_ios.h:477:2: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/sstream:1042:69: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/basic_ios.h:477:2: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/sstream:1042:69: optimized: /usr/include/c++/15/bits/basic_ios.h:477:2: optimized: basic block part vectorized using 32 byte vectors
+basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/sstream:1042:69: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/basic_ios.h:477:2: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/sstream:1042:69: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/hashtable.h:513:7: optimized: basic block part vectorized using 32 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/main.cpp:117:10: optimized: basic block part vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/main.cpp:117:10: optimized: basic block part vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/main.cpp:122:13: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/basic_string.h:234:26: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/basic_string.h:234:26: optimized: basic block part vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/main.cpp:163:18: optimized: basic block part vectorized using 8 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/grid/subgrid.hpp:75:18: optimized: basic block part vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/comm/halo_exchanger.hpp:90:7: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:4: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:16: optimized: /usr/include/c++/15/bits/basic_ios.h:477:2: optimized: basic block part vectorized using 16 byte vectors
+basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:4: optimized: /usr/include/c++/15/sstream:1042:69: optimized: basic block part vectorized using 16 byte vectors
+basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:4: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/basic_ios.h:477:2: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/sstream:1042:69: optimized: basic block part vectorized using 32 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/comm/halo_exchanger.hpp:57:7: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:4: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:16: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:4: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:4: optimized: basic block part vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/main.cpp:250:5: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/std_function.h:413:21: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/move.h:236:11: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/move.h:237:11: optimized: basic block part vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/main.cpp:291:15: optimized: basic block part vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/perf/reporter.hpp:42:67: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 16 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/comm/halo_exchanger.hpp:57:7: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:4: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:16: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 16 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_solver_mpi.cpp:20:39: optimized: loop vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 16 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_solver_mpi.cpp:20:39: optimized: loop vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 32 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_solver_mpi.cpp:126:9: optimized: basic block part vectorized using 8 byte vectors
+/usr/include/c++/15/array:102:12: optimized: /mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_solver_mpi.cpp:127:9: optimized: loop vectorized using 16 byte vectors
+basic block part vectorized using 8 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_solver_mpi.cpp:138:9: optimized: basic block part vectorized using 8 byte vectors
+/usr/include/c++/15/array:102:12: optimized: /mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/comm/halo_exchanger.hpp:57:7: optimized: loop vectorized using 32 byte vectors
+basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/array:102:12: optimized: /usr/include/c++/15/bits/stl_vector.h:106:4: optimized: loop vectorized using 16 byte vectors
+basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:16: optimized: basic block part vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_performance.cpp:46:39: optimized: loop vectorized using 32 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/comm/halo_exchanger.hpp:57:7: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:4: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:16: optimized: basic block part vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/comm/halo_exchanger.hpp:57:7: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:4: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:16: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/basic_ios.h:477:2: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/sstream:1042:69: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/basic_ios.h:477:2: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/sstream:1042:69: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 16 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/comm/halo_exchanger.hpp:57:7: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:4: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:16: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/basic_ios.h:477:2: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/this_thread_sleep.h:77:20: /usr/include/c++/15/sstream:1042:69: optimized: basic block part vectorized using 16 byte vectors
+optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/basic_ios.h:477:2: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/sstream:1042:69: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/vector.tcc:644:30: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 16 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_solver_mpi.cpp:20:39: optimized: loop vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 16 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_solver_mpi.cpp:20:39: optimized: loop vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 16 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 16 byte vectors
+/usr/include/c++/15/bits/basic_ios.h:477:2: /mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_solver_mpi.cpp:20:39: optimized: optimized: loop vectorized using 32 byte vectors
+basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/sstream:1042:69: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: /usr/include/c++/15/array:102:12: optimized: optimized: loop vectorized using 32 byte vectors
+loop vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: /usr/include/c++/15/array:102:12: optimized: loop vectorized using 16 byte vectors
+loop vectorized using 16 byte vectors
+/usr/include/c++/15/array:102:12: optimized: /usr/include/c++/15/array:102:12: optimized: loop vectorized using 32 byte vectors
+loop vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: /usr/include/c++/15/array:102:12: optimized: loop vectorized using 16 byte vectors
+loop vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_solver_mpi.cpp:20:39: optimized: loop vectorized using 32 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/comm/halo_exchanger.hpp:90:7: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:4: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:16: optimized: basic block part vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_solver_mpi.cpp:235:9: optimized: basic block part vectorized using 8 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_solver_mpi.cpp:236:9: optimized: basic block part vectorized using 8 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_solver_mpi.cpp:247:9: optimized: basic block part vectorized using 8 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/comm/halo_exchanger.hpp:57:7: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:4: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:16: optimized: basic block part vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/comm/halo_exchanger.hpp:57:7: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:4: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:16: optimized: basic block part vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/comm/halo_exchanger.hpp:57:7: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:4: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:16: optimized: basic block part vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/comm/halo_exchanger.hpp:57:7: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:4: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:16: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 16 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_performance.cpp:46:39: optimized: loop vectorized using 32 byte vectors
+/usr/include/c++/15/bits/basic_ios.h:477:2: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/sstream:1042:69: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/basic_ios.h:477:2: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/sstream:1042:69: optimized: basic block part vectorized using 32 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/comm/halo_exchanger.hpp:57:7: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:4: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:16: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/basic_ios.h:477:2: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/sstream:1042:69: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 16 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 16 byte vectors
+/usr/include/c++/15/bits/basic_ios.h:477:2: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/sstream:1042:69: optimized: basic block part vectorized using 32 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/comm/halo_exchanger.hpp:57:7: optimized: /usr/include/c++/15/bits/basic_ios.h:477:2: optimized: basic block part vectorized using 16 byte vectors
+basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:4: /usr/include/c++/15/sstream:1042:69: optimized: optimized: basic block part vectorized using 32 byte vectors
+[ 96%] Linking CXX executable hypos
+basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:16: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 16 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/comm/halo_exchanger.hpp:57:7: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:4: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:16: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 16 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 32 byte vectors
+/usr/include/c++/15/bits/basic_ios.h:477:2: optimized: /usr/include/c++/15/array:102:12: optimized: basic block part vectorized using 32 byte vectors
+loop vectorized using 16 byte vectors
+/usr/include/c++/15/sstream:1042:69: optimized: basic block part vectorized using 32 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/comm/halo_exchanger.hpp:57:7: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:4: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:16: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 16 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 16 byte vectors
+/usr/include/c++/15/bits/basic_ios.h:477:2: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/sstream:1042:69: optimized: basic block part vectorized using 32 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/comm/halo_exchanger.hpp:57:7: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:4: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:16: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 16 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_solver_mpi.cpp:51:9: optimized: /usr/include/c++/15/array:102:12: optimized: basic block part vectorized using 8 byte vectors
+loop vectorized using 32 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_solver_mpi.cpp:52:9: optimized: /usr/include/c++/15/array:102:12: optimized: basic block part vectorized using 8 byte vectors
+loop vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_solver_mpi.cpp:63:9: optimized: basic block part vectorized using 8 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/comm/halo_exchanger.hpp:57:7: optimized: /usr/include/c++/15/array:102:12: basic block part vectorized using 16 byte vectors
+optimized: /usr/include/c++/15/bits/stl_vector.h:106:4: optimized: loop vectorized using 32 byte vectors
+basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: /usr/include/c++/15/bits/stl_vector.h:106:16: optimized: loop vectorized using 16 byte vectors
+basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/array:102:12: optimized: /mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/comm/halo_exchanger.hpp:57:7: optimized: loop vectorized using 32 byte vectors
+basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/array:102:12: optimized: /usr/include/c++/15/bits/stl_vector.h:106:4: optimized: loop vectorized using 16 byte vectors
+basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:16: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/array:102:12: optimized: /usr/include/c++/15/array:102:12: loop vectorized using 32 byte vectors
+optimized: loop vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: /usr/include/c++/15/array:102:12: optimized: loop vectorized using 16 byte vectors
+loop vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_solver.cpp:29:44: optimized: /usr/include/c++/15/array:102:12: optimized: loop vectorized using 32 byte vectors
+loop vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/comm/halo_exchanger.hpp:57:7: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:4: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:16: optimized: basic block part vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/comm/halo_exchanger.hpp:57:7: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:4: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:16: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/basic_ios.h:477:2: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/basic_ios.h:477:2: optimized: /usr/include/c++/15/sstream:1042:69: basic block part vectorized using 32 byte vectors
+optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/sstream:1042:69: optimized: /usr/include/c++/15/bits/basic_ios.h:477:2: optimized: basic block part vectorized using 32 byte vectors
+basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/sstream:1042:69: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 16 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_solver.cpp:149:39: optimized: loop vectorized using 32 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/comm/halo_exchanger.hpp:57:7: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:4: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:16: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/basic_ios.h:477:2: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/sstream:1042:69: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/basic_ios.h:477:2: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/sstream:1042:69: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 16 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_solver_mpi.cpp:33:43: optimized: loop vectorized using 32 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_solver_mpi.cpp:186:9: optimized: basic block part vectorized using 8 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_solver_mpi.cpp:187:9: optimized: basic block part vectorized using 8 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/comm/halo_exchanger.hpp:57:7: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:4: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:16: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 16 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 16 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: /mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_halo_exchange.cpp:182:29: optimized: loop vectorized using 16 byte vectors
+loop vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_halo_exchange.cpp:182:29: optimized: loop vectorized using 32 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_solver.cpp:106:39: optimized: loop vectorized using 32 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_halo_exchange.cpp:182:29: optimized: loop vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: /mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/comm/halo_exchanger.hpp:57:7: optimized: loop vectorized using 32 byte vectors
+basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/array:102:12: optimized: /usr/include/c++/15/bits/stl_vector.h:106:4: optimized: loop vectorized using 16 byte vectors
+basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:16: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 32 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_halo_exchange.cpp:160:9: optimized: /usr/include/c++/15/array:102:12: optimized: basic block part vectorized using 8 byte vectors
+loop vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_halo_exchange.cpp:161:9: optimized: basic block part vectorized using 8 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_halo_exchange.cpp:172:9: optimized: basic block part vectorized using 8 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_alt_solvers.cpp:26:39: optimized: /mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/comm/halo_exchanger.hpp:57:7: optimized: loop vectorized using 32 byte vectors
+basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:4: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:16: optimized: basic block part vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/comm/halo_exchanger.hpp:57:7: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:4: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:16: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/std_function.h:413:21: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/move.h:237:11: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/move.h:236:11: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/std_function.h:413:21: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/move.h:237:11: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/move.h:236:11: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 16 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 16 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 16 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/comm/halo_exchanger.hpp:57:7: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:4: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:16: optimized: basic block part vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/comm/halo_exchanger.hpp:57:7: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:4: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:16: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 16 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/comm/halo_exchanger.hpp:57:7: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:4: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:16: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 16 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_halo_exchange.cpp:411:33: optimized: loop vectorized using 32 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_halo_exchange.cpp:411:33: optimized: loop vectorized using 32 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_halo_exchange.cpp:411:33: optimized: loop vectorized using 32 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_halo_exchange.cpp:380:9: optimized: basic block part vectorized using 8 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_halo_exchange.cpp:381:9: optimized: basic block part vectorized using 8 byte vectors
+/usr/include/c++/15/array:102:12: optimized: /mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_halo_exchange.cpp:395:9: optimized: loop vectorized using 32 byte vectors
+basic block part vectorized using 8 byte vectors
+/usr/include/c++/15/array:102:12: optimized: /mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/comm/halo_exchanger.hpp:57:7: optimized: loop vectorized using 16 byte vectors
+basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:4: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: /usr/include/c++/15/bits/stl_vector.h:106:16: optimized: loop vectorized using 32 byte vectors
+basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/comm/halo_exchanger.hpp:57:7: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:4: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:16: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/basic_ios.h:477:2: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/sstream:1042:69: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/basic_ios.h:477:2: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/sstream:1042:69: optimized: basic block part vectorized using 32 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/grid/subgrid.hpp:75:18: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 16 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_alt_solvers.cpp:26:39: optimized: loop vectorized using 32 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/comm/halo_exchanger.hpp:57:7: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:4: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:16: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:4: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/std_function.h:413:21: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/move.h:237:11: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/move.h:236:11: optimized: basic block part vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/grid/subgrid.hpp:75:18: optimized: basic block part vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_alt_solvers.cpp:63:13: optimized: basic block part vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_alt_solvers.cpp:62:10: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/basic_ios.h:477:2: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/basic_ios.h:477:2: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/sstream:1042:69: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/basic_ios.h:477:2: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/basic_ios.h:477:2: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/sstream:1042:69: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:4: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:4: optimized: basic block part vectorized using 16 byte vectors
+[ 96%] Built target hypos
+/usr/include/c++/15/bits/basic_ios.h:477:2: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/sstream:1042:69: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 16 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 16 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 16 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 32 byte vectors
+/usr/include/c++/15/array:102:12: optimized: loop vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_alt_solvers.cpp:26:39: optimized: loop vectorized using 32 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/tests/test_alt_solvers.cpp:26:39: optimized: loop vectorized using 32 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/comm/halo_exchanger.hpp:57:7: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:4: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:16: optimized: basic block part vectorized using 16 byte vectors
+/mnt/c/Users/ftlxy/Documents/【coding】/HyPoS/src/comm/halo_exchanger.hpp:57:7: optimized: basic block part vectorized using 16 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:4: optimized: basic block part vectorized using 32 byte vectors
+/usr/include/c++/15/bits/stl_vector.h:106:16: optimized: basic block part vectorized using 16 byte vectors
+[100%] Linking CXX executable test_hypos
+[100%] Built target test_hypos

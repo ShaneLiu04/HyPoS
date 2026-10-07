@@ -3,6 +3,7 @@
 #include "perf/profiler.hpp"
 #include "utils/logger.hpp"
 #include "core/exception.hpp"
+#include <algorithm>
 #include <cmath>
 
 #ifdef _OPENMP
@@ -15,101 +16,101 @@ JacobiSolver::JacobiSolver(bool overlapComm)
     : overlapComm_(overlapComm) {
 }
 
-void JacobiSolver::updateRegion(Subgrid& subgrid,
+Real JacobiSolver::updateRegion(Subgrid& subgrid,
                                 Index i0, Index i1,
                                 Index j0, Index j1,
                                 Index k0, Index k1) const {
     if (i0 >= i1 || j0 >= j1 || k0 >= k1) {
-        return;
+        return 0.0;
     }
 
-    Real* u = subgrid.u().data();
-    Real* uNext = subgrid.uNext().data();
-    const Real* rhs = subgrid.rhs().data();
+    Real* __restrict__ u = subgrid.u().data();
+    Real* __restrict__ uNext = subgrid.uNext().data();
+    const Real* __restrict__ rhs = subgrid.rhs().data();
     const Index nxT = subgrid.nxTotal();
     const Index nyT = subgrid.nyTotal();
-
-    if (subgrid.nzLocal() == 1) {
-        // 2D: field lives in the k=0 plane
-        const Real invDenom = 1.0 / 4.0;
-        #pragma omp parallel for schedule(static)
-        for (Index j = j0; j < j1; ++j) {
-            #pragma omp simd
-            for (Index i = i0; i < i1; ++i) {
-                const Index idx = j * nxT + i;
-                uNext[idx] = (u[idx - 1] + u[idx + 1] +
-                              u[idx - nxT] + u[idx + nxT] -
-                              rhs[idx]) * invDenom;
-            }
-        }
-    } else {
-        const Real invDenom = 1.0 / 6.0;
-        #pragma omp parallel for schedule(static)
-        for (Index k = k0; k < k1; ++k) {
-            for (Index j = j0; j < j1; ++j) {
-                #pragma omp simd
-                for (Index i = i0; i < i1; ++i) {
-                    const Index idx = (k * nyT + j) * nxT + i;
-                    uNext[idx] = (u[idx - 1] + u[idx + 1] +
-                                  u[idx - nxT] + u[idx + nxT] +
-                                  u[idx - nxT * nyT] + u[idx + nxT * nyT] -
-                                  rhs[idx]) * invDenom;
-                }
-            }
-        }
-    }
-}
-
-Real JacobiSolver::residualPass(Subgrid& subgrid) const {
-    const Index nxT = subgrid.nxTotal();
-    const Index nyT = subgrid.nyTotal();
-    const Real* u = subgrid.u().data();
-    const Real* uNext = subgrid.uNext().data();
 
     Real residual = 0.0;
 
     if (subgrid.nzLocal() == 1) {
+        // 2D: field lives in the k=0 plane
+        const Real invDenom = 1.0 / 4.0;
         #pragma omp parallel for reduction(+:residual) schedule(static)
-        for (Index j = subgrid.jBegin(); j < subgrid.jEnd(); ++j) {
+        for (Index j = j0; j < j1; ++j) {
             #pragma omp simd reduction(+:residual)
-            for (Index i = subgrid.iBegin(); i < subgrid.iEnd(); ++i) {
+            for (Index i = i0; i < i1; ++i) {
                 const Index idx = j * nxT + i;
-                const Real diff = uNext[idx] - u[idx];
+                const Real uNew = (u[idx - 1] + u[idx + 1] +
+                                   u[idx - nxT] + u[idx + nxT] -
+                                   rhs[idx]) * invDenom;
+                uNext[idx] = uNew;
+                const Real diff = uNew - u[idx];
                 residual += diff * diff;
             }
         }
     } else {
+        const Real invDenom = 1.0 / 6.0;
         #pragma omp parallel for reduction(+:residual) schedule(static)
-        for (Index k = subgrid.kBegin(); k < subgrid.kEnd(); ++k) {
-            for (Index j = subgrid.jBegin(); j < subgrid.jEnd(); ++j) {
+        for (Index k = k0; k < k1; ++k) {
+            for (Index j = j0; j < j1; ++j) {
                 #pragma omp simd reduction(+:residual)
-                for (Index i = subgrid.iBegin(); i < subgrid.iEnd(); ++i) {
+                for (Index i = i0; i < i1; ++i) {
                     const Index idx = (k * nyT + j) * nxT + i;
-                    const Real diff = uNext[idx] - u[idx];
+                    const Real uNew = (u[idx - 1] + u[idx + 1] +
+                                       u[idx - nxT] + u[idx + nxT] +
+                                       u[idx - nxT * nyT] + u[idx + nxT * nyT] -
+                                       rhs[idx]) * invDenom;
+                    uNext[idx] = uNew;
+                    const Real diff = uNew - u[idx];
                     residual += diff * diff;
                 }
             }
         }
     }
 
-    return std::sqrt(residual);
+    return residual;
 }
 
 Real JacobiSolver::iterate(Subgrid& subgrid, HaloExchanger& exchanger) {
     const Int hw = subgrid.haloWidth();
 
     // Inner box (independent of halo data) and boundary band split.
-    const Index i0 = subgrid.iBegin() + hw;
-    const Index i1 = subgrid.iEnd() - hw;
-    const Index j0 = subgrid.jBegin() + hw;
-    const Index j1 = subgrid.jEnd() - hw;
+    // Endpoints are clamped so that degenerate subdomains (nLocal <= 2*hw)
+    // still get an exact, non-overlapping partition of the interior.
+    const Index i0 = std::min(subgrid.iBegin() + hw, subgrid.iEnd());
+    const Index i1 = std::max(subgrid.iEnd() - hw, i0);
+    const Index j0 = std::min(subgrid.jBegin() + hw, subgrid.jEnd());
+    const Index j1 = std::max(subgrid.jEnd() - hw, j0);
 
     // Active layer range: [0,1) for the 2D k=0 plane, [kBegin,kEnd) for 3D.
     const bool is2D = (subgrid.nzLocal() == 1);
     const Index kA0 = is2D ? 0 : subgrid.kBegin();
     const Index kA1 = is2D ? 1 : subgrid.kEnd();
-    const Index kI0 = is2D ? 0 : (subgrid.kBegin() + hw);
-    const Index kI1 = is2D ? 1 : (subgrid.kEnd() - hw);
+    const Index kI0 = is2D ? 0 : std::min(subgrid.kBegin() + hw, kA1);
+    const Index kI1 = is2D ? 1 : std::max(subgrid.kEnd() - hw, kI0);
+
+#ifndef NDEBUG
+    {
+        // Region partition self-check: the seven regions must tile the
+        // interior exactly (no overlap, no gap).
+        const Index volInterior = (subgrid.iEnd() - subgrid.iBegin()) *
+                                  (subgrid.jEnd() - subgrid.jBegin()) *
+                                  (kA1 - kA0);
+        const Index volInner = (i1 - i0) * (j1 - j0) * (kI1 - kI0);
+        const Index volLeft = (i0 - subgrid.iBegin()) * (subgrid.jEnd() - subgrid.jBegin()) * (kA1 - kA0);
+        const Index volRight = (subgrid.iEnd() - i1) * (subgrid.jEnd() - subgrid.jBegin()) * (kA1 - kA0);
+        const Index volBottom = (i1 - i0) * (j0 - subgrid.jBegin()) * (kA1 - kA0);
+        const Index volTop = (i1 - i0) * (subgrid.jEnd() - j1) * (kA1 - kA0);
+        const Index volBack = (i1 - i0) * (j1 - j0) * (kI0 - kA0);
+        const Index volFront = (i1 - i0) * (j1 - j0) * (kA1 - kI1);
+        HYPOS_ASSERT(volInner + volLeft + volRight + volBottom + volTop +
+                         volBack + volFront == volInterior);
+    }
+#endif
+
+    // Residual accumulation order is fixed (inner -> L -> R -> D -> U -> B -> F)
+    // and identical for both overlap modes, so residuals are bit-identical.
+    Real residual = 0.0;
 
     if (overlapComm_) {
         {
@@ -118,7 +119,7 @@ Real JacobiSolver::iterate(Subgrid& subgrid, HaloExchanger& exchanger) {
         }
         {
             HYPOS_PROFILE("stencil_interior");
-            updateRegion(subgrid, i0, i1, j0, j1, kI0, kI1);
+            residual += updateRegion(subgrid, i0, i1, j0, j1, kI0, kI1);
         }
         {
             HYPOS_PROFILE("halo_wait");
@@ -132,30 +133,24 @@ Real JacobiSolver::iterate(Subgrid& subgrid, HaloExchanger& exchanger) {
         }
         {
             HYPOS_PROFILE("stencil_interior");
-            updateRegion(subgrid, i0, i1, j0, j1, kI0, kI1);
+            residual += updateRegion(subgrid, i0, i1, j0, j1, kI0, kI1);
         }
     }
 
-    // Boundary band: interior minus inner box, as six disjoint slabs.
     {
         HYPOS_PROFILE("stencil_boundary");
-        updateRegion(subgrid, subgrid.iBegin(), i0, subgrid.jBegin(), subgrid.jEnd(), kA0, kA1);
-        updateRegion(subgrid, i1, subgrid.iEnd(), subgrid.jBegin(), subgrid.jEnd(), kA0, kA1);
-        updateRegion(subgrid, i0, i1, subgrid.jBegin(), j0, kA0, kA1);
-        updateRegion(subgrid, i0, i1, j1, subgrid.jEnd(), kA0, kA1);
-        updateRegion(subgrid, i0, i1, j0, j1, kA0, kI0);
-        updateRegion(subgrid, i0, i1, j0, j1, kI1, kA1);
-    }
-
-    Real residual = 0.0;
-    {
-        HYPOS_PROFILE("residual_allreduce");
-        residual = residualPass(subgrid);
+        residual += updateRegion(subgrid, subgrid.iBegin(), i0, subgrid.jBegin(), subgrid.jEnd(), kA0, kA1);
+        residual += updateRegion(subgrid, i1, subgrid.iEnd(), subgrid.jBegin(), subgrid.jEnd(), kA0, kA1);
+        residual += updateRegion(subgrid, i0, i1, subgrid.jBegin(), j0, kA0, kA1);
+        residual += updateRegion(subgrid, i0, i1, j1, subgrid.jEnd(), kA0, kA1);
+        residual += updateRegion(subgrid, i0, i1, j0, j1, kA0, kI0);
+        residual += updateRegion(subgrid, i0, i1, j0, j1, kI1, kA1);
     }
 
     subgrid.swapU();
+    subgrid.applyPhysicalBoundary();
 
-    return residual;
+    return std::sqrt(residual);
 }
 
 Index JacobiSolver::solve(Subgrid& subgrid,
@@ -179,6 +174,7 @@ Index JacobiSolver::solve(Subgrid& subgrid,
             globalResidual = std::sqrt(globalResidual);
         }
         lastResidual_ = globalResidual;
+        notifyProgress(completed);
 
         if (globalResidual < tolerance) {
             HYPOS_INFO("Converged at iteration " << completed << ", residual = " << globalResidual);

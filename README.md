@@ -11,11 +11,12 @@
 | 技术模块 | 对应 AI Infra 技能 | 实现细节 |
 |---|---|---|
 | **MPI 域分解** | 数据并行 (Data Parallelism) | 2D/3D Cartesian 拓扑，自动负载均衡 |
-| **Halo Exchange** | 集合通信 (Collective Communication) | 非阻塞 MPI_Isend/Irecv（6 方向）；`collective` 模式为 P2P 回退（见路线图） |
+| **Halo Exchange** | 集合通信 (Collective Communication) | 持久化非阻塞 MPI（6 方向、12 请求、memcpy 打包）；`collective` 模式为 P2P 回退（见路线图） |
 | **通信-计算重叠** | 异步流水线 | 内点计算与边界通信重叠 |
 | **OpenMP 加速** | 多线程 Kernel | SIMD 向量化、First-touch 策略 |
-| **内存池管理** | 高效内存管理 | 64 字节对齐、Bump Allocator、RAII |
+| **内存管理** | 高效内存管理 | 64 字节对齐 RAII（AlignedBuffer）、关键路径零动态分配 |
 | **性能可观测性** | Profiling & Tracing | 分层计时、JSON/CSV 报告、自动化扩展性测试 |
+| **求解器可扩展** | 算法与框架解耦 | Jacobi / Red-Black GS / CG（`--solver` 切换，策略模式接口） |
 
 ---
 
@@ -60,16 +61,17 @@ mpirun -np 16 ./build/hypos --nx 2048 --ny 2048 --max-iter 10000 --enable-profil
 |---|---|---|
 | `--nx, --ny, --nz` | 1024, 1024, 1 | 全局网格尺寸 |
 | `--halo-width` | 1 | 幽灵层宽度 |
-| `--solver` | jacobi | 求解器类型（jacobi） |
+| `--solver` | jacobi | 求解器类型（jacobi / red_black_gs / cg） |
 | `--max-iter` | 10000 | 最大迭代次数 |
 | `--tol` | 1e-6 | 收敛容差 |
+| `--bc` | dirichlet | 物理边界条件（dirichlet / neumann） |
 | `--omp-threads` | 系统核心数 | OpenMP 线程数 |
 | `--comm-mode` | p2p | 通信模式（p2p / collective；collective 当前为 P2P 回退） |
 | `--enable-profiling` | false | 启用详细性能分析 |
 | `--overlap-comm` | false | 启用通信-计算重叠 |
-| `--output-format` | json | 输出格式（json / csv / vtk / binary） |
-| `--output-dir` | ./output | 输出目录 |
-| `--save-interval` | 0 | 每 N 步保存中间结果（0=不保存） |
+| `--output-format` | json | 输出格式（json / csv / vtk / binary；vtk=每 rank `.vti` 分片+rank0 `.pvti` 索引，binary=每 rank `.bin` 含真实 offsets） |
+| `--output-dir` | ./output | 输出目录（启动时自动创建） |
+| `--save-interval` | 0 | 每 N 次迭代输出中间解（文件名含步号；0=不保存） |
 
 ---
 
@@ -83,7 +85,6 @@ HyPoS/
 │   ├── core/
 │   │   ├── types.hpp           # 基础类型（Real, Index）
 │   │   ├── aligned_buffer.hpp  # 64 字节对齐内存分配器
-│   │   ├── memory_pool.hpp     # 内存池（Bump Allocator）
 │   │   └── exception.hpp       # 异常体系
 │   ├── grid/
 │   │   ├── grid.hpp            # 全局网格定义
@@ -92,8 +93,10 @@ HyPoS/
 │   │   ├── subgrid.cpp         # 子域实现
 │   │   └── partition.cpp       # 均匀划分实现
 │   ├── solver/
-│   │   ├── solver.hpp          # 求解器策略接口
-│   │   └── jacobi_solver.cpp   # Jacobi 求解器（OpenMP 加速）
+│   │   ├── solver.hpp          # 求解器策略接口（含进度回调/lastResidual）
+│   │   ├── jacobi_solver.cpp   # Jacobi（融合残差、重叠、SIMD）
+│   │   ├── red_black_gs_solver.cpp # Red-Black GS
+│   │   └── cg_solver.cpp       # 共轭梯度（CG）
 │   ├── comm/
 │   │   ├── halo_exchanger.hpp  # 通信抽象接口
 │   │   ├── p2p_exchanger.cpp   # 点对点非阻塞通信
@@ -258,7 +261,7 @@ chmod +x scripts/benchmark.sh
 - RMA（单边通信）Exchanger
 - 真集合通信（`MPI_Neighbor_allgatherv`）——`--comm-mode collective` 当前委托 P2P 实现
 - HDF5 输出、PAPI 硬件计数器
-- Red-Black GS / CG / SOR 求解器、Hilbert 曲线分区
+- SOR 求解器、CG 预条件子、Hilbert 曲线分区
 
 ---
 

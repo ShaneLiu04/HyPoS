@@ -237,6 +237,7 @@ stop
 - main 用 `MPIEnv env(argc, argv, MPI_THREAD_FUNNELED)`；rank/size 取 `env.rank()/env.size()`；`--help` 路径由 parser 内 `std::exit` 处理（与 AR001 相同，不受 MPIEnv 影响——exit 前不触析构，MPI 未 Finalize 属可接受退出路径，文档注明）。
 - **关闭顺序**：`solver.reset(); exchanger.reset(); io.reset(); MPI_Comm_free(&cartComm);` 然后 MPIEnv 析构（Finalize）。
 - CollectiveExchanger 告警：`initialize` 内取 `MPI_Comm_rank(subgrid.comm())`，仅 rank0 打印。
+- main 以顶层 try/catch 包裹运行体（`HyPoSException`/`std::exception` → `HYPOS_ERROR` + 退出码 1），覆盖参数转换异常（如 `--save-interval abc` 的 `std::invalid_argument`）与 IO 异常；MPIEnv 析构仍保证 Finalize。
 - Logger：注释改为"单线程使用；非线程安全（当前无并发日志场景）"。
 - MemoryPool：删除 `src/core/memory_pool.{hpp,cpp}`、CMake 条目；README 亮点表内存行改为"64B 对齐 RAII 内存（AlignedBuffer）"；DESIGN §2.1 同步。
 
@@ -246,6 +247,7 @@ stop
 - 对 6 面中邻居为 `MPI_PROC_NULL` 的面：Dirichlet → 整带宽（含角，横向覆盖 `[0,total)`）置值；Neumann → 镜像相邻内点，横向坐标越界时**夹取**到最近内点（`j=clamp(j, jBegin, jEnd-1)` 等）。2D（nzLocal==1）跳过 k 面（与既有 `applyDirichletBC` 一致）。
 - 调用点：`iterate()` 末尾（残差计算前，swap 之后视求解器而定——Jacobi 在 swap 后作用于新解；RBGS/CG 原地更新后直接刷新）。
 - 默认 Dirichlet 时行为与 AR001 逐位一致（幂等重放 0 值）。
+- 既有 `applyNeumannBC`（全仓无引用）随本 AR **移除**（被 `applyPhysicalBoundary` 取代）；`applyDirichletBC` 保留（setup 初始填充与默认路径），避免"用新接口留旧死代码"与 R3 目标冲突。
 
 #### （4）报告（R5）
 
@@ -261,7 +263,7 @@ stop
 #### （5）性能实现（R6）
 
 - **残差融合与归一化**：见 §4.1.4；Debug 自检：`solve()` 首次迭代前校验区域体积和==内点体积（失败抛 `HyPoSException`，Debug-only）。
-- **持久化通信**：`activeDirs_`/`activeReqs_`（[send,recv]×活动方向）；`initialize` 建 `MPI_Send_init/Recv_init`；`beginExchange` 打包后 `MPI_Startall`；`endExchange` `MPI_Waitall` 后解包；析构 `MPI_Finalized` 防御 + `MPI_Request_free`。全部方向 PROC_NULL 时零请求（Startall 0 长度合法）。
+- **持久化通信**：`activeDirs_`/`activeReqs_`（[send,recv]×活动方向）；`initialize` 建 `MPI_Send_init/Recv_init`；`beginExchange` 打包后 `MPI_Startall`；`endExchange` `MPI_Waitall` 后解包；析构 `MPI_Finalized` 防御 + `MPI_Request_free`。全部方向 PROC_NULL 时零请求（Startall 0 长度合法）。未 `initialize` 即调用交换入口（内部 `comm_ == MPI_COMM_NULL`）或 `data == nullptr`：`HYPOS_ERROR` 日志 + 安全空操作（防御设计，不抛出）。
 - **memcpy 打包布局**：L/R 缓冲 `[k][j][h]`（h 最内，源列连续 → 每 (k,j) 一次 memcpy）；D/U `[h][k][i]`（i 连续，每 (h,k) 一行）；B/F `[h][j][i]`（每 (h,j) 一行）；unpack 镜像。面尺寸公式不变（仅元素顺序变，pack/unpack 成对修改）。
 - **SIMD**：`updateRegion` 指针 `__restrict` + `#pragma omp simd`；证据：`cmake -B build-vec -DCMAKE_CXX_FLAGS="-fopt-info-vec"` 构建日志中 stencil 内层循环"loop vectorized"记录入 AR 日志。
 
@@ -311,7 +313,7 @@ stop
 |----|------|
 | 签名 | `virtual void exchange(Subgrid&, Real* data) = 0;` `virtual void beginExchange(Subgrid&, Real* data) = 0;` `virtual void endExchange(Subgrid&, Real* data) = 0;`；旧签名改为非虚包装转调 `u().data()` |
 | 参数 | data 指向与子域同布局的 padded 缓冲 |
-| 边界 | `data==nullptr`：Debug 断言失败；Release 由调用方保证（AGENT_SPEC） |
+| 边界 | `data==nullptr` 或未 `initialize`：`HYPOS_ERROR` 日志 + 安全空操作（防御设计，不抛出） |
 
 **I-5 `IOBackend` 并行索引**
 | 项 | 内容 |
@@ -326,7 +328,7 @@ stop
 
 **I-7 CLI**：新增 `--bc <dirichlet|neumann>`（默认 dirichlet）；`--solver` 接受 `jacobi|red_black_gs|cg`；`--save-interval` 生效（语义见 §3.2 需求）。帮助文本同步。
 
-**I-8 `PointToPointExchanger` 生命周期**：新增 `~PointToPointExchanger() override`（释放持久化请求，`MPI_Finalized` 防御）；main 在 Finalize 前 `exchanger.reset()`。API 语义与 AR001 一致（initialize→use→destroy）。
+**I-8 `PointToPointExchanger` 生命周期**：新增 `~PointToPointExchanger() override`（释放持久化请求，`MPI_Finalized` 防御）；main 在 Finalize 前 `exchanger.reset()`；未 `initialize` 调用交换入口 → `HYPOS_ERROR` 日志 + 空操作（与 I-4 同一防御）。API 语义与 AR001 一致（initialize→use→destroy）。
 
 ### 4.3.3 接口/参数边界与错误行为（供 §6.2 用例）
 
@@ -334,12 +336,14 @@ stop
 |------|--------------|---------|
 | `setProgressCallback` | 未设置/设置/重复设置 | 无回调；k=1..N 各一次；覆盖生效 |
 | `applyPhysicalBoundary` | Dirichlet/Neumann × 全 PROC_NULL/部分/无 | 置值/镜像（夹取）/空操作；2D 跳过 k 面 |
-| `exchange(data)` | 合法缓冲/`nullptr`(Debug) | 与 u 版结果一致；断言失败 |
-| `writeParallelIndex` | pieces 空/不匹配/合法 | 告警跳过/告警跳过/写出 `.pvti` |
+| `exchange(data)` | 合法缓冲/`nullptr`/未 initialize | 与 u 版结果一致；`HYPOS_ERROR`+空操作；`HYPOS_ERROR`+空操作 |
+| `writeParallelIndex` | pieces 空/不匹配/合法/非 rank0 调用 | 告警跳过/告警跳过/写出 `.pvti`；非 rank0 调用不写（主流程约束 + 代码走查） |
 | `--bc` | dirichlet/neumann/非法 | 默认同 AR001/镜像/退出码 1 |
 | `--solver` | jacobi/red_black_gs/cg/非法 | 原行为/RBGS/CG/退出码 1 |
 | `--save-interval` | 0/N>0/无 IO | 零文件/按步输出/仅最终解 |
 | `iterate()`（CG） | 未初始化状态 | 告警并返回 0，不崩溃 |
+| `--overlap-comm` × 非 Jacobi | rbgs/cg | 告警恰 1 条；行为不变 |
+| main 参数转换异常 | `--save-interval abc` | 错误日志 + 退出码 1（顶层 try/catch） |
 
 ## 4.4 代码设计
 
@@ -375,7 +379,7 @@ package "HyPoS" {
   [main.cpp (MPIEnv/BC/回调/输出编排)] as main
 }
 package "tests" {
-  [test_solvers.cpp (新增 RBGS/CG/BC/offsets/回调)] as ts
+    [test_alt_solvers.cpp (新增 RBGS/CG/BC/offsets/回调)] as ts
   [test_halo_exchange.cpp (data 重载)] as th
   [test_solver_mpi.cpp (alt solver np=4 / 退化断言)] as tm
   [test_performance.cpp (报告/区域)] as tp
@@ -415,7 +419,7 @@ ts --> sg
 | `src/io/binary_io.cpp` | 修改 | 真实 offsets |
 | `src/perf/reporter.hpp/.cpp` | 修改 | 字段收口（删 bandwidth/scaling、compute_time 保留回填） |
 | `src/main.cpp` | 修改 | MPIEnv、BC/回调/输出编排/gather pieces/关闭顺序/告警 |
-| `tests/test_solvers.cpp` | 新增 | §6.1 用例 |
+| `tests/test_alt_solvers.cpp` | 新增 | §6.1 用例（命名避免与既有 `test_solver.cpp` 混淆） |
 | `tests/test_halo_exchange.cpp` | 修改 | data 重载一致性用例 |
 | `tests/test_solver_mpi.cpp` | 修改 | np=4 RBGS/CG；退化用例断言增强 |
 | `tests/test_performance.cpp` | 修改 | 报告字段/融合断言（如需） |
@@ -439,7 +443,7 @@ ts --> sg
 
 **总策略：** UT（单 rank 语义与算法）→ np=3/4/8 MPI 集成 → e2e（输出/保存/报告/性能）→ 回归。**覆盖率目标：** 修改模块行覆盖 ≥80%（gcov 手工统计）；流程分支（图1-3）每分支 ≥1 用例（§6.7）。
 
-## 6.1 单元测试（`tests/test_solvers.cpp` 新增 + 既有补充）
+## 6.1 单元测试（`tests/test_alt_solvers.cpp` 新增 + 既有补充）
 
 | 用例 ID | 覆盖 | 步骤 | 预期 |
 |---------|------|------|------|
@@ -448,35 +452,39 @@ ts --> sg
 | U-BC-N | I-2 | 同上，Neumann（夹取路径：横向越界点） | halo=对应相邻内点镜像值（含角夹取）；内点不变 |
 | U-BC-Partial | I-2 | 仅左右 PROC_NULL，上下有邻居 | 仅物理面被刷新；有邻居面无变化 |
 | U-CB | I-3 | 设置计数回调；solve 10 迭代 | 回调 10 次且序列 1..10；未设置时无副作用 |
-| U-Fusion | R6a | 自环 np=1 solve 400 迭代：融合实现对比封存参考值（首次运行的收敛历史哈希/残差序列快照） | 残差序列与参考一致（≤0） |
+| U-Fusion | R6a | 自环 np=1，`JacobiSolver(false)` 与 `(true)` 各以 tol=0 跑 400 迭代（同进程、同 OMP 配置） | `lastResidual()` 位级相等（EXPECT_EQ）；交换后全场 `memcmp` 相等 |
 | U-Degen | R6a | TinyDecompositionSmoke（Debug）：区域体积自检 | 断言通过；无 ASan 报告 |
-| U-RBGS | R7a | 制造解 64² 单 rank：tol=1e-7 | 收敛；iters≤50%·Jacobi（同条件实测） ; L2 vs u*<1e-3；vs Jacobi(tol=1e-12) 逐点 ≤1e-8 |
+| U-PackStride | R6c | 3D 非对称子域（nxLocal≠nyLocal≠nzLocal，hw=2）自环六方向交换 | 六方向语义逐点断言通过（覆盖 [k][j][h]/[h][k][i]/[h][j][i] 各长度） |
+| U-RBGS | R7a | 制造解 64² 单 rank：tol=1e-8 | 收敛；iters≤60%·Jacobi（同条件实测；理论比≈1/(1+ρ)≈0.5） ; L2 vs u*<1e-3；vs Jacobi(tol=1e-12) 逐点 ≤1e-8 |
 | U-CG | R7b | 同上 | 收敛；iters≤10%·Jacobi；L2 vs u*<1e-3；vs Jacobi ≤1e-8 |
-| U-CG-State | I-8/边界 | 直接调用未初始化 CG.iterate() | 返回 0 + 告警不崩溃 |
+| U-CG-State | 接口边界 | 直接调用未初始化 CG.iterate() | 返回 0 + 告警不崩溃 |
 
 ## 6.2 接口测试
 
 | 用例 ID | 接口 | 输入 | 预期 |
 |---------|------|------|------|
-| IF-BC-1/2/3 | `--bc` | dirichlet/neumann/foo | 各正常/镜像/退出码 1 |
-| IF-Solver-1..3 | `--solver` | red_black_gs/cg/foo | 正常收敛/正常/退出码 1 |
-| IF-ExchData | I-4 | np=1 自环：`exchange(sg, buf==u)` 与 `exchange(sg)` | 结果逐位一致 |
+| IF-BC-1/2/3 | `--bc` | dirichlet/neumann/foo（np=1/4，32²，max-iter 50） | 各正常/正常完成且镜像语义由 U-BC-N 断言/退出码 1（e2e 见 I16） |
+| IF-Solver-1..3 | `--solver` | red_black_gs/cg/foo；cg+`--overlap-comm` | 正常收敛/正常/退出码 1；组合下告警恰 1 条且行为不变 |
+| IF-ExchData | I-4 | np=1 自环：独立副本 buf（复制自 u）执行 `exchange(sg, buf.data())`；另对比 `exchange(sg)` 的 u 结果 | halo 语义正确且两路径结果一致 |
+| IF-ExchData-null | I-4 | `exchange(sg, nullptr)` | 无崩溃；u 不变 |
+| IF-ExchNoInit | I-8 | 未 initialize 实例调用 exchange | 无崩溃；无副作用 |
 | IF-Index | I-5 | pieces 空/不匹配/合法（单测直接调 VTK 后端） | 告警跳过×2/`.pvti` 生成且含 N 个 Piece |
 | IF-CB-Dup | I-3 | 连续设置两个回调 | 仅后者被调用 |
-| IF-SI-Parse | I-7 | `--save-interval 0/50/abc` | 0 无文件/按步/非法参数异常退出码 1（parser stoi 抛 → main 捕获路径见 E 用例） |
+| IF-SI-Parse | I-7 | `--save-interval 0/50/abc` | 0 无文件（见 I9）/按步输出/`abc` → 错误日志 + 退出码 1（顶层 try/catch，E-Parse） |
 
 ## 6.3 业务场景测试
 
 | 用例 ID | 场景 | 步骤 | 预期 |
 |---------|------|------|------|
-| I8 | PVTI 全局输出（np=4 与 np=1） | `hypos --nx 32 --ny 32 --max-iter 10 --output-format vtk --output-dir D` | np=4：4×`.vti`+1×`.pvti`；Q 个 Piece；各 Extent 拼合=全局且 Origin 正确；np=1 单 Piece Origin 0 |
-| I9 | save-interval | `--save-interval 50 --max-iter 120 --output-format vtk`；默认对照组 | 存在 `solution_50_r*`/`solution_100_r*`；默认组仅最终解 |
+| I8 | PVTI 全局输出（np=4 与 np=1） | `hypos --nx 32 --ny 32 --max-iter 10 --output-format vtk --output-dir D` | np=4：4×`.vti`+1×`.pvti`；4 个 Piece；各 Extent 拼合=全局且 Origin 正确；np=1 单 Piece Origin 0 |
+| I9 | save-interval | 三组：`50/120`、`50/30`、默认；`--output-format vtk` | 组1存在 `solution_50_r*`/`solution_100_r*`；组2无中间文件（未到 50 步）；默认组仅最终解 |
 | I10 | 性能对比 | 256² 10000 迭代 np=1/4 OMP=1 ×3 次 | iter_time 中位数改善 ≥10%（对比 AR001 0.0451/0.0204ms）；证据入 `logs/` |
 | I11 | alt 求解器 e2e | np=4 `--solver red_black_gs/cg --nx 64 --ny 64 --max-iter 2000` | 退出 0；报告 iterations 显著小于 Jacobi 同配置 |
 | I12 | 3 进程任意分解 | np=3 `--nx 24 --ny 24 --max-iter 20` | 退出 0；输出分片 3 份 |
 | I13 | collective 告警 | np=4 `--comm-mode collective` | 告警恰 1 条 |
 | I14 | 报告字段 | np=4 `--enable-profiling`；np=1 计算 flops 对账 | comm_overhead_ratio>0 且与 comm/iter 一致（±5%）；compute_time_ms>0 且与 Profiler 一致（±5%）；JSON 无 scaling/bandwidth；flops 与公式一致（±5%） |
 | I15 | Binary 输出 | np=4 `--output-format binary` | 4×`.bin`；头 offsets 实测真实值；np=1 全局 |
+| I16 | Neumann 冒烟 | np=1 与 np=4 `--bc neumann --nx 32 --ny 32 --max-iter 50` | 退出 0；解有限（镜像语义由 U-BC-N 断言） |
 
 ## 6.4 异常场景测试
 
@@ -487,15 +495,18 @@ ts --> sg
 | E-Degen | 退化分解 | np=4 全局 2×2（1×1 子域） | 不崩溃；Debug 自检通过；解有限（复用 AR001 E5） |
 | E-CGState | CG 未初始化 iterate | 单测直接调用 | 返回 0 + 告警；不崩溃 |
 | E-PVTI | pieces 与网格不匹配 | 单测构造错误 pieces | 告警跳过；无部分写入崩溃 |
+| E-Exch-NoInit | 未 initialize 调交换 | 单测直接调用 | 无崩溃；错误日志路径（防御） |
+| E-Parse | 参数转换异常 | `--save-interval abc` | 错误日志 + 退出码 1（顶层 try/catch） |
 
 ## 6.5 MPI 集成测试（既有文件扩充）
 
 | 用例 | 排名 | 场景 | 断言 |
 |------|------|------|------|
-| M-A1 | np=4 | RBGS 制造解 64²（tol=1e-7） | 收敛；iters≤50%·Jacobi；L2<1e-3 |
+| M-A1 | np=4 | RBGS 制造解 64²（tol=1e-8） | 收敛；iters≤60%·Jacobi；L2<1e-3 |
 | M-A2 | np=4 | CG 制造解 64²（tol=1e-7） | 收敛；iters≤10%·Jacobi；L2<1e-3 |
 | M-A3 | np=4 | RBGS/CG vs Jacobi(tol=1e-12) 逐点 | ≤1e-8（每 rank 局部比较 + 全局坐标映射） |
-| M-Degen2 | np=4 | TinyDecompositionSmoke 增强（4×4 全局也断言与串行参考一致 ≤1e-12） | 通过 |
+| M-Degen2 | np=4 | TinyDecompositionSmoke 增强：全局 4×4（2×2/rank）与 2×2（1×1/rank）均与串行参考逐点 ≤1e-12 | 通过 |
+| M-A4 | np=4 | 3D RBGS/CG 冒烟：64×64×8，两 solver 各 max-iter=100 | 正常完成；解有限 |
 
 ## 6.6 追溯矩阵（srs 验收 → 用例）
 
@@ -504,11 +515,11 @@ ts --> sg
 | 3.1 PVTI/二元分片+offsets | I8、I15、U-Offsets |
 | 3.2 save-interval | I9、U-CB |
 | 3.3 RAII/告警/死代码 | I13、代码走查（main 无裸 MPI_Init；grep MemoryPool 零引用）、I8（主流程无回归） |
-| 3.4 Neumann | U-BC-D/U-BC-N/U-BC-Partial、IF-BC-*、I11（neumann 冒烟并入 CI 冒烟） |
+| 3.4 Neumann | U-BC-D/U-BC-N/U-BC-Partial、IF-BC-*、I16（neumann 冒烟） |
 | 3.5 报告收口 | I14 |
-| 3.6 性能与一致性 | I10、U-Fusion、U-Degen、E1（ASan 全量）、向量化日志 |
-| 3.7 RBGS/CG | U-RBGS、U-CG、M-A1..A3、I11 |
-| 3.8 工程化 | I12、ctest 全绿（含 collective_mpi/solver_alt_mpi）、文档走查、基准前后对比 |
+| 3.6 性能与一致性 | I10、U-Fusion（on/off 位级）、O1/O2（既有一致性）、U-Degen、E1（ASan 全量）、向量化日志 |
+| 3.7 RBGS/CG | U-RBGS、U-CG、M-A1..A4（含 3D 冒烟）、I11 |
+| 3.8 工程化 | I12、ctest 全绿（含 collective_mpi/solver_alt_mpi）、文档与 .gitignore 走查、基准前后对比 |
 
 ## 6.7 分支覆盖矩阵（流程图 → 用例）
 
@@ -518,7 +529,10 @@ ts --> sg
 | RBGS/CG 分支（图1） | U-RBGS/U-CG/M-A* |
 | IO 配置/未配置（图2） | I8/I9（配置）与 I9 默认组（未配置） |
 | rank0 索引分支（图2） | I8（np=1 与 np=4 对比） |
-| 持久化初始化/无活动方向/析构防御（图3） | IF-ExchData、U5（全 PROC_NULL 既有）、main 关闭顺序回归（I8） |
+| 持久化初始化/无活动方向/未初始化防御（图3） | IF-ExchData、IF-ExchNoInit、U5（全 PROC_NULL 既有）；正常关闭路径 I8；**析构时 MPI 已 Finalize 的防御分支为代码走查项**（进程内无法在 Finalize 后继续运行测试） |
+| 非 Jacobi 求解器 + `--overlap-comm` 告警（图1） | IF-Solver-1/2 |
+| main 顶层异常捕获（参数/IO，图2） | E-Parse、E-OutDir |
+| Neumann 允许未收敛分支（图1） | U-BC-N（语义）+ I16（冒烟） |
 | 求解器/BC/非法值（CLI） | IF-* / E-BC |
 
 ## 6.8 测试执行环境

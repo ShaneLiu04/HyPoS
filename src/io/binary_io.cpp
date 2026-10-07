@@ -26,7 +26,9 @@ void BinaryIOBackend::write(const Subgrid& subgrid, const std::string& filename,
     Index ny = subgrid.nyLocal();
     Index nz = subgrid.nzLocal();
     Index hw = subgrid.haloWidth();
-    Index offsetX = 0, offsetY = 0, offsetZ = 0;
+    Index offsetX = subgrid.offsetX();
+    Index offsetY = subgrid.offsetY();
+    Index offsetZ = subgrid.offsetZ();
 
     ofs.write(reinterpret_cast<const char*>(&nx), sizeof(Index));
     ofs.write(reinterpret_cast<const char*>(&ny), sizeof(Index));

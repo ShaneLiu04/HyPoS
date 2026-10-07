@@ -24,7 +24,7 @@ AR001 修复了 6 类实质缺陷并归档。其后审查发现一批遗留问�
 ## 2. 需求范围
 
 **In Scope：**
-- R1 全局解输出（PVTU 分片 + 索引；Binary 真实 offsets）
+- R1 全局解输出（VTI/PVTI 分片 + 索引；Binary 真实 offsets）
 - R2 `--save-interval` 中间解保存
 - R3 RAII/清理收口（MPIEnv 接入、collective 告警限流、MemoryPool 处置、Logger 注释）
 - R4 Neumann 边界接线（`--bc`）
@@ -34,7 +34,7 @@ AR001 修复了 6 类实质缺陷并归档。其后审查发现一批遗留问�
 - R8 工程化收口（.gitignore、ctest 扩充、脚本优化、文档同步、基准刷新）
 
 **Out of Scope：**
-- 周期边界（periodic）、残差按格点归一化的语义变更、HDF5/RMA、CG 预条件子、Docker/DevContainer、MPI-IO 单文件聚合（PVTU 分片已满足并行输出）、MSVC/Windows 支持、`--tol` 默认值调整
+- 周期边界（periodic）、残差按格点归一化的语义变更、HDF5/RMA、CG 预条件子、Docker/DevContainer、MPI-IO 单文件聚合（VTI/PVTI 分片已满足并行输出）、MSVC/Windows 支持、`--tol` 默认值调整
 
 ## 3. 功能需求
 
@@ -149,7 +149,7 @@ AR001 修复了 6 类实质缺陷并归档。其后审查发现一批遗留问�
 **异常处理：** 未知 solver 别名仍退出码 1。
 
 **验收标准：**
-- Given 制造解 64²（沿用 M3a 问题与解析误差基准），When RBGS/CG 求解 tol=1e-7，Then 收敛、全局 L2 误差 <1e-3，且迭代数显著低于 Jacobi（RBGS ≤50%、CG ≤10%；Jacobi 基线 ~11000）
+- Given 制造解 64²（沿用 M3a 问题与解析误差基准），When RBGS/CG 求解 tol=1e-8，Then 收敛、全局 L2 误差 <1e-3，且迭代数显著低于 Jacobi（RBGS ≤60%、CG ≤10%；RBGS 理论迭代比 ≈1/(1+ρ_J)≈0.5，取 60% 工程阈值；Jacobi 基线 ~11000）
 - Given 与 Jacobi 收敛解（同问题、tol=1e-12，Jacobi 充分迭代）比较，Then 逐点差 ≤1e-8
 - Given 3D 冒烟（64×64×8 np=4），Then 正常完成、解有限
 
@@ -191,13 +191,13 @@ AR001 修复了 6 类实质缺陷并归档。其后审查发现一批遗留问�
 **假设：**
 - AR001 基准数据（`benchmarks/reference_results/`）为对比基线有效
 - CG/RBGS 收敛行为在制造解与 -1 右端项两类问题上稳定
-- PVTU/VTU 文本格式足以被 ParaView 解析（无外部验证工具，按规范格式自检 + 结构断言）
+- VTI/PVTI 文本格式足以被 ParaView 解析（无外部验证工具，按规范格式自检 + 结构断言）
 
 ## 6. 术语说明
 
 | 术语 | 定义 |
 |------|------|
-| PVTU/VTU | ParaView 并行数据集：`.pvtu` 为索引，`.vtu` 为单分片 |
+| VTI/PVTI | VTK XML ImageData 及其并行索引：`.pvti` 为索引，`.vti` 为单分片 |
 | 残差融合 | 把残差累积合并进 stencil 更新循环，消除独立扫描 |
 | 持久化通信 | MPI_Send_init/Recv_init 预注册请求，迭代内 Startall/Waitall |
 | RBGS | Red-Black Gauss-Seidel，双色半扫并行迭代法 |

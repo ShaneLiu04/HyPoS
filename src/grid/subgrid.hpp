@@ -8,6 +8,11 @@
 namespace hypo {
 
 /**
+ * @brief Physical boundary condition applied to halo faces without a neighbor.
+ */
+enum class BoundaryCondition { Dirichlet, Neumann };
+
+/**
  * @brief Local subdomain descriptor with halo layers.
  * Manages the local portion of the global grid, including ghost/halo cells.
  */
@@ -65,6 +70,16 @@ public:
 
     MPI_Comm comm() const noexcept { return comm_; }
 
+    // Global offset of this subdomain's first interior cell (0-based)
+    void setOffsets(Index offsetX, Index offsetY, Index offsetZ) noexcept {
+        offsetX_ = offsetX;
+        offsetY_ = offsetY;
+        offsetZ_ = offsetZ;
+    }
+    Index offsetX() const noexcept { return offsetX_; }
+    Index offsetY() const noexcept { return offsetY_; }
+    Index offsetZ() const noexcept { return offsetZ_; }
+
     /**
      * @brief Access a cell value (from u array).
      */
@@ -83,9 +98,25 @@ public:
     void applyDirichletBC(Real fixedValue) noexcept;
 
     /**
-     * @brief Apply Neumann (zero-flux) BC to halo cells.
+     * @brief Set the physical boundary condition used by applyPhysicalBoundary.
      */
-    void applyNeumannBC() noexcept;
+    void setBoundaryCondition(BoundaryCondition bc) noexcept { boundaryCondition_ = bc; }
+    BoundaryCondition boundaryCondition() const noexcept { return boundaryCondition_; }
+
+    /**
+     * @brief Refresh halo faces that have no neighbor (MPI_PROC_NULL).
+     * Dirichlet: fill the full halo band with dirichletValue.
+     * Neumann (zero-flux): mirror the adjacent interior cell; transverse
+     * coordinates are clamped into the interior (corners included).
+     * 2D grids (nzLocal == 1) skip the k faces, matching applyDirichletBC.
+     */
+    void applyPhysicalBoundary(Real dirichletValue = 0.0) noexcept;
+
+    /**
+     * @brief Same as applyPhysicalBoundary(), operating on an arbitrary
+     * padded buffer (used for auxiliary solver vectors, e.g. CG).
+     */
+    void applyPhysicalBoundary(Real* data, Real dirichletValue = 0.0) noexcept;
 
 private:
     Index nxLocal_ = 0;
@@ -103,6 +134,12 @@ private:
     int neighborUp_     = MPI_PROC_NULL;
     int neighborBack_   = MPI_PROC_NULL;
     int neighborFront_  = MPI_PROC_NULL;
+
+    Index offsetX_ = 0;
+    Index offsetY_ = 0;
+    Index offsetZ_ = 0;
+
+    BoundaryCondition boundaryCondition_ = BoundaryCondition::Dirichlet;
 
     MPI_Comm comm_ = MPI_COMM_NULL;
 };

@@ -19,7 +19,6 @@ HyPoS 采用**分层架构**，将数学求解、并行通信、网格管理和 
 
 - **types.hpp**: 类型别名（`Real = double`, `Index = std::size_t`），统一类型体系
 - **aligned_buffer.hpp**: 64 字节对齐的 RAII 内存分配器，防止 false sharing
-- **memory_pool.hpp**: Bump Allocator，用于临时网格分配，避免重复 malloc/free
 - **exception.hpp**: 异常层次结构（HyPoSException → MPIException → ConfigException）
 
 ### 2.2 网格层（grid/）
@@ -34,8 +33,9 @@ Grid (全局描述) --> GridPartition (策略) --> Subgrid (本地子域 + Halo)
   - 支持余数均匀分配（remainder 进程优先获得额外行/列）
 - **Subgrid**: 本地子域管理
   - 内存：三个 `AlignedBuffer<Real>`（u, u_next, rhs）
-  - 索引：全局索引到本地索引的偏移映射
+  - 索引：全局索引到本地索引的偏移映射（含全局 offsets，用于并行输出与 RBGS 全局着色）
   - 邻居：通过 `MPI_Cart_shift` 预计算的邻居 rank
+  - 物理边界：Dirichlet/Neumann（`applyPhysicalBoundary`，逐迭代仅刷新无邻居的 halo 面）
 
 ### 2.3 求解器层（solver/）
 
@@ -45,15 +45,17 @@ Grid (全局描述) --> GridPartition (策略) --> Subgrid (本地子域 + Halo)
   - 3D 七点 stencil：除以 6.0
   - OpenMP 并行：`#pragma omp parallel for` + `#pragma omp simd`
   - 残差计算：内点 L2 范数，通过 `MPI_Allreduce` 全局聚合
-  - 通信-计算重叠（可选，`JacobiSolver(true)`）：`beginExchange` → 内点盒计算 → `endExchange` → 边界 6 slab；残差使用**独立全内点扫描**，保证 overlap on/off 的迭代数与解 bit 级一致（`lastResidual()` 暴露最近残差）
+  - 通信-计算重叠（可选，`JacobiSolver(true)`）：`beginExchange` → 内点盒计算 → `endExchange` → 边界 6 slab；残差使用**融合累积**（固定区域顺序），保证 overlap on/off 的迭代数与解 bit 级一致（`lastResidual()` 暴露最近残差）
+- **RedBlackGSSolver**: 双色半扫（全局奇偶着色，依赖子域 offsets），每半扫一次 halo 交换；迭代数约为 Jacobi 的一半（模型问题理论比 ≈1/(1+ρ)）
+- **CGSolver**: 无预条件共轭梯度（matvec 复用 stencil 并交换辅助向量；每迭代两次全局内积归约）；一般右端项下迭代数比 Jacobi 低 1-2 个数量级
 
 ### 2.4 通信层（comm/）
 
 - **HaloExchanger**: 抽象基类，定义 `beginExchange()` / `endExchange()` 接口
-- **PointToPointExchanger**: 非阻塞 MPI 实现
-  - `MPI_Isend` / `MPI_Irecv` + `MPI_Waitall`
-  - 6 个方向（左/右/下/上/后/前）共 12 个非阻塞请求；tag 按发送面编号 0-5
-  - 每个方向的独立 send/recv 缓冲区；仅交换内点面范围（2D 数据位于 k=0 平面）
+- **PointToPointExchanger**: 持久化非阻塞 MPI 实现
+  - `MPI_Send_init` / `MPI_Recv_init` + `MPI_Startall` / `MPI_Waitall`（请求在 `initialize` 注册、析构释放）
+  - 6 个方向（左/右/下/上/后/前）共 12 个请求；tag 按发送面编号 0-5；支持任意 padded 缓冲（`exchange(sg, data)`）
+  - 每个方向的独立 send/recv 缓冲区；仅交换内点面范围（2D 数据位于 k=0 平面）；包/解包为行级 `memcpy`（缓冲布局最内维连续）
 - **CollectiveExchanger**: P2P 回退实现（委托 `PointToPointExchanger` 并记录告警）；真 `MPI_Neighbor_allgatherv` 为路线图
 
 ### 2.5 性能层（perf/）
@@ -67,9 +69,9 @@ Grid (全局描述) --> GridPartition (策略) --> Subgrid (本地子域 + Halo)
 
 ### 2.6 I/O 层（io/）
 
-- **IOBackend**: 抽象接口
-- **BinaryIOBackend**: 原始二进制输出，最高性能
-- **VTKIOBackend**: VTK 结构化点格式，支持 ParaView 可视化
+- **IOBackend**: 抽象接口（含可选的并行索引接口 `writeParallelIndex`）
+- **BinaryIOBackend**: 原始二进制输出，最高性能（每 rank 分片，头部含真实全局 offsets）
+- **VTKIOBackend**: VTK XML ImageData 分片（每 rank `.vti`，带全局 Origin/Extent 偏移）+ rank0 `PImageData` 索引（`.pvti`），直接支持 ParaView
 
 ### 2.7 工具层（utils/）
 
@@ -157,7 +159,7 @@ Interior: i = [halo, nx_local+halo-1]
 
 | 决策 | 选择 | 理由 |
 |---|---|---|
-| 内存分配 | 对齐分配 + 内存池 | 防止 false sharing，NUMA 友好 |
+| 内存分配 | 对齐分配（AlignedBuffer） | 防止 false sharing；关键路径零动态分配 |
 | 求解器接口 | 策略模式 | 支持 Jacobi → CG/SOR 的平滑替换 |
 | 通信接口 | 策略模式 | 支持 P2P → Collective → RMA 的平滑替换 |
 | 数据布局 | SoA（结构体数组） | Stencil 访问局部性好，利于 SIMD |
@@ -173,8 +175,8 @@ Interior: i = [halo, nx_local+halo-1]
 
 | 预留扩展 | 接口位置 | 实现复杂度 |
 |---|---|---|
-| CG/SOR 求解器 | `solver/solver.hpp` | 中（需要预处理子、Krylov 子空间） |
-| Red-Black GS | `solver/solver.hpp` | 低（修改迭代顺序即可） |
+| CG/SOR 求解器（CG 已实现） | `solver/solver.hpp` | 中（SOR 需松弛因子；CG 预条件子） |
+| Red-Black GS（已实现） | `solver/solver.hpp` | 低 |
 | RMA 通信 | `comm/halo_exchanger.hpp` | 中（MPI_Win_create + 同步） |
 | Hilbert 曲线划分 | `grid/partition.hpp` | 高（空间填充曲线算法） |
 | HDF5 输出 | `io/io_backend.hpp` | 低（链接 HDF5 库） |

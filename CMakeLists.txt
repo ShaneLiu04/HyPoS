@@ -23,10 +23,11 @@ find_package(MPI REQUIRED)
 
 # Source files
 set(HYPOS_CORE_SOURCES
-    src/core/memory_pool.cpp
     src/grid/subgrid.cpp
     src/grid/partition.cpp
     src/solver/jacobi_solver.cpp
+    src/solver/red_black_gs_solver.cpp
+    src/solver/cg_solver.cpp
     src/comm/p2p_exchanger.cpp
     src/comm/collective_exchanger.cpp
     src/perf/timer.cpp
@@ -64,6 +65,7 @@ if(GTest_FOUND)
         tests/gtest_main_mpi.cpp
         tests/test_grid.cpp
         tests/test_solver.cpp
+        tests/test_alt_solvers.cpp
         tests/test_overlap.cpp
         tests/test_halo_exchange.cpp
         tests/test_solver_mpi.cpp
@@ -104,9 +106,22 @@ if(GTest_FOUND)
         add_test(NAME overlap_consistency
             COMMAND ${HYPOS_MPIEXEC} ${HYPOS_MPIEXEC_FLAGS} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} 4
                     $<TARGET_FILE:test_hypos> --gtest_filter=OverlapTest.*)
+        add_test(NAME solver_alt_mpi
+            COMMAND ${HYPOS_MPIEXEC} ${HYPOS_MPIEXEC_FLAGS} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} 4
+                    $<TARGET_FILE:test_hypos> --gtest_filter=SolverMpiTest.AltSolvers*)
+        add_test(NAME collective_mpi
+            COMMAND ${HYPOS_MPIEXEC} ${HYPOS_MPIEXEC_FLAGS} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} 4
+                    $<TARGET_FILE:hypos> --comm-mode collective --nx 32 --ny 32 --max-iter 20
+                    --output-dir ${CMAKE_BINARY_DIR}/ctest_collective)
+        add_test(NAME ranks3_smoke
+            COMMAND ${HYPOS_MPIEXEC} ${HYPOS_MPIEXEC_FLAGS} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} 3
+                    $<TARGET_FILE:hypos> --nx 24 --ny 24 --max-iter 20
+                    --output-dir ${CMAKE_BINARY_DIR}/ctest_ranks3)
 
         set_tests_properties(halo_2d_mpi halo_3d_mpi solver_mpi overlap_consistency
-            PROPERTIES ENVIRONMENT "${HYPOS_TEST_ENV}" TIMEOUT 300)
+            PROPERTIES ENVIRONMENT "${HYPOS_TEST_ENV}" TIMEOUT 600)
+        set_tests_properties(solver_alt_mpi collective_mpi ranks3_smoke
+            PROPERTIES ENVIRONMENT "${HYPOS_TEST_ENV}" TIMEOUT 600)
     endif()
 elseif(HYPOS_BUILD_TESTS)
     message(WARNING "GTest not found: tests are disabled")
