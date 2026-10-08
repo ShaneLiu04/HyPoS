@@ -78,6 +78,11 @@ if(GTest_FOUND)
 
     set(HYPOS_TEST_ENV
         "OMP_NUM_THREADS=4;ASAN_OPTIONS=detect_leaks=0;OMPI_ALLOW_RUN_AS_ROOT=1;OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1")
+    # MPI-launched tests run one OpenMP thread per rank: on small CI runners
+    # (4 cores) oversubscribing ranks x threads collapses libgomp regions
+    # (measured ~100 ms/iteration vs ~5 us) and times the suite out.
+    set(HYPOS_TEST_ENV_MPI
+        "OMP_NUM_THREADS=1;ASAN_OPTIONS=detect_leaks=0;OMPI_ALLOW_RUN_AS_ROOT=1;OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1")
 
     add_test(NAME unit COMMAND $<TARGET_FILE:test_hypos>)
     set_tests_properties(unit PROPERTIES ENVIRONMENT "${HYPOS_TEST_ENV}" TIMEOUT 120)
@@ -157,7 +162,7 @@ if(GTest_FOUND)
             COMMAND ${HYPOS_MPIEXEC} ${HYPOS_MPIEXEC_FLAGS} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} 4
                     $<TARGET_FILE:test_hypos> --gtest_filter=PartitionTopologyTest.*)
         set_tests_properties(topology_consistency PROPERTIES
-            ENVIRONMENT "${HYPOS_TEST_ENV}" TIMEOUT 60)
+            ENVIRONMENT "${HYPOS_TEST_ENV_MPI}" TIMEOUT 60)
         add_test(NAME collective_mpi
             COMMAND ${HYPOS_MPIEXEC} ${HYPOS_MPIEXEC_FLAGS} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} 4
                     $<TARGET_FILE:hypos> --comm-mode collective --nx 32 --ny 32 --max-iter 20
@@ -196,11 +201,15 @@ if(GTest_FOUND)
                     "-Dexpected=solution_5.bin"
                     -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/VerifyMpiioOutput.cmake)
 
-        set_tests_properties(halo_2d_mpi halo_3d_mpi solver_mpi overlap_consistency
-            PROPERTIES ENVIRONMENT "${HYPOS_TEST_ENV}" TIMEOUT 600)
-        set_tests_properties(solver_alt_mpi collective_mpi ranks3_smoke
+        set_tests_properties(halo_2d_mpi halo_3d_mpi
+            PROPERTIES ENVIRONMENT "${HYPOS_TEST_ENV_MPI}" TIMEOUT 600)
+        # Heavy multi-iteration suites get extra headroom for the slow
+        # Debug+ASan CI leg; they finish in seconds on normal hardware.
+        set_tests_properties(solver_mpi overlap_consistency solver_alt_mpi
+            PROPERTIES ENVIRONMENT "${HYPOS_TEST_ENV_MPI}" TIMEOUT 900)
+        set_tests_properties(collective_mpi ranks3_smoke
             mpiio_np1 mpiio_np4 mpiio_e2e mpiio_e2e_final
-            PROPERTIES ENVIRONMENT "${HYPOS_TEST_ENV}" TIMEOUT 600)
+            PROPERTIES ENVIRONMENT "${HYPOS_TEST_ENV_MPI}" TIMEOUT 600)
         set_tests_properties(mpiio_e2e PROPERTIES FIXTURES_SETUP mpiio_e2e_files)
         set_tests_properties(mpiio_e2e_verify PROPERTIES FIXTURES_REQUIRED mpiio_e2e_files)
         set_tests_properties(mpiio_e2e_final PROPERTIES FIXTURES_SETUP mpiio_e2e_final_files)

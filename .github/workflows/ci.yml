@@ -9,6 +9,10 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    env:
+      # Runner has 4 cores; keep plain `mpirun` steps from oversubscribing
+      # OpenMP threads (ctest sets its own per-test values).
+      OMP_NUM_THREADS: "1"
 
     steps:
     - uses: actions/checkout@v3
