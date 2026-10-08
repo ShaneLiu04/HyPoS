@@ -151,6 +151,13 @@ if(GTest_FOUND)
         add_test(NAME solver_alt_mpi
             COMMAND ${HYPOS_MPIEXEC} ${HYPOS_MPIEXEC_FLAGS} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} 4
                     $<TARGET_FILE:test_hypos> --gtest_filter=SolverMpiTest.AltSolvers*)
+        # B3 (AR004 T006, design §6): np=4 topology consistency of the
+        # Cartesian communicator exposed by UniformPartition::partition().
+        add_test(NAME topology_consistency
+            COMMAND ${HYPOS_MPIEXEC} ${HYPOS_MPIEXEC_FLAGS} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} 4
+                    $<TARGET_FILE:test_hypos> --gtest_filter=PartitionTopologyTest.*)
+        set_tests_properties(topology_consistency PROPERTIES
+            ENVIRONMENT "${HYPOS_TEST_ENV}" TIMEOUT 60)
         add_test(NAME collective_mpi
             COMMAND ${HYPOS_MPIEXEC} ${HYPOS_MPIEXEC_FLAGS} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} 4
                     $<TARGET_FILE:hypos> --comm-mode collective --nx 32 --ny 32 --max-iter 20

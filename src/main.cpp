@@ -159,15 +159,13 @@ int main(int argc, char* argv[]) {
                    << threadInfo);
     }
 
-    // Partition grid
+    // Partition grid. The partitioner creates the ONE Cartesian topology
+    // for the whole run and hands it out via SubgridInfo::cartComm (AR004
+    // A3: single topology source — no second Cart_create here anymore; it
+    // is freed once at the end of main).
     UniformPartition partition;
     SubgridInfo info = partition.partition(grid, MPI_COMM_WORLD, rank);
-
-    // Create Cartesian communicator and get neighbors
-    int dims[3], periods[3] = {0, 0, 0};
-    partition.getTopologyDims(dims[0], dims[1], dims[2]);
-    MPI_Comm cartComm;
-    MPI_Cart_create(MPI_COMM_WORLD, 3, dims, periods, 1, &cartComm);
+    MPI_Comm cartComm = info.cartComm;
 
     int left, right, down, up, back, front;
     MPI_Cart_shift(cartComm, 0, 1, &left, &right);

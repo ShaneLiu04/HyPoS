@@ -16,6 +16,10 @@ struct SubgridInfo {
     Index offsetY = 0;  ///< Global offset of this subdomain in y
     Index offsetZ = 0;  ///< Global offset of this subdomain in z
     int   rank = 0;
+    /// Cartesian communicator created by the partitioner. Ownership is
+    /// TRANSFERRED to the caller: the caller must MPI_Comm_free it.
+    /// MPI_COMM_NULL when no topology was created.
+    MPI_Comm cartComm = MPI_COMM_NULL;
 };
 
 /**

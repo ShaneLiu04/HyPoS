@@ -16,7 +16,7 @@
 | T003 | A2-CLI `--residual-check-interval`：基类 setResidualCheckInterval（0 钳 1）；main 解析/校验（<1 退出码 1；CG 传入 WARN 忽略）；RunConfig +residualCheckInterval 透出。测试先行：U9、I1-I6 | T001 | passing | 2026-10-08 完成；I1-I6 以 ctest 条目 + cmake/VerifyAr004Cli.cmake 四模式（interval10/default/cg_warn/help）落地；CSV 列插入 overlap_comm 后（17 列，位置由 default 模式守护）；拒绝类 4 项 WILL_FAIL；CG 不调用 setter（WARN 语义一致）；Red 期修正：verify 条目需 HYPOS_TEST_ENV（LSan 噪声） |
 | T004 | B2a+A4-CG：updatePInterior 抽取（消除 solve/iterate 重复）；初始化循环并行化；区名改 cg_iteration。测试先行：U6（golden 迭代数，先跑基线固化）、E2 | - | passing | 2026-10-08 完成；U6 实测修正设计前提：libgomp 归约按线程到达序合并 → OMP=4 跨运行非位级确定，tier=1 保位级 hash、tier=4 改迭代数+相对差 1e-11（噪声带宽实测 ≤1.4e-12）；golden 绑定 Debug+ASan（NDEBUG 跳过）；E2 以相邻双 inf rhs 确定性触发 pap=NaN 守卫 |
 | T005 | A1 First-touch：zeroInitialize() 外层维度并行（全缓冲，三场单遍历）；applyDirichletBC 保持串行并文档记录。测试先行：U7、B4 | - | passing | 2026-10-08 完成（微型任务，主代理直做）；设计勘误：2D 子域缓冲实含 nzTotal≥3 个 k 平面，设计原文"2D 仅 j/i 全范围"会漏 2/3 缓冲——2D 分支补内层 k 循环、外层仍并行 j（保线程利用率），U7 全缓冲断言（halo=2 构造）守护该语义 |
-| T006 | A3 拓扑一致性：SubgridInfo +cartComm（所有权移交）；partition 用 cart rank 查 coords；main 删除二次 Cart_create。测试先行：B3 | - | pending | 接口变更授权见 design §4.3.1；design D5/D6 |
+| T006 | A3 拓扑一致性：SubgridInfo +cartComm（所有权移交）；partition 用 cart rank 查 coords；main 删除二次 Cart_create。测试先行：B3 | - | passing | 2026-10-08 完成；Red=编译失败（info.cartComm 不存在）；B3 设计勘误：原"Σ nxLocal==nx"全局求和在 2D tiling 下不变式错误（Σ=nx×dims[1]），修正为按行/列分组求和 + 链端点检查（走查 evidence ② 单次 Cart_create 随 Green 落实） |
 | T007 | A4 Profiler：per-thread ThreadData 注册表（热路径零锁）+ 聚合；hpp 注释对齐；test_performance.cpp:83 区名断言复核（RBGS 区名已随 T002 落地）。测试先行：U8、U11 | T004 | pending | design D7；JSON 格式兼容 |
 | T008 | 全量回归（Debug/Release + ASan；TSan 不可用则走查佐证）+ 基准（scripts/bench_ar004.sh：Jacobi ±5% 门槛、RBGS k=1/5/10 三档、CG 前后，≥3 次中位数）+ 文档同步（README/AGENT_SPEC/PERFORMANCE §11/GUIDE 勾选 G1/G3/G5/G6、P1/P4/P6） | T001-T007 | pending | SCALING_REPORT 口径注记 |
 
@@ -30,6 +30,15 @@
 ## 进度记录
 
 > 每个开发会话结束后追加，记录完成情况。
+
+### 2026-10-08 会话记录（T006）
+
+- 完成任务：T006 A3 拓扑单一来源
+- TDD：Red（子代理：PartitionTopologyTest.Np4TopologyIsConsistent + GridTest.PartitionUniform 补所有权释放 + ctest 条目 topology_consistency；编译失败即合法 Red，错误仅限 test_grid.cpp）→ Green（主代理：partition.hpp SubgridInfo+cartComm（默认 MPI_COMM_NULL、所有权注释）；partition.cpp cart rank 查 coords（修 reorder=1 潜在错位）+ 删除内部 Comm_free；main.cpp 删二次 Cart_create，下游经局部 cartComm=info.cartComm 无缝衔接，末尾单次 free 即释放分区器通信器）
+- B3 实现期勘误（设计 §6 B3 原文"Σ nxLocal==nx（各维）"有误）：2D tiling 下各 rank x 向全宽参与求和 → Σ=2048=2×1024；正确不变式 = 按行（固定 coords[1]）Σ nxLocal==nx、按列 Σ nyLocal==ny、nz 维不分解逐 rank 相等——已修正测试并在 tasks.md 记录
+- B3 断言集：cartComm 非空、分组尺寸和、行/列 offset 链连续（链首 0、链尾恰为全局尺寸）、Cart_shift 四向邻居互指（Sendrecv 令牌核对）、coords 由 cartComm 查询、结尾 MPI_Comm_free（所有权契约演示）
+- 修改文件：src/grid/partition.hpp/cpp、src/main.cpp、tests/test_grid.cpp、CMakeLists.txt（+topology_consistency）
+- 测试：Debug 全量 25/25（61s）、Release 全量 25/25（14s）、Release 0 警告
 
 ### 2026-10-08 会话记录（T005）
 

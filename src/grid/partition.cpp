@@ -32,14 +32,21 @@ SubgridInfo UniformPartition::partition(const Grid& grid, MPI_Comm comm, int ran
     const_cast<UniformPartition*>(this)->dimsY_ = dims[1];
     const_cast<UniformPartition*>(this)->dimsZ_ = dims[2];
 
-    // Create Cartesian communicator
+    // Create Cartesian communicator. Ownership is transferred to the
+    // caller via SubgridInfo::cartComm (the caller must free it) — a single
+    // topology source for the whole run (AR004 A3).
     MPI_Comm cartComm;
     int reorder = 1;
     MPI_Cart_create(comm, 3, dims, periods, reorder, &cartComm);
 
-    // Get coordinates in Cartesian grid
+    // Query coordinates with the CART rank: reorder=1 lets the
+    // implementation permute ranks, so the raw-comm rank is not guaranteed
+    // to identify the same position (MPI standard). (AR004 A3, fixes the
+    // latent mismatch.)
+    int cartRank = 0;
+    MPI_Comm_rank(cartComm, &cartRank);
     int coords[3];
-    MPI_Cart_coords(cartComm, rank, 3, coords);
+    MPI_Cart_coords(cartComm, cartRank, 3, coords);
 
     // Compute local sizes with remainder distribution
     auto divide = [](Index total, int procs, int coord) -> Index {
@@ -53,6 +60,7 @@ SubgridInfo UniformPartition::partition(const Grid& grid, MPI_Comm comm, int ran
     info.nyLocal = divide(grid.ny, dims[1], coords[1]);
     info.nzLocal = divide(grid.nz, dims[2], coords[2]);
     info.rank = rank;
+    info.cartComm = cartComm;
 
     // Compute offsets
     info.offsetX = 0;
@@ -68,7 +76,6 @@ SubgridInfo UniformPartition::partition(const Grid& grid, MPI_Comm comm, int ran
         info.offsetZ += divide(grid.nz, dims[2], k);
     }
 
-    MPI_Comm_free(&cartComm);
     return info;
 }
 
