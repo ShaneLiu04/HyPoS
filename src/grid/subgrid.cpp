@@ -29,9 +29,46 @@ void Subgrid::setNeighbors(int left, int right, int down, int up, int back, int 
 }
 
 void Subgrid::zeroInitialize() noexcept {
-    u_.fill(0.0);
-    uNext_.fill(0.0);
-    rhs_.fill(0.0);
+    // AR004 A1 first-touch: zero the ENTIRE buffer of all three fields in a
+    // single pass, parallel over the outer dimension with schedule(static)
+    // to match the stencil loops' partitioning. A 2D subgrid still
+    // allocates nzTotal() z-planes (halo on both sides), so the 2D branch
+    // keeps an inner k loop; parallelizing over j there preserves thread
+    // utilization (nzTotal is tiny for 2D).
+    Real* u = u_.data();
+    Real* un = uNext_.data();
+    Real* r = rhs_.data();
+    const Index nxT = nxTotal();
+    const Index nyT = nyTotal();
+    const Index nzT = nzTotal();
+
+    if (nzLocal_ == 1) {
+        #pragma omp parallel for schedule(static)
+        for (Index j = 0; j < nyT; ++j) {
+            for (Index k = 0; k < nzT; ++k) {
+                #pragma omp simd
+                for (Index i = 0; i < nxT; ++i) {
+                    const Index idx = (k * nyT + j) * nxT + i;
+                    u[idx] = 0.0;
+                    un[idx] = 0.0;
+                    r[idx] = 0.0;
+                }
+            }
+        }
+    } else {
+        #pragma omp parallel for schedule(static)
+        for (Index k = 0; k < nzT; ++k) {
+            for (Index j = 0; j < nyT; ++j) {
+                #pragma omp simd
+                for (Index i = 0; i < nxT; ++i) {
+                    const Index idx = (k * nyT + j) * nxT + i;
+                    u[idx] = 0.0;
+                    un[idx] = 0.0;
+                    r[idx] = 0.0;
+                }
+            }
+        }
+    }
 }
 
 void Subgrid::applyDirichletBC(Real fixedValue) noexcept {

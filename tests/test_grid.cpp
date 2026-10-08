@@ -51,3 +51,39 @@ TEST(SubgridTest, MemoryAllocation) {
     EXPECT_EQ(sg.nzTotal(), 3); // 1 + 2*halo
     EXPECT_EQ(sg.totalCells(), 102 * 102 * 3);
 }
+
+// U7 (AR004 T005, design §6): zeroInitialize must zero the ENTIRE buffer of
+// all three fields — including halo cells and, for 2D subgrids, the z-halo
+// planes (a 2D subgrid still allocates nzTotal = 3 planes with halo 1).
+// Guards the OpenMP parallelization: a wrong loop range (e.g. covering only
+// the k=0 plane) would leave parts of the buffer dirty. Regression-capture
+// semantics: passes on the baseline fill()-based code and pins the contract
+// through the parallel rewrite.
+TEST(SubgridTest, ZeroInitializeCoversFullBuffer2DAnd3D) {
+    const auto poisonCheck = [](Subgrid& sg, const char* label) {
+        const Index total = sg.totalCells();
+        ASSERT_GT(total, Index(0));
+        Real* u = sg.u().data();
+        Real* un = sg.uNext().data();
+        Real* r = sg.rhs().data();
+        for (Index idx = 0; idx < total; ++idx) {
+            u[idx] = 1.5 + static_cast<Real>(idx % 7);
+            un[idx] = -2.25;
+            r[idx] = 7.75;
+        }
+        sg.zeroInitialize();
+        for (Index idx = 0; idx < total; ++idx) {
+            EXPECT_EQ(u[idx], 0.0) << label << " u idx=" << idx;
+            EXPECT_EQ(un[idx], 0.0) << label << " uNext idx=" << idx;
+            EXPECT_EQ(r[idx], 0.0) << label << " rhs idx=" << idx;
+        }
+    };
+
+    // 2D with halo 2: nzTotal = 5 planes, halo width exercises range edges.
+    Subgrid sg2(16, 16, 1, 2, MPI_COMM_SELF);
+    poisonCheck(sg2, "2D halo=2");
+
+    // 3D with halo 1.
+    Subgrid sg3(8, 8, 8, 1, MPI_COMM_SELF);
+    poisonCheck(sg3, "3D halo=1");
+}

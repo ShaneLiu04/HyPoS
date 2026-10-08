@@ -15,7 +15,7 @@
 | T002 | A2-RBGS 真实残差 + interval：iterateCore/iterate 拆分（iterate 每调用必扫描）；solve() 每 k 步判定。测试先行：U4/U5、B5 | T001 | passing | 2026-10-08 完成；新增 R-I1s/R-I5s/R-E4s；rbgs_iteration 区名随 solve 重写落地（原 T007 项）；新增共享 globalTrueResidual（design §4.3.1 已补录） |
 | T003 | A2-CLI `--residual-check-interval`：基类 setResidualCheckInterval（0 钳 1）；main 解析/校验（<1 退出码 1；CG 传入 WARN 忽略）；RunConfig +residualCheckInterval 透出。测试先行：U9、I1-I6 | T001 | passing | 2026-10-08 完成；I1-I6 以 ctest 条目 + cmake/VerifyAr004Cli.cmake 四模式（interval10/default/cg_warn/help）落地；CSV 列插入 overlap_comm 后（17 列，位置由 default 模式守护）；拒绝类 4 项 WILL_FAIL；CG 不调用 setter（WARN 语义一致）；Red 期修正：verify 条目需 HYPOS_TEST_ENV（LSan 噪声） |
 | T004 | B2a+A4-CG：updatePInterior 抽取（消除 solve/iterate 重复）；初始化循环并行化；区名改 cg_iteration。测试先行：U6（golden 迭代数，先跑基线固化）、E2 | - | passing | 2026-10-08 完成；U6 实测修正设计前提：libgomp 归约按线程到达序合并 → OMP=4 跨运行非位级确定，tier=1 保位级 hash、tier=4 改迭代数+相对差 1e-11（噪声带宽实测 ≤1.4e-12）；golden 绑定 Debug+ASan（NDEBUG 跳过）；E2 以相邻双 inf rhs 确定性触发 pap=NaN 守卫 |
-| T005 | A1 First-touch：zeroInitialize() 外层维度并行（全缓冲，三场单遍历）；applyDirichletBC 保持串行并文档记录。测试先行：U7、B4 | - | pending | design D8 |
+| T005 | A1 First-touch：zeroInitialize() 外层维度并行（全缓冲，三场单遍历）；applyDirichletBC 保持串行并文档记录。测试先行：U7、B4 | - | passing | 2026-10-08 完成（微型任务，主代理直做）；设计勘误：2D 子域缓冲实含 nzTotal≥3 个 k 平面，设计原文"2D 仅 j/i 全范围"会漏 2/3 缓冲——2D 分支补内层 k 循环、外层仍并行 j（保线程利用率），U7 全缓冲断言（halo=2 构造）守护该语义 |
 | T006 | A3 拓扑一致性：SubgridInfo +cartComm（所有权移交）；partition 用 cart rank 查 coords；main 删除二次 Cart_create。测试先行：B3 | - | pending | 接口变更授权见 design §4.3.1；design D5/D6 |
 | T007 | A4 Profiler：per-thread ThreadData 注册表（热路径零锁）+ 聚合；hpp 注释对齐；test_performance.cpp:83 区名断言复核（RBGS 区名已随 T002 落地）。测试先行：U8、U11 | T004 | pending | design D7；JSON 格式兼容 |
 | T008 | 全量回归（Debug/Release + ASan；TSan 不可用则走查佐证）+ 基准（scripts/bench_ar004.sh：Jacobi ±5% 门槛、RBGS k=1/5/10 三档、CG 前后，≥3 次中位数）+ 文档同步（README/AGENT_SPEC/PERFORMANCE §11/GUIDE 勾选 G1/G3/G5/G6、P1/P4/P6） | T001-T007 | pending | SCALING_REPORT 口径注记 |
@@ -30,6 +30,14 @@
 ## 进度记录
 
 > 每个开发会话结束后追加，记录完成情况。
+
+### 2026-10-08 会话记录（T005）
+
+- 完成任务：T005 A1 first-touch zeroInitialize 并行化（微型任务，主代理直做 Red+Green）
+- Red：U7（test_grid.cpp：2D halo=2 与 3D halo=1 构造，三场投毒后断言全缓冲逐元素==0.0，回归固化语义基线即绿）+ B4（test_solver.cpp：16³ jacobi 901 迭代收敛 + lastResidual≤tol 真实口径 + 最大值原理正值检查）
+- Green：subgrid.cpp zeroInitialize 由三次 fill 改为单遍历三场并行——2D 分支 omp parallel for over j∈[0,nyTotal) + 内层 k∈[0,nzTotal)（设计勘误：2D 缓冲含 z-halo 平面，原设计 2D 循环不含 k 会漏清 2/3 缓冲）；3D 分支 k 外层；schedule(static) 与 stencil 循环分区一致（走查 evidence ① 落实）；noexcept 保持
+- 修改文件：src/grid/subgrid.cpp、tests/test_grid.cpp（+U7）、tests/test_solver.cpp（+B4）
+- 测试：unit 全绿；Debug 全量 24/24（61s）；Release 0 警告 + unit 绿
 
 ### 2026-10-08 会话记录（T004）
 

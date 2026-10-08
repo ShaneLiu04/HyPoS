@@ -365,7 +365,49 @@ TEST(SolverAR004Test, LastResidualAfterConvergenceIsTrueResidual) {
         std::sqrt(trueResidualSumSqSerial(sg, sg.u().data()));
     ASSERT_GT(expected, 0.0);
     expectCloseRelative(solver.lastResidual(), expected,
-                        "lastResidual vs recomputed true residual");
+                        "lastResidual vs recomputed true residual at exit");
+}
+
+// B4 (AR004 T005, design §6): 3D smoke — jacobi on 16^3 must converge and
+// report the TRUE residual on the 3D scale (denominator D = 6 conversion
+// path from T001) at or below the tolerance. End-to-end guard that the 3D
+// branch of the honest-residual criterion works in a real solve.
+TEST(SolverAR004Test, Jacobi3DSmokeConvergesWithTrueResidual) {
+    Subgrid sg(16, 16, 16, 1, MPI_COMM_SELF);
+    sg.setNeighbors(MPI_PROC_NULL, MPI_PROC_NULL, MPI_PROC_NULL,
+                    MPI_PROC_NULL, MPI_PROC_NULL, MPI_PROC_NULL);
+    sg.zeroInitialize();
+    sg.applyDirichletBC(0.0);
+
+    Real* rhs = sg.rhs().data();
+    for (Index k = sg.kBegin(); k < sg.kEnd(); ++k) {
+        for (Index j = sg.jBegin(); j < sg.jEnd(); ++j) {
+            for (Index i = sg.iBegin(); i < sg.iEnd(); ++i) {
+                rhs[sg.index(i, j, k)] = -1.0;
+            }
+        }
+    }
+
+    PointToPointExchanger ex;
+    ex.initialize(sg);
+
+    JacobiSolver solver;
+    const Index iters = solver.solve(sg, ex, 20000, 1e-5);
+
+    EXPECT_GT(iters, Index(0));
+    EXPECT_LT(iters, Index(20000));
+    EXPECT_LE(solver.lastResidual(), 1e-5);
+
+    // Positive interior solution by the maximum principle (rhs = -1).
+    const Real* u = sg.u().data();
+    for (Index k = sg.kBegin(); k < sg.kEnd(); ++k) {
+        for (Index j = sg.jBegin(); j < sg.jEnd(); ++j) {
+            for (Index i = sg.iBegin(); i < sg.iEnd(); ++i) {
+                EXPECT_GT(u[sg.index(i, j, k)], 0.0)
+                    << "i=" << i << " j=" << j << " k=" << k;
+            }
+        }
+    }
 }
 
 // U3: iterate() must return denom * sqrt(sum(diff^2)), which by the algebraic
