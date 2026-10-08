@@ -257,6 +257,157 @@ TEST(AltFeatureTest, BinaryOutputBitIdenticalToExpectedBytes) {
     }
 }
 
+// ============================================================================
+// AR005 T003 (U3): VTKIOBackend .vti appended raw-binary output guard.
+// The on-disk contract (VTK XML appended mode, raw encoding):
+//   - <VTKFile ... header_type="UInt64"> attribute;
+//   - <DataArray type="Float64" Name="u" format="appended" offset="0">,
+//     and format="ascii" must be gone;
+//   - <AppendedData encoding="raw">, the '_' marker, an 8-byte little-endian
+//     UInt64 byte count (nxLocal*nyLocal*nzLocal*sizeof(double)), then the
+//     interior u field as a raw double memory image in (k, j, i) row-major
+//     order (x fastest), then the closing </AppendedData></VTKFile> tags.
+// This test is the "minimal independent parser" of srs §3.1 acceptance (1):
+// it re-reads the file and reconstructs the value sequence from the raw
+// bytes alone. The expected bytes are built from the test's own encoding
+// (poisoned halo + interior formula), so any halo sentinel leaking into the
+// payload or any (k, j, i) order scramble fails here. The current ASCII
+// implementation has no AppendedData section at all, so this test FAILS —
+// the legal Red state for this task (Green lands in the implementation
+// step).
+// ============================================================================
+TEST(AltFeatureTest, VtkAppendedBinaryParsesBack) {
+    const std::string outDir = "test_out";
+    std::filesystem::create_directories(outDir);
+
+    Subgrid sg(4, 4, 1, 1, MPI_COMM_SELF);
+    sg.setNeighbors(MPI_PROC_NULL, MPI_PROC_NULL, MPI_PROC_NULL, MPI_PROC_NULL);
+    sg.setOffsets(0, 0, 0);
+
+    // Poison the WHOLE padded buffer, then overwrite only interior cells:
+    // a halo byte leaking into the appended payload can only come from the
+    // sentinel and is caught by the exact byte comparison below.
+    const Real kHaloSentinel = -777.0;
+    Real* uBuf = sg.u().data();
+    for (Index idx = 0; idx < sg.totalCells(); ++idx) {
+        uBuf[idx] = kHaloSentinel;
+    }
+    for (Index k = sg.kBegin(); k < sg.kEnd(); ++k) {
+        for (Index j = sg.jBegin(); j < sg.jEnd(); ++j) {
+            for (Index i = sg.iBegin(); i < sg.iEnd(); ++i) {
+                sg.at(i, j, k) =
+                    1000.0 * static_cast<Real>(i) + static_cast<Real>(j);
+            }
+        }
+    }
+
+    VTKIOBackend io(0.25, 0.25, 0.25);
+    io.write(sg, outDir + "/vtk_appended_guard", 0);
+    const std::string fname = outDir + "/vtk_appended_guard.vti";
+
+    // ---- Read the whole file back (binary-safe) ----
+    std::ifstream ifs(fname, std::ios::binary);
+    ASSERT_TRUE(ifs.good()) << "cannot open " << fname;
+    const std::vector<char> actual((std::istreambuf_iterator<char>(ifs)),
+                                   std::istreambuf_iterator<char>());
+    ASSERT_FALSE(actual.empty());
+    const std::string text(actual.begin(), actual.end());
+
+    // ---- (1) XML structure: appended raw mode, ASCII mode is gone ----
+    EXPECT_NE(text.find("header_type=\"UInt64\""), std::string::npos);
+    EXPECT_NE(text.find("format=\"appended\""), std::string::npos);
+    EXPECT_NE(text.find("offset=\"0\""), std::string::npos);
+    const std::size_t appendedTagPos =
+        text.find("<AppendedData encoding=\"raw\">");
+    ASSERT_NE(appendedTagPos, std::string::npos)
+        << "missing <AppendedData encoding=\"raw\">";
+    EXPECT_EQ(text.find("format=\"ascii\""), std::string::npos);
+
+    // ---- (2) '_' marker followed by the 8-byte UInt64 length header ----
+    const std::size_t markPos = text.find('_', appendedTagPos);
+    ASSERT_NE(markPos, std::string::npos) << "missing '_' appended-data marker";
+    const std::size_t headerPos = markPos + 1;
+    ASSERT_GE(actual.size(), headerPos + sizeof(std::uint64_t))
+        << "file too short for the 8-byte length header";
+
+    std::uint64_t declaredBytes = 0;
+    std::memcpy(&declaredBytes, actual.data() + headerPos,
+                sizeof(std::uint64_t));
+    const std::uint64_t expectedBytes =
+        static_cast<std::uint64_t>(sg.nxLocal()) *
+        static_cast<std::uint64_t>(sg.nyLocal()) *
+        static_cast<std::uint64_t>(sg.nzLocal()) * sizeof(Real);
+    EXPECT_EQ(declaredBytes, expectedBytes)
+        << "declared payload byte count != nxLocal*nyLocal*nzLocal*8";
+
+    // ---- (3) payload bit-identical to the interior field in (k, j, i) order
+    //      (memcmp from the test-built expected sequence; halo excluded) ----
+    const std::size_t dataPos = headerPos + sizeof(std::uint64_t);
+    ASSERT_GE(actual.size(), dataPos + static_cast<std::size_t>(expectedBytes))
+        << "file too short for the appended payload";
+
+    std::vector<char> expected;
+    expected.reserve(static_cast<std::size_t>(expectedBytes));
+    for (Index k = sg.kBegin(); k < sg.kEnd(); ++k) {
+        for (Index j = sg.jBegin(); j < sg.jEnd(); ++j) {
+            for (Index i = sg.iBegin(); i < sg.iEnd(); ++i) {
+                const Real v = sg.at(i, j, k);
+                const char* p = reinterpret_cast<const char*>(&v);
+                expected.insert(expected.end(), p, p + sizeof(Real));
+            }
+        }
+    }
+    ASSERT_EQ(expected.size(), static_cast<std::size_t>(expectedBytes));
+    EXPECT_EQ(std::memcmp(actual.data() + dataPos, expected.data(),
+                          expected.size()),
+              0)
+        << "appended payload differs from the expected interior byte sequence";
+
+    // The halo sentinel must never appear inside the payload (redundant with
+    // the memcmp above, but pinpoints the failure mode when it does).
+    for (std::size_t off = 0; off + sizeof(Real) <= expected.size();
+         off += sizeof(Real)) {
+        Real decoded = 0.0;
+        std::memcpy(&decoded, actual.data() + dataPos + off, sizeof(Real));
+        EXPECT_NE(decoded, kHaloSentinel)
+            << "halo sentinel leaked into payload double " << off / sizeof(Real);
+    }
+
+    // ---- (4) decoded doubles exactly match sg.at(i, j, k) ----
+    std::size_t cells = 0;
+    for (Index k = sg.kBegin(); k < sg.kEnd(); ++k) {
+        for (Index j = sg.jBegin(); j < sg.jEnd(); ++j) {
+            for (Index i = sg.iBegin(); i < sg.iEnd(); ++i) {
+                Real decoded = 0.0;
+                std::memcpy(&decoded,
+                            actual.data() + dataPos + cells * sizeof(Real),
+                            sizeof(Real));
+                EXPECT_EQ(decoded, sg.at(i, j, k))  // bitwise-exact compare
+                    << "cell (i=" << i << ", j=" << j << ", k=" << k << ")";
+                ++cells;
+            }
+        }
+    }
+    EXPECT_EQ(cells, std::size_t{16});
+
+    // ---- (5) closing tags after the appended payload ----
+    const std::string tail(actual.begin() + static_cast<std::ptrdiff_t>(
+                                             dataPos + expected.size()),
+                           actual.end());
+    EXPECT_NE(tail.find("</AppendedData>"), std::string::npos)
+        << "missing </AppendedData> after the payload";
+    ASSERT_NE(tail.find("</VTKFile>"), std::string::npos)
+        << "missing </VTKFile> after the appended data";
+    // Only whitespace may follow the final closing tag.
+    const std::size_t lastContent = text.find_last_not_of(" \t\r\n");
+    ASSERT_NE(lastContent, std::string::npos);
+    ASSERT_GT(lastContent + 1, std::strlen("</VTKFile>"));
+    EXPECT_EQ(text.compare(lastContent + 1 - std::strlen("</VTKFile>"),
+                           std::strlen("</VTKFile>"), "</VTKFile>"),
+              0)
+        << "file does not end with </VTKFile>";
+}
+
 TEST(AltFeatureTest, ProgressCallbackCountsIterations) {
     Subgrid sg(16, 16, 1, 1, MPI_COMM_SELF);
     sg.setNeighbors(MPI_PROC_NULL, MPI_PROC_NULL, MPI_PROC_NULL, MPI_PROC_NULL);

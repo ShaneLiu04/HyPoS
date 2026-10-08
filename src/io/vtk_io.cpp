@@ -1,7 +1,7 @@
 #include "io/io_backend.hpp"
 #include "utils/logger.hpp"
+#include <cstdint>
 #include <fstream>
-#include <iomanip>
 #include <string>
 
 namespace hypo {
@@ -21,7 +21,7 @@ void VTKIOBackend::write(const Subgrid& subgrid, const std::string& filename, in
         fname += ".vti";
     }
 
-    std::ofstream ofs(fname);
+    std::ofstream ofs(fname, std::ios::binary);
     if (!ofs) {
         HYPOS_WARN("Cannot open VTK output file: " << fname);
         return;
@@ -38,7 +38,8 @@ void VTKIOBackend::write(const Subgrid& subgrid, const std::string& filename, in
     const Index z1 = z0 + nz - 1;
 
     ofs << "<?xml version=\"1.0\"?>\n";
-    ofs << "<VTKFile type=\"ImageData\" version=\"1.0\" byte_order=\"LittleEndian\">\n";
+    ofs << "<VTKFile type=\"ImageData\" version=\"1.0\" byte_order=\"LittleEndian\" "
+           "header_type=\"UInt64\">\n";
     ofs << "  <ImageData WholeExtent=\"" << x0 << " " << x1 << " " << y0 << " " << y1
         << " " << z0 << " " << z1 << "\" Origin=\""
         << static_cast<Real>(x0) * dx_ << " " << static_cast<Real>(y0) * dy_ << " "
@@ -47,22 +48,30 @@ void VTKIOBackend::write(const Subgrid& subgrid, const std::string& filename, in
     ofs << "    <Piece Extent=\"" << x0 << " " << x1 << " " << y0 << " " << y1
         << " " << z0 << " " << z1 << "\">\n";
     ofs << "      <PointData Scalars=\"u\">\n";
-    ofs << "        <DataArray type=\"Float64\" Name=\"u\" format=\"ascii\">\n";
-
-    const Real* u = subgrid.u().data();
-    ofs << std::scientific << std::setprecision(12);
-    for (Index k = subgrid.kBegin(); k < subgrid.kEnd(); ++k) {
-        for (Index j = subgrid.jBegin(); j < subgrid.jEnd(); ++j) {
-            for (Index i = subgrid.iBegin(); i < subgrid.iEnd(); ++i) {
-                ofs << u[subgrid.index(i, j, k)] << " ";
-            }
-        }
-    }
-    ofs << "\n";
-    ofs << "        </DataArray>\n";
+    ofs << "        <DataArray type=\"Float64\" Name=\"u\" format=\"appended\" "
+           "offset=\"0\"/>\n";
     ofs << "      </PointData>\n";
     ofs << "    </Piece>\n";
     ofs << "  </ImageData>\n";
+    ofs << "  <AppendedData encoding=\"raw\">\n";
+    ofs << "_";
+
+    // Appended payload: UInt64 byte count (little endian) followed by the
+    // interior u field as a row-major (x fastest) memory image. Interior
+    // cells along x are contiguous, so each (k, j) row is emitted with a
+    // single block write.
+    const std::uint64_t dataBytes =
+        static_cast<std::uint64_t>(nx) * ny * nz * sizeof(Real);
+    ofs.write(reinterpret_cast<const char*>(&dataBytes), sizeof(dataBytes));
+    const Real* u = subgrid.u().data();
+    const std::streamsize rowBytes = static_cast<std::streamsize>(nx) * sizeof(Real);
+    for (Index k = subgrid.kBegin(); k < subgrid.kEnd(); ++k) {
+        for (Index j = subgrid.jBegin(); j < subgrid.jEnd(); ++j) {
+            ofs.write(reinterpret_cast<const char*>(&u[subgrid.index(subgrid.iBegin(), j, k)]),
+                      rowBytes);
+        }
+    }
+    ofs << "\n  </AppendedData>\n";
     ofs << "</VTKFile>\n";
 
     HYPOS_INFO("Wrote VTK piece to " << fname);
