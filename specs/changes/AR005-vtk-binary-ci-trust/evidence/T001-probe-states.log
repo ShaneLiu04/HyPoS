@@ -1,0 +1,17 @@
+== Red-1: HYPOS_EXPECT_NP=4, single process (degradation semantics) ==
+MPI launch degraded: expected 4 ranks but MPI_Comm_size reports 1 (this MPI runtime may be silently collapsing multi-rank launches to a single process)
+[  FAILED  ] MpiEnvTest.SizeProbeMatchesExpected (0 ms)
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] MpiEnvTest.SizeProbeMatchesExpected
+rc=0
+== Red-2: HYPOS_EXPECT_NP=abc (fail-safe) ==
+HYPOS_EXPECT_NP is not a positive integer: 'abc'
+[  FAILED  ] MpiEnvTest.SizeProbeMatchesExpected (0 ms)
+[  FAILED  ] 1 test, listed below:
+== State-1: env unset (unit-entry semantics) ==
+[  SKIPPED ] MpiEnvTest.SizeProbeMatchesExpected (0 ms)
+[  SKIPPED ] 1 test, listed below:
+[  SKIPPED ] MpiEnvTest.SizeProbeMatchesExpected
+== Green: HYPOS_EXPECT_NP=1, single process ==
+[       OK ] MpiEnvTest.SizeProbeMatchesExpected (0 ms)
+[  PASSED  ] 1 test.

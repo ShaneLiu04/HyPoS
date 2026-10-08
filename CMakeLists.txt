@@ -138,26 +138,35 @@ if(GTest_FOUND)
 
         add_test(NAME halo_2d_mpi
             COMMAND ${HYPOS_MPIEXEC} ${HYPOS_MPIEXEC_FLAGS} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} 4
-                    $<TARGET_FILE:test_hypos> --gtest_filter=HaloExchangeTest.MpiNonUniform4RanksHalos)
+                    $<TARGET_FILE:test_hypos> --gtest_filter=HaloExchangeTest.MpiNonUniform4RanksHalos:MpiEnvTest.*)
         add_test(NAME halo_3d_mpi
             COMMAND ${HYPOS_MPIEXEC} ${HYPOS_MPIEXEC_FLAGS} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} 8
-                    $<TARGET_FILE:test_hypos> --gtest_filter=HaloExchangeTest.MpiNonUniform8RanksHalos3D)
+                    $<TARGET_FILE:test_hypos> --gtest_filter=HaloExchangeTest.MpiNonUniform8RanksHalos3D:MpiEnvTest.*)
         add_test(NAME solver_mpi
             COMMAND ${HYPOS_MPIEXEC} ${HYPOS_MPIEXEC_FLAGS} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} 4
-                    $<TARGET_FILE:test_hypos> --gtest_filter=SolverMpiTest.*)
+                    $<TARGET_FILE:test_hypos> --gtest_filter=SolverMpiTest.*:MpiEnvTest.*)
         add_test(NAME overlap_consistency
             COMMAND ${HYPOS_MPIEXEC} ${HYPOS_MPIEXEC_FLAGS} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} 4
-                    $<TARGET_FILE:test_hypos> --gtest_filter=OverlapTest.*)
+                    $<TARGET_FILE:test_hypos> --gtest_filter=OverlapTest.*:MpiEnvTest.*)
         add_test(NAME solver_alt_mpi
             COMMAND ${HYPOS_MPIEXEC} ${HYPOS_MPIEXEC_FLAGS} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} 4
-                    $<TARGET_FILE:test_hypos> --gtest_filter=SolverMpiTest.AltSolvers*)
+                    $<TARGET_FILE:test_hypos> --gtest_filter=SolverMpiTest.AltSolvers*:MpiEnvTest.*)
         # B3 (AR004 T006, design §6): np=4 topology consistency of the
         # Cartesian communicator exposed by UniformPartition::partition().
         add_test(NAME topology_consistency
             COMMAND ${HYPOS_MPIEXEC} ${HYPOS_MPIEXEC_FLAGS} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} 4
-                    $<TARGET_FILE:test_hypos> --gtest_filter=PartitionTopologyTest.*)
+                    $<TARGET_FILE:test_hypos> --gtest_filter=PartitionTopologyTest.*:MpiEnvTest.*)
         set_tests_properties(topology_consistency PROPERTIES
-            ENVIRONMENT "${HYPOS_TEST_ENV}" TIMEOUT 60)
+            ENVIRONMENT "${HYPOS_TEST_ENV};HYPOS_EXPECT_NP=4" TIMEOUT 60)
+        # AR005 (design §4.1 FP1): standalone process-count probe entry.
+        # Makes the "multi-rank launch silently degraded to one process"
+        # failure mode (mpich 4.2.0 on Ubuntu 24.04) a deterministic FAIL
+        # instead of a false green.
+        add_test(NAME mpi_size_probe
+            COMMAND ${HYPOS_MPIEXEC} ${HYPOS_MPIEXEC_FLAGS} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} 4
+                    $<TARGET_FILE:test_hypos> --gtest_filter=MpiEnvTest.*)
+        set_tests_properties(mpi_size_probe PROPERTIES
+            ENVIRONMENT "${HYPOS_TEST_ENV};HYPOS_EXPECT_NP=4" TIMEOUT 60)
         add_test(NAME collective_mpi
             COMMAND ${HYPOS_MPIEXEC} ${HYPOS_MPIEXEC_FLAGS} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} 4
                     $<TARGET_FILE:hypos> --comm-mode collective --nx 32 --ny 32 --max-iter 20
@@ -171,7 +180,7 @@ if(GTest_FOUND)
                     $<TARGET_FILE:test_hypos> --gtest_filter=MpiIoOutputTest.*)
         add_test(NAME mpiio_np4
             COMMAND ${HYPOS_MPIEXEC} ${HYPOS_MPIEXEC_FLAGS} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} 4
-                    $<TARGET_FILE:test_hypos> --gtest_filter=MpiIoOutputTest.*)
+                    $<TARGET_FILE:test_hypos> --gtest_filter=MpiIoOutputTest.*:MpiEnvTest.*)
         add_test(NAME mpiio_e2e
             COMMAND ${HYPOS_MPIEXEC} ${HYPOS_MPIEXEC_FLAGS} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} 4
                     $<TARGET_FILE:hypos> --output-format mpibin --nx 32 --ny 32 --max-iter 20
@@ -196,10 +205,20 @@ if(GTest_FOUND)
                     "-Dexpected=solution_5.bin"
                     -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/VerifyMpiioOutput.cmake)
 
-        set_tests_properties(halo_2d_mpi halo_3d_mpi solver_mpi overlap_consistency
-            PROPERTIES ENVIRONMENT "${HYPOS_TEST_ENV}" TIMEOUT 600)
-        set_tests_properties(solver_alt_mpi collective_mpi ranks3_smoke
-            mpiio_np1 mpiio_np4 mpiio_e2e mpiio_e2e_final
+        # AR005 (design §4.3): inject the expected rank count into every
+        # np>1 entry. gtest entries consume it via the MpiEnvTest probe
+        # (appended to their --gtest_filter above); the four hypos-binary
+        # entries are declarative self-documentation only -- their guard is
+        # the environment-level probe (decision D7: launch degradation is an
+        # all-or-nothing property of the mpirun environment).
+        set_tests_properties(halo_2d_mpi solver_mpi overlap_consistency
+            solver_alt_mpi mpiio_np4 collective_mpi mpiio_e2e mpiio_e2e_final
+            PROPERTIES ENVIRONMENT "${HYPOS_TEST_ENV};HYPOS_EXPECT_NP=4" TIMEOUT 600)
+        set_tests_properties(halo_3d_mpi
+            PROPERTIES ENVIRONMENT "${HYPOS_TEST_ENV};HYPOS_EXPECT_NP=8" TIMEOUT 600)
+        set_tests_properties(ranks3_smoke
+            PROPERTIES ENVIRONMENT "${HYPOS_TEST_ENV};HYPOS_EXPECT_NP=3" TIMEOUT 600)
+        set_tests_properties(mpiio_np1
             PROPERTIES ENVIRONMENT "${HYPOS_TEST_ENV}" TIMEOUT 600)
         set_tests_properties(mpiio_e2e PROPERTIES FIXTURES_SETUP mpiio_e2e_files)
         set_tests_properties(mpiio_e2e_verify PROPERTIES FIXTURES_REQUIRED mpiio_e2e_files)
