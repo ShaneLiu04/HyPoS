@@ -5,6 +5,8 @@
 
 namespace hypo {
 
+class HaloExchanger;
+
 /**
  * @brief Local sum of squared true residuals over the interior points:
  *        sum (D*u - sum(neighbors) + rhs)^2 with D = 4 (2D) / 6 (3D),
@@ -19,5 +21,16 @@ namespace hypo {
  * Thread-safe, no exception paths.
  */
 Real trueResidualSquaredLocal(const Subgrid& subgrid) noexcept;
+
+/**
+ * @brief Global true residual ||r||_2 of the current iterate:
+ *        refreshes the neighbor halos of subgrid.u() via the exchanger,
+ *        evaluates trueResidualSquaredLocal, and reduces across ranks.
+ *
+ * Carries no profiler regions: callers wrap it with the appropriate
+ * region name (residual_confirm for exit scans, residual_allreduce for
+ * in-loop checks). MPI paths do not throw (AGENT_SPEC).
+ */
+Real globalTrueResidual(Subgrid& subgrid, HaloExchanger& exchanger) noexcept;
 
 } // namespace hypo

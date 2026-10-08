@@ -141,6 +141,7 @@ stop
 | 接口 | 签名 | 变更类型 | 说明 |
 | --- | --- | --- | --- |
 | 真实残差 helper | `namespace hypo { Real trueResidualSquaredLocal(const Subgrid& subgrid); }`（新文件 `src/solver/residual.hpp/cpp`） | 新增 | 内部点 Σ(D·u − Σnb + rhs)²，OpenMP 归约；调用方须先 exchange + applyPhysicalBoundary |
+| 全局真实残差 | `namespace hypo { Real globalTrueResidual(Subgrid& subgrid, HaloExchanger& exchanger); }`（同文件） | 新增（T002 实现期补充：4 处调用点复用——Jacobi/RBGS 出口确认 + RBGS 检查扫描/iterate） | exchange(u) + trueResidualSquaredLocal + MPI_Allreduce，返回全局 ‖r‖；内部无 profiler 区名，由调用方包裹（residual_confirm / residual_allreduce） |
 | 残差检查频率 | `void PoissonSolver::setResidualCheckInterval(Index interval)`（基类，默认实现存 `residualCheckInterval_ = max(1, interval)`；protected 成员 `Index residualCheckInterval_ = 1`） | 新增 | Jacobi/RBGS 读取；CG 不读取（main 层 WARN 拦截） |
 | CG p 更新 | `void CGSolver::updatePInterior(const Subgrid& subgrid, Real beta) const`（private） | 新增 | `pp = rp + beta*pp`，solve/iterate 复用 |
 | RBGS 迭代拆分 | `Real RedBlackGSSolver::iterateCore(Subgrid&, HaloExchanger&) const`（private，双扫 + applyPhysicalBoundary，返回 Σdiff²） | 新增 | solve() 非检查迭代走此路径 |

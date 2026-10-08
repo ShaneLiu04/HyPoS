@@ -1,4 +1,7 @@
 #include "solver/residual.hpp"
+#include "comm/halo_exchanger.hpp"
+#include <cmath>
+#include <mpi.h>
 
 namespace hypo {
 
@@ -45,6 +48,15 @@ Real trueResidualSquaredLocal(const Subgrid& subgrid) noexcept {
     }
 
     return sum;
+}
+
+Real globalTrueResidual(Subgrid& subgrid, HaloExchanger& exchanger) noexcept {
+    exchanger.exchange(subgrid);
+    const Real localSquared = trueResidualSquaredLocal(subgrid);
+    Real globalSquared = 0.0;
+    MPI_Allreduce(&localSquared, &globalSquared, 1, MPI_DOUBLE, MPI_SUM,
+                  subgrid.comm());
+    return std::sqrt(globalSquared);
 }
 
 } // namespace hypo

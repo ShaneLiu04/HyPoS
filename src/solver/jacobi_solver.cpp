@@ -205,11 +205,7 @@ Index JacobiSolver::solve(Subgrid& subgrid,
     // when no iteration ran, keeping the "0 before any iteration" contract.
     if (completed > 0) {
         HYPOS_PROFILE("residual_confirm");
-        exchanger.exchange(subgrid);
-        Real localSquared = trueResidualSquaredLocal(subgrid);
-        Real globalSquared = 0.0;
-        MPI_Allreduce(&localSquared, &globalSquared, 1, MPI_DOUBLE, MPI_SUM, subgrid.comm());
-        lastResidual_ = std::sqrt(globalSquared);
+        lastResidual_ = globalTrueResidual(subgrid, exchanger);
     }
 
     totalTimer.stop();

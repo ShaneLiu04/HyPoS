@@ -1,4 +1,5 @@
 #include "solver/solver.hpp"
+#include "solver/residual.hpp"
 #include "comm/halo_exchanger.hpp"
 #include "perf/profiler.hpp"
 #include "utils/logger.hpp"
@@ -64,8 +65,8 @@ Real RedBlackGSSolver::sweep(Subgrid& subgrid, int parity) const {
     return residual;
 }
 
-Real RedBlackGSSolver::iterate(Subgrid& subgrid, HaloExchanger& exchanger) {
-    Real residual = 0.0;
+Real RedBlackGSSolver::iterateCore(Subgrid& subgrid, HaloExchanger& exchanger) const {
+    Real updates = 0.0;
 
     {
         HYPOS_PROFILE("halo_exchange");
@@ -73,7 +74,7 @@ Real RedBlackGSSolver::iterate(Subgrid& subgrid, HaloExchanger& exchanger) {
     }
     {
         HYPOS_PROFILE("stencil_interior");
-        residual += sweep(subgrid, 0);
+        updates += sweep(subgrid, 0);
     }
     {
         HYPOS_PROFILE("halo_exchange");
@@ -81,12 +82,20 @@ Real RedBlackGSSolver::iterate(Subgrid& subgrid, HaloExchanger& exchanger) {
     }
     {
         HYPOS_PROFILE("stencil_boundary");
-        residual += sweep(subgrid, 1);
+        updates += sweep(subgrid, 1);
     }
 
     subgrid.applyPhysicalBoundary();
 
-    return std::sqrt(residual);
+    return updates;
+}
+
+Real RedBlackGSSolver::iterate(Subgrid& subgrid, HaloExchanger& exchanger) {
+    // Single-call contract: always report the true residual of the state
+    // produced by this iteration (scan = exchange + kernel + reduction).
+    iterateCore(subgrid, exchanger);
+    HYPOS_PROFILE("residual_allreduce");
+    return globalTrueResidual(subgrid, exchanger);
 }
 
 Index RedBlackGSSolver::solve(Subgrid& subgrid,
@@ -98,28 +107,41 @@ Index RedBlackGSSolver::solve(Subgrid& subgrid,
 
     Index completed = 0;
     for (; completed < maxIter; ) {
-        HYPOS_PROFILE("jacobi_iteration");
-        Real localResidual = iterate(subgrid, exchanger);
+        HYPOS_PROFILE("rbgs_iteration");
+        iterateCore(subgrid, exchanger);
         ++completed;
 
-        Real globalResidual = 0.0;
-        {
-            HYPOS_PROFILE("residual_allreduce");
-            Real localSquared = localResidual * localResidual;
-            MPI_Allreduce(&localSquared, &globalResidual, 1, MPI_DOUBLE, MPI_SUM, subgrid.comm());
-            globalResidual = std::sqrt(globalResidual);
-        }
-        lastResidual_ = globalResidual;
-        notifyProgress(completed);
+        // In-place updates have no diff-to-residual relation, so the true
+        // residual needs a dedicated scan; skipping it on non-check
+        // iterations is exactly what the interval buys.
+        if (completed % residualCheckInterval_ == 0) {
+            Real globalResidual = 0.0;
+            {
+                HYPOS_PROFILE("residual_allreduce");
+                globalResidual = globalTrueResidual(subgrid, exchanger);
+            }
+            lastResidual_ = globalResidual;
+            notifyProgress(completed);
 
-        if (globalResidual < tolerance) {
-            HYPOS_INFO("Converged at iteration " << completed << ", residual = " << globalResidual);
-            break;
-        }
+            if (globalResidual < tolerance) {
+                HYPOS_INFO("Converged at iteration " << completed << ", residual = " << globalResidual);
+                break;
+            }
 
-        if (completed % 500 == 0) {
-            HYPOS_INFO("Iteration " << completed << ", residual = " << globalResidual);
+            if (completed % 500 == 0) {
+                HYPOS_INFO("Iteration " << completed << ", residual = " << globalResidual);
+            }
+        } else {
+            notifyProgress(completed);
         }
+    }
+
+    // Exit confirmation scan (converged or maxIter): lastResidual() is the
+    // true residual of the final iterate. Skipped when no iteration ran,
+    // keeping the "0 before any iteration" contract.
+    if (completed > 0) {
+        HYPOS_PROFILE("residual_confirm");
+        lastResidual_ = globalTrueResidual(subgrid, exchanger);
     }
 
     totalTimer.stop();

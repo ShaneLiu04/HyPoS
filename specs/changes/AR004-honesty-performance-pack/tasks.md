@@ -12,13 +12,13 @@
 | ID | 任务描述 | 依赖 | 状态 | 备注 |
 |----|---------|------|------|------|
 | T001 | A2-Jacobi 真实残差 + interval：新增 src/solver/residual.hpp/cpp（trueResidualSquaredLocal）；iterate() 返回 denom×‖diff‖；solve() 判据换算 + 出口统一确认扫描（区名 residual_confirm）。测试先行：U1-U3、U10、B2 期望值更新 | - | passing | 2026-10-08 完成；新增 solver 级 interval 用例 I1s/I5s/E4s 一并落地；maxIter=0 出口跳过确认扫描（保基类契约） |
-| T002 | A2-RBGS 真实残差 + interval：iterateCore/iterate 拆分（iterate 每调用必扫描）；solve() 每 k 步判定。测试先行：U4/U5、B5 | T001 | 共享 residual helper（design D2） |
-| T003 | A2-CLI `--residual-check-interval`：基类 setResidualCheckInterval（0 钳 1）；main 解析/校验（<1 退出码 1；CG 传入 WARN 忽略）；RunConfig +residualCheckInterval 透出。测试先行：U9、I1-I6 | T001 | design D4/D9 |
-| T004 | B2a+A4-CG：updatePInterior 抽取（消除 solve/iterate 重复）；初始化循环并行化；区名改 cg_iteration。测试先行：U6（golden 迭代数，先跑基线固化）、E2 | - | design §4.2.2-4；位级不变 |
-| T005 | A1 First-touch：zeroInitialize() 外层维度并行（全缓冲，三场单遍历）；applyDirichletBC 保持串行并文档记录。测试先行：U7、B4 | - | design D8 |
-| T006 | A3 拓扑一致性：SubgridInfo +cartComm（所有权移交）；partition 用 cart rank 查 coords；main 删除二次 Cart_create。测试先行：B3 | - | 接口变更授权见 design §4.3.1；design D5/D6 |
-| T007 | A4 Profiler：per-thread ThreadData 注册表（热路径零锁）+ 聚合；hpp 注释对齐；RBGS 区名 rbgs_iteration；test_performance.cpp:83 区名断言同步。测试先行：U8 | T004 | design D7；JSON 格式兼容 |
-| T008 | 全量回归（Debug/Release + ASan；TSan 不可用则走查佐证）+ 基准（scripts/bench_ar004.sh：Jacobi ±5% 门槛、RBGS k=1/5/10 三档、CG 前后，≥3 次中位数）+ 文档同步（README/AGENT_SPEC/PERFORMANCE §11/GUIDE 勾选 G1/G3/G5/G6、P1/P4/P6） | T001-T007 | SCALING_REPORT 口径注记 |
+| T002 | A2-RBGS 真实残差 + interval：iterateCore/iterate 拆分（iterate 每调用必扫描）；solve() 每 k 步判定。测试先行：U4/U5、B5 | T001 | passing | 2026-10-08 完成；新增 R-I1s/R-I5s/R-E4s；rbgs_iteration 区名随 solve 重写落地（原 T007 项）；新增共享 globalTrueResidual（design §4.3.1 已补录） |
+| T003 | A2-CLI `--residual-check-interval`：基类 setResidualCheckInterval（0 钳 1）；main 解析/校验（<1 退出码 1；CG 传入 WARN 忽略）；RunConfig +residualCheckInterval 透出。测试先行：U9、I1-I6 | T001 | pending | design D4/D9；U9 已随 T001 落地 |
+| T004 | B2a+A4-CG：updatePInterior 抽取（消除 solve/iterate 重复）；初始化循环并行化；区名改 cg_iteration。测试先行：U6（golden 迭代数，先跑基线固化）、E2 | - | pending | design §4.2.2-4；位级不变 |
+| T005 | A1 First-touch：zeroInitialize() 外层维度并行（全缓冲，三场单遍历）；applyDirichletBC 保持串行并文档记录。测试先行：U7、B4 | - | pending | design D8 |
+| T006 | A3 拓扑一致性：SubgridInfo +cartComm（所有权移交）；partition 用 cart rank 查 coords；main 删除二次 Cart_create。测试先行：B3 | - | pending | 接口变更授权见 design §4.3.1；design D5/D6 |
+| T007 | A4 Profiler：per-thread ThreadData 注册表（热路径零锁）+ 聚合；hpp 注释对齐；test_performance.cpp:83 区名断言复核（RBGS 区名已随 T002 落地）。测试先行：U8、U11 | T004 | pending | design D7；JSON 格式兼容 |
+| T008 | 全量回归（Debug/Release + ASan；TSan 不可用则走查佐证）+ 基准（scripts/bench_ar004.sh：Jacobi ±5% 门槛、RBGS k=1/5/10 三档、CG 前后，≥3 次中位数）+ 文档同步（README/AGENT_SPEC/PERFORMANCE §11/GUIDE 勾选 G1/G3/G5/G6、P1/P4/P6） | T001-T007 | pending | SCALING_REPORT 口径注记 |
 
 ## 状态说明
 
@@ -30,6 +30,13 @@
 ## 进度记录
 
 > 每个开发会话结束后追加，记录完成情况。
+
+### 2026-10-08 会话记录（T002）
+
+- 完成任务：T002 A2-RBGS 真实残差 + interval
+- TDD：Red（子代理写 5 用例：U4/U5/R-I1s/R-I5s/R-E4s，运行期断言失败确认，24 既有测试保持绿）→ Green（主代理，一次通过）→ Refactor（新增共享 globalTrueResidual 并回改 Jacobi 确认扫描消除内联重复；design §4.3.1 补录该接口）
+- 修改文件：src/solver/residual.hpp/cpp（+globalTrueResidual）、src/solver/solver.hpp（RBGS 文档 + iterateCore 声明）、src/solver/red_black_gs_solver.cpp（iterateCore/iterate/solve 重写 + rbgs_iteration 区名）、src/solver/jacobi_solver.cpp（确认扫描改用共享 helper）、tests/test_alt_solvers.cpp（+5 用例）
+- 测试：unit 全绿（Debug 9.92s / Release 2.38s）；Debug 全量 ctest 16/16 绿（144s，较 T001 前增加——RBGS 扫描的诚实成本，Debug+ASan 口径）；Release 0 警告
 
 ### 2026-10-08 会话记录（T001）
 

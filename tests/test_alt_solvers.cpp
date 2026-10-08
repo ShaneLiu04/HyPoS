@@ -5,6 +5,7 @@
 #include "grid/grid.hpp"
 #include "grid/subgrid.hpp"
 #include "io/io_backend.hpp"
+#include "perf/profiler.hpp"
 #include "solver/solver.hpp"
 
 #include <filesystem>
@@ -495,4 +496,277 @@ TEST(AltSolverTest, CgIterateBeforeSolveIsSafe) {
 
     CGSolver cg;
     EXPECT_DOUBLE_EQ(cg.iterate(sg, ex), 0.0);
+}
+
+// ============================================================================
+// AR004 T002: A2-RBGS real residual + residual check interval.
+// These tests assert the NEW contract for RedBlackGSSolver:
+//   - iterate() always performs a residual scan (exchange(u) +
+//     trueResidualSquaredLocal + Allreduce) after the double sweep and
+//     returns the CURRENT true residual ||Au - f||_2 (not a diff norm);
+//   - solve() evaluates the convergence criterion only on iterations with
+//     completed % interval == 0 (interval via the base-class
+//     setResidualCheckInterval, default 1), on the true-residual scale;
+//   - the loop exit (converged or maxIter) runs exactly one confirmation
+//     scan (profiler region "residual_confirm", callCount == 1); maxIter == 0
+//     skips it and leaves lastResidual() at 0;
+//   - solve()'s iteration region is named "rbgs_iteration";
+//   - each in-loop check scan contains one Allreduce in profiler region
+//     "residual_allreduce".
+// The current implementation is still diff-based and misuses the
+// "jacobi_iteration" region name, so these assertions fail at runtime — the
+// legal Red state for this task.
+// ============================================================================
+
+namespace {
+
+// Relative-error tolerance for residual comparisons: the OpenMP reduction in
+// the true-residual scan sums in a different order than the serial
+// recomputation below, so results agree to ~1 ulp but not bit-exactly.
+// Copied from the AR004 T001 facilities in tests/test_solver.cpp (anonymous
+// namespaces are not shared across translation units).
+constexpr Real kAr004RelTol = 1e-12;
+
+void expectCloseRelative(Real actual, Real expected, const std::string& context) {
+    const Real tol = kAr004RelTol * std::fabs(expected);
+    EXPECT_NEAR(actual, expected, tol) << context;
+}
+
+// Exact manufactured solution on an n x n global grid: u = sin(pi x) sin(pi y)
+// with x = (gI+1)/(n+1). Generalizes the 64^2-only sineExact above (which
+// hard-codes /65.0). Copied from tests/test_solver.cpp; named differently to
+// avoid ambiguity with the sineExact overload in the namespace above.
+Real sineExactGlobalN(long long gI, long long gJ, long long n) {
+    const double x = static_cast<double>(gI + 1) / static_cast<double>(n + 1);
+    const double y = static_cast<double>(gJ + 1) / static_cast<double>(n + 1);
+    return std::sin(M_PI * x) * std::sin(M_PI * y);
+}
+
+// Single-rank manufactured sine setup for an arbitrary global size, following
+// the setupManufacturedSine pattern above (which is 64^2-specific via
+// sineExact). Copied from tests/test_solver.cpp; named differently to avoid
+// ambiguity with the (sg, offsetX, offsetY) overload in the namespace above.
+void setupManufacturedSineGlobalN(Subgrid& sg, Index globalN) {
+    sg.zeroInitialize();
+    sg.applyDirichletBC(0.0);
+    Real* rhs = sg.rhs().data();
+    const long long hw = static_cast<long long>(sg.haloWidth());
+    for (Index j = sg.jBegin(); j < sg.jEnd(); ++j) {
+        for (Index i = sg.iBegin(); i < sg.iEnd(); ++i) {
+            const long long gI = static_cast<long long>(i) - hw;
+            const long long gJ = static_cast<long long>(j) - hw;
+            rhs[sg.index(i, j)] =
+                sineExactGlobalN(gI - 1, gJ, globalN) + sineExactGlobalN(gI + 1, gJ, globalN) +
+                sineExactGlobalN(gI, gJ - 1, globalN) + sineExactGlobalN(gI, gJ + 1, globalN) -
+                4.0 * sineExactGlobalN(gI, gJ, globalN);
+        }
+    }
+}
+
+// Independent serial recomputation of the local true residual sum of squares
+// for the Au = -rhs convention (r = D*u - sum(neighbors) + rhs), D = 4 in 2D,
+// D = 6 in 3D. Takes an explicit u buffer so callers can evaluate a snapshot.
+// Halo values are read as-is: the caller is responsible for having refreshed
+// them (exchange / applyPhysicalBoundary). Copied verbatim in style from the
+// AR004 T001 facilities in tests/test_solver.cpp.
+Real trueResidualSumSqSerial(const Subgrid& sg, const Real* u) {
+    const Real* rhs = sg.rhs().data();
+    const Index nxT = sg.nxTotal();
+    const Index nyT = sg.nyTotal();
+    const bool is2D = (sg.nzLocal() == 1);
+    const Real denom = is2D ? 4.0 : 6.0;
+    // 2D lives in the k = 0 plane of the padded array.
+    const Index k0 = is2D ? 0 : sg.kBegin();
+    const Index k1 = is2D ? 1 : sg.kEnd();
+
+    Real sum = 0.0;
+    for (Index k = k0; k < k1; ++k) {
+        for (Index j = sg.jBegin(); j < sg.jEnd(); ++j) {
+            for (Index i = sg.iBegin(); i < sg.iEnd(); ++i) {
+                const Index idx = (k * nyT + j) * nxT + i;
+                const Real neighborSum = u[idx - 1] + u[idx + 1] +
+                                         u[idx - nxT] + u[idx + nxT] +
+                                         (is2D ? 0.0
+                                               : u[idx - nxT * nyT] +
+                                                 u[idx + nxT * nyT]);
+                const Real r = denom * u[idx] - neighborSum + rhs[idx];
+                sum += r * r;
+            }
+        }
+    }
+    return sum;
+}
+
+} // namespace
+
+// U4: after convergence, lastResidual() is the true residual ||Au - f||_2 of
+// the final iterate (confirm-scan semantics on the true-residual scale), not
+// a diff-based proxy.
+TEST(RbgsAR004Test, LastResidualAfterConvergenceIsTrueResidual) {
+    const Index kGridN = 32;      // manufactured sine domain 32x32
+    const Real kTol = 1e-6;       // convergence threshold on the true residual
+    const Index kMaxIter = 5000;  // generous budget; RBGS on 32^2 is far faster
+
+    Subgrid sg(kGridN, kGridN, 1, 1, MPI_COMM_SELF);
+    sg.setNeighbors(MPI_PROC_NULL, MPI_PROC_NULL, MPI_PROC_NULL, MPI_PROC_NULL);
+    setupManufacturedSineGlobalN(sg, kGridN);
+
+    PointToPointExchanger ex;
+    ex.initialize(sg);
+
+    RedBlackGSSolver solver;
+    const Index iters = solver.solve(sg, ex, kMaxIter, kTol);
+
+    SCOPED_TRACE("converged solve");
+    ASSERT_GT(iters, Index(0));
+    ASSERT_LT(iters, kMaxIter);  // must converge, not run out of budget
+    EXPECT_LE(solver.lastResidual(), kTol);
+
+    // Recompute the true residual of the final u. Single rank with all
+    // PROC_NULL neighbors: halo IS the physical boundary, so refreshing it
+    // via applyPhysicalBoundary is the correct pre-computation step.
+    sg.applyPhysicalBoundary();
+    const Real expected =
+        std::sqrt(trueResidualSumSqSerial(sg, sg.u().data()));
+    ASSERT_GT(expected, 0.0);
+    expectCloseRelative(solver.lastResidual(), expected,
+                        "lastResidual vs recomputed true residual");
+}
+
+// U5: iterate() returns the CURRENT true residual — of the state AFTER the
+// double sweep — not the diff norm and not the pre-update residual.
+TEST(RbgsAR004Test, IterateReturnsCurrentTrueResidual) {
+    const Index kGridN = 16;  // small single-rank grid, one direct iterate() call
+
+    Subgrid sg(kGridN, kGridN, 1, 1, MPI_COMM_SELF);
+    sg.setNeighbors(MPI_PROC_NULL, MPI_PROC_NULL, MPI_PROC_NULL, MPI_PROC_NULL);
+    setupManufacturedSineGlobalN(sg, kGridN);
+
+    // Perturb u away from zero with asymmetric values so both the old
+    // diff-based semantics and any indexing slip produce a distinguishable
+    // answer.
+    for (Index j = sg.jBegin(); j < sg.jEnd(); ++j) {
+        for (Index i = sg.iBegin(); i < sg.iEnd(); ++i) {
+            const Real fi = static_cast<Real>(i);
+            const Real fj = static_cast<Real>(j);
+            sg.at(i, j) = 0.10 * fi - 0.05 * fj + 0.02 * fi * fj;
+        }
+    }
+    // Refresh the PROC_NULL halo faces before the call.
+    sg.applyPhysicalBoundary();
+
+    PointToPointExchanger ex;
+    ex.initialize(sg);
+
+    RedBlackGSSolver solver;
+    const Real returned = solver.iterate(sg, ex);
+
+    // Recompute the true residual of the post-sweep state. iterate() has
+    // already refreshed the physical faces via applyPhysicalBoundary, and
+    // with all-PROC_NULL neighbors the in-scan exchange is a no-op; the
+    // repeat applyPhysicalBoundary is idempotent and documents the contract.
+    sg.applyPhysicalBoundary();
+    const Real expected =
+        std::sqrt(trueResidualSumSqSerial(sg, sg.u().data()));
+    SCOPED_TRACE("iterate() return vs current true residual");
+    ASSERT_GT(expected, 0.0);
+    expectCloseRelative(returned, expected,
+                        "iterate() return vs ||Au - f|| of post-sweep state");
+}
+
+// R-I5s: default interval (k=1) — every iteration runs the scan-based check.
+// tol=0 never converges, maxIter=20: 20 in-loop checks (one Allreduce each in
+// region residual_allreduce), 20 iteration regions, one exit confirmation
+// scan.
+TEST(RbgsAR004Test, DefaultIntervalChecksEveryIteration) {
+    const Index kGridN = 32;   // manufactured sine domain
+    const Index kMaxIter = 20;
+    const Real kNoConvergeTol = 0.0;
+
+    Subgrid sg(kGridN, kGridN, 1, 1, MPI_COMM_SELF);
+    sg.setNeighbors(MPI_PROC_NULL, MPI_PROC_NULL, MPI_PROC_NULL, MPI_PROC_NULL);
+    setupManufacturedSineGlobalN(sg, kGridN);
+
+    PointToPointExchanger ex;
+    ex.initialize(sg);
+
+    Profiler::instance().reset();
+    RedBlackGSSolver solver;  // no setResidualCheckInterval: default must be 1
+    const Index iters = solver.solve(sg, ex, kMaxIter, kNoConvergeTol);
+
+    SCOPED_TRACE("default interval, maxIter=20");
+    EXPECT_EQ(iters, kMaxIter);
+    EXPECT_EQ(Profiler::instance().stats("residual_allreduce").callCount,
+              std::uint64_t{kMaxIter});
+    EXPECT_EQ(Profiler::instance().stats("residual_confirm").callCount,
+              std::uint64_t{1});
+    EXPECT_EQ(Profiler::instance().stats("rbgs_iteration").callCount,
+              std::uint64_t{kMaxIter});
+}
+
+// R-I1s: with interval k, the in-loop check fires only every k-th iteration:
+// maxIter=20, interval=10 -> 2 checks (at 10 and 20); the iteration region
+// still covers every iteration.
+TEST(RbgsAR004Test, IntervalTenHalvesAllreduceChecks) {
+    const Index kGridN = 32;   // manufactured sine domain
+    const Index kMaxIter = 20;
+    const Index kInterval = 10;      // floor(20/10) = 2 in-loop checks
+    const Real kNoConvergeTol = 0.0;
+
+    Subgrid sg(kGridN, kGridN, 1, 1, MPI_COMM_SELF);
+    sg.setNeighbors(MPI_PROC_NULL, MPI_PROC_NULL, MPI_PROC_NULL, MPI_PROC_NULL);
+    setupManufacturedSineGlobalN(sg, kGridN);
+
+    PointToPointExchanger ex;
+    ex.initialize(sg);
+
+    Profiler::instance().reset();
+    RedBlackGSSolver solver;
+    solver.setResidualCheckInterval(kInterval);
+    const Index iters = solver.solve(sg, ex, kMaxIter, kNoConvergeTol);
+
+    SCOPED_TRACE("interval=10, maxIter=20");
+    EXPECT_EQ(iters, kMaxIter);
+    EXPECT_EQ(Profiler::instance().stats("residual_allreduce").callCount,
+              std::uint64_t{2});
+    EXPECT_EQ(Profiler::instance().stats("residual_confirm").callCount,
+              std::uint64_t{1});
+    EXPECT_EQ(Profiler::instance().stats("rbgs_iteration").callCount,
+              std::uint64_t{kMaxIter});
+}
+
+// R-E4s: interval >= maxIter means no in-loop check at all; the exit still
+// gets exactly one confirmation scan and lastResidual() is the true residual
+// of the final iterate.
+TEST(RbgsAR004Test, IntervalAboveMaxIterSkipsInLoopChecks) {
+    const Index kGridN = 32;   // manufactured sine domain
+    const Index kMaxIter = 5;  // exhaust the budget
+    const Index kInterval = 100;    // no completed iteration is a multiple of 100
+    const Real kNoConvergeTol = 0.0;
+
+    Subgrid sg(kGridN, kGridN, 1, 1, MPI_COMM_SELF);
+    sg.setNeighbors(MPI_PROC_NULL, MPI_PROC_NULL, MPI_PROC_NULL, MPI_PROC_NULL);
+    setupManufacturedSineGlobalN(sg, kGridN);
+
+    PointToPointExchanger ex;
+    ex.initialize(sg);
+
+    Profiler::instance().reset();
+    RedBlackGSSolver solver;
+    solver.setResidualCheckInterval(kInterval);
+    const Index iters = solver.solve(sg, ex, kMaxIter, kNoConvergeTol);
+
+    SCOPED_TRACE("interval=100, maxIter=5");
+    EXPECT_EQ(iters, kMaxIter);
+    EXPECT_EQ(Profiler::instance().stats("residual_allreduce").callCount,
+              std::uint64_t{0});
+    EXPECT_EQ(Profiler::instance().stats("residual_confirm").callCount,
+              std::uint64_t{1});
+
+    sg.applyPhysicalBoundary();
+    const Real expected =
+        std::sqrt(trueResidualSumSqSerial(sg, sg.u().data()));
+    ASSERT_GT(expected, 0.0);
+    expectCloseRelative(solver.lastResidual(), expected,
+                        "lastResidual vs recomputed true residual at exit");
 }

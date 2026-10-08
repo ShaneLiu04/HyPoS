@@ -142,6 +142,14 @@ private:
  * Two colored half-sweeps per iteration; a halo exchange after each sweep
  * shares the freshly updated color. Global coloring uses the subgrid offsets,
  * so the same color assignment holds across ranks.
+ *
+ * Residual semantics (AR004): in-place updates leave no algebraic relation
+ * between the update diff and the residual, so the true residual
+ * ||A u - b|| is obtained from a dedicated scan (exchange + kernel +
+ * reduction). iterate() always scans; solve() scans every
+ * residualCheckInterval_ iterations and, at loop exit, runs one
+ * confirmation scan so lastResidual() is the true residual of the final
+ * iterate.
  */
 class RedBlackGSSolver : public PoissonSolver {
 public:
@@ -163,6 +171,14 @@ private:
      * @param parity 0 for red cells, 1 for black cells (global parity).
      */
     Real sweep(Subgrid& subgrid, int parity) const;
+
+    /**
+     * @brief One full iteration without the residual scan: two colored
+     * half-sweeps with halo exchanges, then applyPhysicalBoundary.
+     * @return Local sum of squared updates (diagnostic only; not a
+     *         convergence criterion — see class doc).
+     */
+    Real iterateCore(Subgrid& subgrid, HaloExchanger& exchanger) const;
 
     Real lastResidual_ = 0.0;
 };
