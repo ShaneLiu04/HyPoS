@@ -285,4 +285,21 @@ struct Good {
 
 ---
 
+## 12. AR005 I/O 写出路径基准（ASCII→appended binary / 逐元素→块写）
+
+取数口径：`--max-iter 10 --save-interval 10`（io_write 剖面区段，循环内写出）、np=1、OMP=1、WSL 单机、Release 构建、每组合 3 次取中位数；baseline = 改动前（ASCII vtk + 逐元素 binary，HEAD 69305cb 前），after = T002/T003 落地后。门槛（design D6）：median(after) ≤ median(baseline)。复测：`scripts/bench_ar005.sh baseline|after`；详见 `specs/changes/AR005-vtk-binary-ci-trust/evidence/`。
+
+| nx | format | baseline sec / bytes | after sec / bytes | 提速 | 体积 |
+|----|--------|---------------------|-------------------|------|------|
+| 256 | vtk | 0.019120 / 1,245,572 B | 0.000528 / 524,750 B | **36.2×** | **-57.9%** |
+| 256 | binary | 0.001253 / 524,344 B | 0.000374 / 524,344 B | 3.35× | 0（布局不变） |
+| 512 | vtk | 0.065241 / 4,981,124 B | 0.001339 / 2,097,614 B | **48.7×** | **-57.9%** |
+| 512 | binary | 0.005386 / 2,097,208 B | 0.001422 / 2,097,208 B | 3.79× | 0（布局不变） |
+
+- 四组合全部满足 D6 门槛；`.vti` 体积 = 数据镜像 + ~406B XML 头（与 binary 后端一致），`.bin` 字节数逐位不变（U2 布局守护测试佐证纯性能重构）。
+- 提速来源：vtk 每元素 ~24 字符文本格式化 → 每 (k,j) 行一次块写；binary 每 1 元素 1 次 write syscall（256² = 65,536 次）→ 每行 1 次（256 次）。
+- ParaView 兼容口径：本地无 GUI 环境，以 U3 最小解析器测试（位级还原）+ VTK XML 规范走查替代（srs §4），未做真实加载演示。
+
+---
+
 *Last updated: 2026*

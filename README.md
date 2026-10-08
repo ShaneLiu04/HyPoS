@@ -25,7 +25,7 @@
 ### 依赖
 
 - **CMake** ≥ 3.16
-- **MPI** 实现：OpenMPI、MPICH 或 Intel MPI（注意：Ubuntu 24.04 的 `mpich 4.2.0` 包存在 PMI/PMIx 不匹配缺陷，应用会静默退化为单进程运行；该环境请使用 OpenMPI，可用 `mpirun -n 4 <app>` 验证 `MPI_Comm_size` 是否为 4）
+- **MPI** 实现：OpenMPI、MPICH 或 Intel MPI（注意：Ubuntu 24.04 的 `mpich 4.2.0` 包存在 PMI/PMIx 不匹配缺陷，应用会静默退化为单进程运行；该环境请使用 OpenMPI，可用 `mpirun -n 4 <app>` 验证 `MPI_Comm_size` 是否为 4。本项目测试套件内置进程数探针：np>1 的 ctest 条目注入 `HYPOS_EXPECT_NP`，实际 rank 数不符时测试直接 FAIL，不再可能"单进程假通过"）
 - **OpenMP** 支持（GCC/Clang/Intel 编译器）
 - **C++17** 编译器：GCC 10+、Clang 14+、Intel oneAPI 2023+
 - 可选：GoogleTest（测试）、PAPI（硬件计数器）
@@ -70,7 +70,7 @@ mpirun -np 16 ./build/hypos --nx 2048 --ny 2048 --max-iter 10000 --enable-profil
 | `--enable-profiling` | false | 启用详细性能分析 |
 | `--overlap-comm` | false | 启用通信-计算重叠 |
 | `--residual-check-interval` | 1 | 每 N 次迭代检查一次收敛（jacobi / red_black_gs；N≥1，默认每迭代；CG 不支持并警告忽略）。判据为真实残差 ‖Au−f‖₂ |
-| `--output-format` | json | 输出格式（json / csv / vtk / binary / mpibin；vtk=每 rank `.vti` 分片+rank0 `.pvti` 索引，binary=每 rank `.bin` 含真实 offsets，mpibin=MPI-IO 单文件 `solution_<step>.bin`：72 字节自描述头+全局行主序数据区，全 rank 集体写，小端） |
+| `--output-format` | json | 输出格式（json / csv / vtk / binary / mpibin；vtk=每 rank `.vti` 分片+rank0 `.pvti` 索引，`.vti` 为 appended raw binary（`header_type="UInt64"`，数据区=interior 行主序小端 Float64 镜像，可被 ParaView 直接加载），binary=每 rank `.bin` 含真实 offsets，mpibin=MPI-IO 单文件 `solution_<step>.bin`：72 字节自描述头+全局行主序数据区，全 rank 集体写，小端） |
 | `--output-dir` | ./output | 输出目录（启动时自动创建） |
 | `--save-interval` | 0 | 每 N 次迭代输出中间解（文件名含步号；0=不保存） |
 

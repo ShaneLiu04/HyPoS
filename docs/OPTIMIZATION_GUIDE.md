@@ -66,7 +66,7 @@ HyPoS 的本质定位是**「HPC 工程教学/参考样板」**：用一个小�
 | P2 | **CG 每迭代 3 次全局 Allreduce**（dot(r,r)/dot(p,Ap)/dot(r,r)），无 pipelined 化、无 `MPI_Iallreduce` 重叠 | cg_solver.cpp:159,169,178 | 未开始（对应 B2b） |
 | P3 | **RBGS 内层 stride-2 循环无 `omp simd`**；每 sweep 2 次 halo 交换且无重叠——通信翻倍抵消部分收益 | red_black_gs_solver.cpp:30,50,71-81 | 未开始（对应 B4） |
 | P4 | **残差 Allreduce 每迭代一次，无检查频率参数**——归约开销管理是 HPC 经典课题，项目把它写死 | jacobi_solver.cpp:169-175 | ✅ 已完成（AR004/T003：`--residual-check-interval N`（Jacobi/RBGS），RunConfig/JSON 透出；Jacobi k=10 np4 实测 −27%/iter） |
-| P5 | **VTK 输出为 ASCII Float64**（512² 一次输出数百 MB 文本）；binary 后端逐元素 `ofstream.write` 非块写 | vtk_io.cpp:50-60；binary_io.cpp:44-52 | 未开始（对应 D1） |
+| P5 | **VTK 输出为 ASCII Float64**（512² 一次输出数百 MB 文本）；binary 后端逐元素 `ofstream.write` 非块写 | vtk_io.cpp:50-60；binary_io.cpp:44-52 | ✅ 已完成（AR005/T002-T004：.vti 改 appended raw binary（vtk 36-49×/体积 -58%）、.bin 块写（3.4-3.8×，字节布局不变）；U2/U3 位级守护 + pvti 零变更） |
 | P6 | **拓扑重复创建**：`UniformPartition::partition()` 内建 cart comm 用后即 free（partition.cpp:36-38），main.cpp:168 再建一次；两次均 `reorder=1`，理论上可给出**不同的 rank→coord 映射**（当前靠实现巧合保持一致） | partition.cpp:38 + main.cpp:168 | ✅ 已完成（AR004/T006：SubgridInfo.cartComm 所有权移交 + cart rank 查 coords（修 reorder 错位）+ main 删除二次创建；B3 拓扑一致性测试） |
 | P7 | **halo 打包用 memcpy 中间缓冲**而非 MPI 派生数据类型直传（pack/unpack 与面缓冲均可省） | p2p_exchanger.cpp:139-242 | 未开始（对应 C1） |
 
@@ -174,7 +174,7 @@ HyPoS 的本质定位是**「HPC 工程教学/参考样板」**：用一个小�
 
 ### D. I/O 层
 
-#### D1 VTK 二进制格式 + binary 块写（修复 P5）
+#### D1 VTK 二进制格式 + binary 块写（修复 P5）✅ 已完成（AR005/T002-T004）
 
 - **方案**：`.vti` 从 ASCII 改 appended binary（raw offset 模式，XML 头写 `format="appended"` + offset）；`BinaryIOBackend` 改块写（攒一行 memcpy 进缓冲或 `ofs.write(ptr, bytes)` 整行）。
 - **收益**：512² VTK 输出体积/耗时预计降 1-2 个数量级（数据入 PERFORMANCE）；ParaView 加载时间实测。
@@ -212,7 +212,7 @@ HyPoS 的本质定位是**「HPC 工程教学/参考样板」**：用一个小�
 
 ### F. 工程配套层
 
-#### F1 CI 矩阵 + CI 可信度修复（**含一项紧急排查**）
+#### F1 CI 矩阵 + CI 可信度修复（**含一项紧急排查**）——探针+runner 固定已完成（AR005/T001/T005），矩阵扩展未开始
 
 - **紧急项**：CI 的 Debug(MPICH) job 跑在 ubuntu-latest（24.04）上——**该平台 mpich 4.2.0 存在 PMI/PMIx 不匹配缺陷，应用静默退化为单进程**（AR003 开发期实测确认，README:28 已记录）。这意味着 **CI 里 MPICH 路径的 np4/np8 多 rank 测试（halo_2d_mpi、solver_mpi 等）很可能一直在"4 个单进程假通过"**。修复：ctest 增加进程数探针测试（`MPI_Comm_size != 预期 np` 即 FAIL），并 pin MPICH 到已修复版本或换发行版。
 - **矩阵**：GCC/Clang × OpenMPI/MPICH、ccache 缓存、覆盖率 job（见 F2）。
