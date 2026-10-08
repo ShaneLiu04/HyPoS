@@ -105,6 +105,35 @@ void CGSolver::axpyInterior(Subgrid& subgrid, Real alpha, const Real* x, Real* y
     }
 }
 
+void CGSolver::updatePInterior(Subgrid& subgrid, Real beta) {
+    const Index nxT = subgrid.nxTotal();
+    const Index nyT = subgrid.nyTotal();
+    const Real* rp = r_.data();
+    Real* pp = p_.data();
+
+    if (subgrid.nzLocal() == 1) {
+        #pragma omp parallel for schedule(static)
+        for (Index j = subgrid.jBegin(); j < subgrid.jEnd(); ++j) {
+            #pragma omp simd
+            for (Index i = subgrid.iBegin(); i < subgrid.iEnd(); ++i) {
+                const Index idx = j * nxT + i;
+                pp[idx] = rp[idx] + beta * pp[idx];
+            }
+        }
+    } else {
+        #pragma omp parallel for schedule(static)
+        for (Index k = subgrid.kBegin(); k < subgrid.kEnd(); ++k) {
+            for (Index j = subgrid.jBegin(); j < subgrid.jEnd(); ++j) {
+                #pragma omp simd
+                for (Index i = subgrid.iBegin(); i < subgrid.iEnd(); ++i) {
+                    const Index idx = (k * nyT + j) * nxT + i;
+                    pp[idx] = rp[idx] + beta * pp[idx];
+                }
+            }
+        }
+    }
+}
+
 Index CGSolver::solve(Subgrid& subgrid,
                       HaloExchanger& exchanger,
                       Index maxIter,
@@ -122,6 +151,7 @@ Index CGSolver::solve(Subgrid& subgrid,
     if (ap_.size() != total) {
         ap_.allocate(total);
     }
+    #pragma omp parallel for schedule(static)
     for (Index idx = 0; idx < total; ++idx) {
         r_[idx] = 0.0;
         p_[idx] = 0.0;
@@ -135,7 +165,9 @@ Index CGSolver::solve(Subgrid& subgrid,
         const Index nyT = subgrid.nyTotal();
         const Real* rhs = subgrid.rhs().data();
         if (subgrid.nzLocal() == 1) {
+            #pragma omp parallel for schedule(static)
             for (Index j = subgrid.jBegin(); j < subgrid.jEnd(); ++j) {
+                #pragma omp simd
                 for (Index i = subgrid.iBegin(); i < subgrid.iEnd(); ++i) {
                     const Index idx = j * nxT + i;
                     r_[idx] = -rhs[idx];
@@ -143,8 +175,10 @@ Index CGSolver::solve(Subgrid& subgrid,
                 }
             }
         } else {
+            #pragma omp parallel for schedule(static)
             for (Index k = subgrid.kBegin(); k < subgrid.kEnd(); ++k) {
                 for (Index j = subgrid.jBegin(); j < subgrid.jEnd(); ++j) {
+                    #pragma omp simd
                     for (Index i = subgrid.iBegin(); i < subgrid.iEnd(); ++i) {
                         const Index idx = (k * nyT + j) * nxT + i;
                         r_[idx] = -rhs[idx];
@@ -164,7 +198,7 @@ Index CGSolver::solve(Subgrid& subgrid,
     Index completed = 0;
     if (residual >= tolerance) {
         for (; completed < maxIter; ) {
-            HYPOS_PROFILE("jacobi_iteration");
+            HYPOS_PROFILE("cg_iteration");
             matvec(subgrid, exchanger, p_.data(), ap_.data());
             const Real pap = dotGlobal(subgrid, p_.data(), ap_.data());
             if (!(pap > 0.0)) {
@@ -191,29 +225,7 @@ Index CGSolver::solve(Subgrid& subgrid,
 
             const Real beta = rhoNew / rho_;
             rho_ = rhoNew;
-            {
-                const Index nxT = subgrid.nxTotal();
-                const Index nyT = subgrid.nyTotal();
-                const Real* rp = r_.data();
-                Real* pp = p_.data();
-                if (subgrid.nzLocal() == 1) {
-                    for (Index j = subgrid.jBegin(); j < subgrid.jEnd(); ++j) {
-                        for (Index i = subgrid.iBegin(); i < subgrid.iEnd(); ++i) {
-                            const Index idx = j * nxT + i;
-                            pp[idx] = rp[idx] + beta * pp[idx];
-                        }
-                    }
-                } else {
-                    for (Index k = subgrid.kBegin(); k < subgrid.kEnd(); ++k) {
-                        for (Index j = subgrid.jBegin(); j < subgrid.jEnd(); ++j) {
-                            for (Index i = subgrid.iBegin(); i < subgrid.iEnd(); ++i) {
-                                const Index idx = (k * nyT + j) * nxT + i;
-                                pp[idx] = rp[idx] + beta * pp[idx];
-                            }
-                        }
-                    }
-                }
-            }
+            updatePInterior(subgrid, beta);
         }
     }
 
@@ -248,29 +260,7 @@ Real CGSolver::iterate(Subgrid& subgrid, HaloExchanger& exchanger) {
     lastResidual_ = std::sqrt(rhoNew);
     const Real beta = rhoNew / rho_;
     rho_ = rhoNew;
-    {
-        const Index nxT = subgrid.nxTotal();
-        const Index nyT = subgrid.nyTotal();
-        const Real* rp = r_.data();
-        Real* pp = p_.data();
-        if (subgrid.nzLocal() == 1) {
-            for (Index j = subgrid.jBegin(); j < subgrid.jEnd(); ++j) {
-                for (Index i = subgrid.iBegin(); i < subgrid.iEnd(); ++i) {
-                    const Index idx = j * nxT + i;
-                    pp[idx] = rp[idx] + beta * pp[idx];
-                }
-            }
-        } else {
-            for (Index k = subgrid.kBegin(); k < subgrid.kEnd(); ++k) {
-                for (Index j = subgrid.jBegin(); j < subgrid.jEnd(); ++j) {
-                    for (Index i = subgrid.iBegin(); i < subgrid.iEnd(); ++i) {
-                        const Index idx = (k * nyT + j) * nxT + i;
-                        pp[idx] = rp[idx] + beta * pp[idx];
-                    }
-                }
-            }
-        }
-    }
+    updatePInterior(subgrid, beta);
     return lastResidual_;
 }
 

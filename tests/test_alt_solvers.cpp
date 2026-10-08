@@ -14,7 +14,13 @@
 #include <string>
 #include <vector>
 #include <cmath>
+#include <cstdint>
 #include <cstring>
+#include <limits>
+
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
 using namespace hypo;
 
@@ -769,4 +775,195 @@ TEST(RbgsAR004Test, IntervalAboveMaxIterSkipsInLoopChecks) {
     ASSERT_GT(expected, 0.0);
     expectCloseRelative(solver.lastResidual(), expected,
                         "lastResidual vs recomputed true residual at exit");
+}
+
+// ============================================================================
+// AR004 T004: CGSolver refactoring + parallelization (behavior must stay
+// BIT-IDENTICAL for a fixed OMP thread count).
+// These tests pin the contract of the upcoming Green implementation:
+//   - the init loops (r_/p_/ap_ zeroing, r_ = -rhs, p_ = r_ setup) get an
+//     OpenMP parallel for, and the duplicated p-update loops in solve() and
+//     iterate() get extracted into a private helper updatePInterior
+//     (parallelized) — both are element-wise, so NO arithmetic may change
+//     for a fixed thread count (no new reductions);
+//   - the profiler region name inside solve()'s loop changes from
+//     "jacobi_iteration" to "cg_iteration" (naming only, no numerics);
+//   - the existing `pap <= 0` breakdown guard in solve() must keep firing
+//     BEFORE any state mutation (u untouched) and iterate() after a
+//     breakdown must stay safe.
+// U6 is a regression-capture golden test: it PASSES on the current baseline
+// code (the goldens are captured from it) and fails only if the Green
+// implementation changes CG numerics for a fixed thread count. E2 tests
+// current behavior and must pass before and after the refactor.
+// ============================================================================
+
+namespace {
+
+// FNV-1a 64-bit hash over the raw bytes of the interior solution in
+// row-major order (j outer, i inner). Byte-level: any bit flip anywhere in
+// the interior changes the hash.
+std::uint64_t fnv1a64Interior(const Subgrid& sg) {
+    std::uint64_t h = 0xcbf29ce484222325ULL;  // FNV offset basis
+    for (Index j = sg.jBegin(); j < sg.jEnd(); ++j) {
+        for (Index i = sg.iBegin(); i < sg.iEnd(); ++i) {
+            const Real v = sg.u().data()[sg.index(i, j)];
+            unsigned char bytes[sizeof(Real)];
+            std::memcpy(bytes, &v, sizeof(Real));
+            for (unsigned char b : bytes) {
+                h ^= static_cast<std::uint64_t>(b);
+                h *= 0x100000001b3ULL;  // FNV prime
+            }
+        }
+    }
+    return h;
+}
+
+} // namespace
+
+// U6: pin the numerical behavior of CG on 64^2 (uniform-Poisson rhs = -1,
+// multi-mode, maxIter=30000, tol=1e-7) per OMP thread tier, so the upcoming
+// parallelization/refactor cannot silently change results. The multi-mode
+// rhs forces 126 CG iterations, exercising every refactored loop (init,
+// matvec, axpy, p-update) repeatedly.
+//
+// Determinism split (established by measurement on libgomp): dotGlobal's
+// OpenMP reduction combines partial sums in thread-arrival order, so the
+// OMP=4 result is NOT bitwise reproducible across runs — only the OMP=1
+// tier is. Therefore:
+//   - tier 1: bit-exact golden (iteration count + FNV-1a hash of interior u)
+//   - tier 4: golden iteration count + max-abs deviation vs the tier-1
+//     solution must stay below 1e-12 (repo convention for cross-thread
+//     comparisons; values are O(0.05), so this is a relative-scale check).
+TEST(CgAR004Test, ParallelizedLoopsPreserveBaselineGoldens) {
+#ifdef NDEBUG
+    // The bit-exact golden below is pinned to the Debug+ASan build the
+    // capture ran on; Release codegen (-O3, vectorization, FMA contraction)
+    // legitimately differs in low-order bits. The rest of the suite carries
+    // relative-assertion coverage in Release.
+    GTEST_SKIP() << "bit-exact goldens are Debug-build-only";
+#endif
+    int sz = 0;
+    MPI_Comm_size(MPI_COMM_WORLD, &sz);
+    if (sz != 1) {
+        GTEST_SKIP() << "golden capture is single-process only";
+    }
+
+#ifdef _OPENMP
+    // RAII: restore the max-threads setting on every exit path, including
+    // ASSERT failures.
+    struct MaxThreadsRestore {
+        int saved;
+        ~MaxThreadsRestore() { omp_set_num_threads(saved); }
+    } threadGuard{omp_get_max_threads()};
+#endif
+
+    const int kTiers[2] = {1, 4};
+    // Goldens captured 2026-10-08 on baseline (pre-T004) code, WSL OpenMPI,
+    // Debug+ASan build. Index k matches kTiers[k]. Uniform rhs = -1 is
+    // multi-mode: CG needs 126 iterations. The convergence margin at the
+    // golden count is ~20% (residual 8.1e-8 vs tol 1e-7), so last-ulp
+    // reduction noise cannot flip the iteration count.
+    static constexpr Index kGoldenIters[2] = {126, 126};
+    static constexpr std::uint64_t kGoldenHashTier1 = 0x654fa5ddb3bd66b5ULL;
+
+    // Interior solution of the tier-1 run, kept for the tier-4 comparison.
+    std::vector<Real> tier1U;
+
+    for (int k = 0; k < 2; ++k) {
+        const int t = kTiers[k];
+#ifdef _OPENMP
+        omp_set_num_threads(t);
+#endif
+        Subgrid sg(64, 64, 1, 1, MPI_COMM_SELF);
+        sg.setNeighbors(MPI_PROC_NULL, MPI_PROC_NULL, MPI_PROC_NULL, MPI_PROC_NULL);
+        setupUniformPoisson(sg);
+        PointToPointExchanger ex;
+        ex.initialize(sg);
+
+        CGSolver cg;
+        const Index iters = cg.solve(sg, ex, 30000, 1e-7);
+        ASSERT_EQ(iters, kGoldenIters[k]) << "tier=" << t << " iters=" << iters;
+
+        if (t == 1) {
+            const std::uint64_t hash = fnv1a64Interior(sg);
+            ASSERT_EQ(hash, kGoldenHashTier1)
+                << "tier=" << t << " hash=0x" << std::hex << hash;
+            tier1U.reserve(static_cast<std::size_t>(62 * 62));
+            for (Index j = sg.jBegin(); j < sg.jEnd(); ++j) {
+                for (Index i = sg.iBegin(); i < sg.iEnd(); ++i) {
+                    tier1U.push_back(sg.u().data()[sg.index(i, j)]);
+                }
+            }
+        } else {
+            // libgomp combines reductions in arrival order, so the
+            // multi-threaded result is not bitwise stable across runs;
+            // compare against the tier-1 solution instead.
+            std::size_t c = 0;
+            Real maxAbsDiff = 0.0;
+            for (Index j = sg.jBegin(); j < sg.jEnd(); ++j) {
+                for (Index i = sg.iBegin(); i < sg.iEnd(); ++i) {
+                    const Real diff = std::fabs(sg.u().data()[sg.index(i, j)] - tier1U[c]);
+                    maxAbsDiff = std::max(maxAbsDiff, diff);
+                    ++c;
+                }
+            }
+            ASSERT_EQ(c, tier1U.size());
+            // Observed noise band across repeated runs: <= 1.4e-12
+            // (arrival-order reduction noise accumulated over 126
+            // iterations). 1e-11 leaves ~8x margin; the tier-1 hash above
+            // is the bit-exact guard, this is the coarse tier-4 check.
+            EXPECT_LT(maxAbsDiff, 1e-11)
+                << "tier=" << t << " maxAbsDiff=" << maxAbsDiff;
+        }
+    }
+}
+
+// E2: the `pap <= 0` breakdown guard in solve() must fire BEFORE any state
+// mutation (u untouched), and iterate() after a breakdown must stay safe.
+//
+// Deterministic trigger via IEEE overflow, independent of iteration count
+// and thread count: rhs = +inf at two horizontally adjacent interior cells
+// (2,2) and (3,2) makes r = p = -inf at both points. The matvec at (2,2)
+// then computes ap = 4*(-inf) - (... + (-inf) + ...) = -inf - (-inf) = NaN
+// (inf - inf), likewise at (3,2). pap = dot(p, ap) contains NaN, and NaN
+// propagates through ANY summation/reduction order, so `!(pap > 0)` fires
+// deterministically for any thread count.
+TEST(CgAR004Test, BreakdownGuardFiresBeforeStateMutation) {
+    Subgrid sg(8, 8, 1, 1, MPI_COMM_SELF);
+    sg.setNeighbors(MPI_PROC_NULL, MPI_PROC_NULL, MPI_PROC_NULL, MPI_PROC_NULL);
+    setupUniformPoisson(sg);  // zeroes u/uNext/rhs, then rhs = -1 interior
+
+    // (2,2) and (3,2) are interior for an 8x8 grid with halo 1
+    // (iBegin = jBegin = 1, iEnd = jEnd = 9 in total coordinates 0..9).
+    ASSERT_LT(sg.iBegin(), Index(2));
+    ASSERT_GT(sg.iEnd(), Index(3));
+    ASSERT_LT(sg.jBegin(), Index(2));
+    ASSERT_GT(sg.jEnd(), Index(2));
+    sg.rhs().data()[sg.index(2, 2)] = std::numeric_limits<double>::infinity();
+    sg.rhs().data()[sg.index(3, 2)] = std::numeric_limits<double>::infinity();
+
+    PointToPointExchanger ex;
+    ex.initialize(sg);
+
+    CGSolver cg;
+    const Index iters = cg.solve(sg, ex, 100, 1e-7);
+    EXPECT_EQ(iters, Index(0));  // breakdown at iteration 0
+
+    // u is EXACTLY untouched: the guard fired before axpyInterior mutated u.
+    // (setupUniformPoisson zeroes u via zeroInitialize; the trailing
+    // applyPhysicalBoundary in solve() only touches halo cells, which the
+    // interior loop below never reads.)
+    for (Index j = sg.jBegin(); j < sg.jEnd(); ++j) {
+        for (Index i = sg.iBegin(); i < sg.iEnd(); ++i) {
+            EXPECT_EQ(sg.u().data()[sg.index(i, j)], 0.0)
+                << "at i=" << i << " j=" << j;
+        }
+    }
+
+    // Initial residual sqrt(rho) is inf (r = -rhs is inf at the two cells).
+    EXPECT_TRUE(std::isinf(cg.lastResidual()));
+
+    // iterate() after breakdown must not crash and must return inf
+    // (guard fires again inside iterate(); lastResidual_ is still inf).
+    EXPECT_TRUE(std::isinf(cg.iterate(sg, ex)));
 }

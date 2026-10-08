@@ -14,7 +14,7 @@
 | T001 | A2-Jacobi 真实残差 + interval：新增 src/solver/residual.hpp/cpp（trueResidualSquaredLocal）；iterate() 返回 denom×‖diff‖；solve() 判据换算 + 出口统一确认扫描（区名 residual_confirm）。测试先行：U1-U3、U10、B2 期望值更新 | - | passing | 2026-10-08 完成；新增 solver 级 interval 用例 I1s/I5s/E4s 一并落地；maxIter=0 出口跳过确认扫描（保基类契约） |
 | T002 | A2-RBGS 真实残差 + interval：iterateCore/iterate 拆分（iterate 每调用必扫描）；solve() 每 k 步判定。测试先行：U4/U5、B5 | T001 | passing | 2026-10-08 完成；新增 R-I1s/R-I5s/R-E4s；rbgs_iteration 区名随 solve 重写落地（原 T007 项）；新增共享 globalTrueResidual（design §4.3.1 已补录） |
 | T003 | A2-CLI `--residual-check-interval`：基类 setResidualCheckInterval（0 钳 1）；main 解析/校验（<1 退出码 1；CG 传入 WARN 忽略）；RunConfig +residualCheckInterval 透出。测试先行：U9、I1-I6 | T001 | passing | 2026-10-08 完成；I1-I6 以 ctest 条目 + cmake/VerifyAr004Cli.cmake 四模式（interval10/default/cg_warn/help）落地；CSV 列插入 overlap_comm 后（17 列，位置由 default 模式守护）；拒绝类 4 项 WILL_FAIL；CG 不调用 setter（WARN 语义一致）；Red 期修正：verify 条目需 HYPOS_TEST_ENV（LSan 噪声） |
-| T004 | B2a+A4-CG：updatePInterior 抽取（消除 solve/iterate 重复）；初始化循环并行化；区名改 cg_iteration。测试先行：U6（golden 迭代数，先跑基线固化）、E2 | - | pending | design §4.2.2-4；位级不变 |
+| T004 | B2a+A4-CG：updatePInterior 抽取（消除 solve/iterate 重复）；初始化循环并行化；区名改 cg_iteration。测试先行：U6（golden 迭代数，先跑基线固化）、E2 | - | passing | 2026-10-08 完成；U6 实测修正设计前提：libgomp 归约按线程到达序合并 → OMP=4 跨运行非位级确定，tier=1 保位级 hash、tier=4 改迭代数+相对差 1e-11（噪声带宽实测 ≤1.4e-12）；golden 绑定 Debug+ASan（NDEBUG 跳过）；E2 以相邻双 inf rhs 确定性触发 pap=NaN 守卫 |
 | T005 | A1 First-touch：zeroInitialize() 外层维度并行（全缓冲，三场单遍历）；applyDirichletBC 保持串行并文档记录。测试先行：U7、B4 | - | pending | design D8 |
 | T006 | A3 拓扑一致性：SubgridInfo +cartComm（所有权移交）；partition 用 cart rank 查 coords；main 删除二次 Cart_create。测试先行：B3 | - | pending | 接口变更授权见 design §4.3.1；design D5/D6 |
 | T007 | A4 Profiler：per-thread ThreadData 注册表（热路径零锁）+ 聚合；hpp 注释对齐；test_performance.cpp:83 区名断言复核（RBGS 区名已随 T002 落地）。测试先行：U8、U11 | T004 | pending | design D7；JSON 格式兼容 |
@@ -30,6 +30,16 @@
 ## 进度记录
 
 > 每个开发会话结束后追加，记录完成情况。
+
+### 2026-10-08 会话记录（T004）
+
+- 完成任务：T004 B2a+A4-CG 并行化 + 去重 + 区名修复
+- TDD：Red（子代理写 U6/E2；U6 初版正弦问题恰为离散算符特征向量 → CG 1 步收敛、不覆盖重构尾部，主代理改用 uniform rhs=-1 多模态问题 → 126 迭代全路径覆盖；golden 采集于基线代码，按回归固化语义 Red 期即绿）→ Green（主代理：updatePInterior 抽取 + omp parallel for/simd、三场置零与初始化循环并行化、区名 cg_iteration；一次编译修正 const 限定）
+- 重要实测发现（修正设计 §6 U6 前提）：libgomp 归约按线程到达序合并，OMP=4 档跨运行 hash 不稳定（1.0~1.4e-12 波动）→ 测试口径改为 tier=1 位级 hash golden（0x654fa5ddb3bd66b5，两轮 10+ 次运行稳定）+ tier=4 迭代数 golden（126，收敛裕度 ~20% 不受 ulp 噪声翻转）与 tier=1 解最大偏差 <1e-11
+- golden 绑定 Debug+ASan 构建：Release（O3/FMA）低序位合法不同，NDEBUG 下 GTEST_SKIP
+- E2：相邻双 inf rhs → r=p=-inf → matvec 得 inf-inf=NaN → pap=NaN 确定性触发 breakdown 守卫（与线程数无关）；断言 0 迭代、u 全零（守卫先于 axpy）、lastResidual=inf、事后 iterate() 安全
+- 修改文件：src/solver/cg_solver.cpp（updatePInterior + 三处并行化 + 区名）、src/solver/solver.hpp（私有声明）、tests/test_alt_solvers.cpp（CgAR004Test 两用例 + fnv1a64Interior 助手）
+- 测试：CgAR004Test 5+10 次重复运行零失败；Debug 全量 24/24（79s）；Release 0 警告 + unit 绿；tier-1 hash 精确匹配证明并行化未改变单线程数值
 
 ### 2026-10-08 会话记录（T003）
 

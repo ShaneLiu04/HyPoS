@@ -214,6 +214,12 @@ private:
 
     void axpyInterior(Subgrid& subgrid, Real alpha, const Real* x, Real* y) const;
 
+    /**
+     * @brief Direction update on the interior: p = r + beta * p.
+     * Element-wise, so the thread partition does not affect any value.
+     */
+    void updatePInterior(Subgrid& subgrid, Real beta);
+
     AlignedBuffer<Real> r_;
     AlignedBuffer<Real> p_;
     AlignedBuffer<Real> ap_;
