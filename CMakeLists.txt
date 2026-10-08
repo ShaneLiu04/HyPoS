@@ -128,18 +128,25 @@ if(GTest_FOUND)
 
     if(MPIEXEC_EXECUTABLE)
         # Launcher must match the MPI implementation the binary is linked
-        # against; MPICH's mpiexec does not accept --oversubscribe (which
-        # keeps the np=8 test runnable on machines with fewer cores).
+        # against; MPICH's mpiexec rejects --oversubscribe (OpenMPI's
+        # accepts it). CI pins -DMPIEXEC_EXECUTABLE=... per leg, so honor
+        # that value first; otherwise fall back to name-based detection.
         set(HYPOS_MPIEXEC "${MPIEXEC_EXECUTABLE}")
         set(HYPOS_MPIEXEC_FLAGS "")
-        if(MPI_CXX_COMPILER MATCHES "mpich")
-            find_program(HYPOS_MPIEXEC_MPICH NAMES mpiexec.mpich mpirun.mpich)
-            if(HYPOS_MPIEXEC_MPICH)
-                set(HYPOS_MPIEXEC "${HYPOS_MPIEXEC_MPICH}")
+        if(MPI_CXX_COMPILER MATCHES "mpich" OR MPI_CXX_LIBRARIES MATCHES "mpich"
+           OR MPIEXEC_EXECUTABLE MATCHES "mpich")
+            if(NOT MPIEXEC_EXECUTABLE MATCHES "mpich")
+                find_program(HYPOS_MPIEXEC_MPICH NAMES mpiexec.mpich mpirun.mpich)
+                if(HYPOS_MPIEXEC_MPICH)
+                    set(HYPOS_MPIEXEC "${HYPOS_MPIEXEC_MPICH}")
+                else()
+                    message(WARNING "MPICH detected but mpiexec.mpich not found; MPI tests may fail")
+                endif()
             endif()
         else()
             set(HYPOS_MPIEXEC_FLAGS --oversubscribe)
         endif()
+        message(STATUS "HyPoS MPI test launcher: ${HYPOS_MPIEXEC} ${HYPOS_MPIEXEC_FLAGS}")
 
         add_test(NAME halo_2d_mpi
             COMMAND ${HYPOS_MPIEXEC} ${HYPOS_MPIEXEC_FLAGS} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} 4
