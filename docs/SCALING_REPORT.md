@@ -92,6 +92,8 @@
 | `final_residual` | 204.6 | 未达 1e-6（固定 10000 次） |
 
 > `comm_time_ms` 与 Profiler 报告同源（rank0），可由 `--enable-profiling` 输出精确对账（ST 用例 I5，np=1 与 np=4 均验证 ±5%）。
+>
+> **口径注记（AR004 后）**：本表及下文的历史迭代数/`final_residual` 采集于**递推残差口径**（更新量范数，≈‖r‖/D）——该判据下"tol 未达但停机"的表象即 `final_residual` 204.6 与 1e-6 的巨大落差。AR004 起判据与 `final_residual` 均为真实残差 ‖Au−f‖₂（Jacobi 融合换算、RBGS 每 k 步扫描），历史数据与 AR004 后数据不可直接混比；对比与换算依据见 `specs/changes/AR004-honesty-performance-pack/evidence/`。
 
 ### AR002 优化前后对比（同一环境，受控口径）
 

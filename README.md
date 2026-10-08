@@ -63,12 +63,13 @@ mpirun -np 16 ./build/hypos --nx 2048 --ny 2048 --max-iter 10000 --enable-profil
 | `--halo-width` | 1 | 幽灵层宽度 |
 | `--solver` | jacobi | 求解器类型（jacobi / red_black_gs / cg） |
 | `--max-iter` | 10000 | 最大迭代次数 |
-| `--tol` | 1e-6 | 收敛容差 |
+| `--tol` | 1e-6 | 收敛容差（真实残差 ‖Au−f‖₂ 口径；`final_residual` 报告同口径） |
 | `--bc` | dirichlet | 物理边界条件（dirichlet / neumann） |
 | `--omp-threads` | 系统核心数 | OpenMP 线程数 |
 | `--comm-mode` | p2p | 通信模式（p2p / collective；collective 当前为 P2P 回退） |
 | `--enable-profiling` | false | 启用详细性能分析 |
 | `--overlap-comm` | false | 启用通信-计算重叠 |
+| `--residual-check-interval` | 1 | 每 N 次迭代检查一次收敛（jacobi / red_black_gs；N≥1，默认每迭代；CG 不支持并警告忽略）。判据为真实残差 ‖Au−f‖₂ |
 | `--output-format` | json | 输出格式（json / csv / vtk / binary / mpibin；vtk=每 rank `.vti` 分片+rank0 `.pvti` 索引，binary=每 rank `.bin` 含真实 offsets，mpibin=MPI-IO 单文件 `solution_<step>.bin`：72 字节自描述头+全局行主序数据区，全 rank 集体写，小端） |
 | `--output-dir` | ./output | 输出目录（启动时自动创建） |
 | `--save-interval` | 0 | 每 N 次迭代输出中间解（文件名含步号；0=不保存） |

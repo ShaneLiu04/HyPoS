@@ -265,4 +265,24 @@ struct Good {
 
 ---
 
+## 11. AR004 诚实性修复 + CG 并行化基准（before/after）
+
+取数口径：256²、`--max-iter 500 --tol 0.0`（固定迭代数）、OMP=1、WSL 单机、Release 构建、每组合 3 次取中位数；before = 改动前基线（HEAD aa5c282），after = T001-T007 落地后（HEAD 28685e8）。详见 `specs/changes/AR004-honesty-performance-pack/evidence/`。
+
+| case | before ms/iter | after ms/iter | Δ | 说明 |
+|------|---------------|---------------|---|------|
+| jacobi np=1 | 0.0701 | 0.0729 | +4.0% | 真实残差判据≈零开销（融合换算 r=D·diff，无显式扫描） |
+| jacobi np=1 k=10 | — | 0.0705 | — | `--residual-check-interval 10`：省 9/10 Allreduce |
+| rbgs np=1 k=1 | 0.1060 | 0.1422 | +34% | 诚实成本：每 iter 真实残差扫描（exchange+核+Allreduce） |
+| rbgs np=1 k=5 | — | 0.1093 | +3.1%（vs before k=1） | interval 摊薄扫描成本 |
+| rbgs np=1 k=10 | — | 0.1089 | +2.7%（vs before k=1） | k=10 基本收回诚实化成本 |
+| cg np=1 | 0.1882 | 0.1938 | +3.0% | 噪声量级 |
+| cg np=4 | 0.0565 | 0.0524 | −7.3% | B2a：updatePInterior/初始化循环并行化收益 |
+
+- 收敛口径变化（64² tol=1e-6/1e-7）：jacobi 16141→17327、rbgs 8368→8812（迭代数——before 为递推残差口径，未真正达到 tol；after 为真实残差口径）；cg 198→198（不变，佐证数值一致性）。
+- np=4 数据在本机跨会话漂移 ±15%（mpirun oversubscribe + 共享 VM），仅作趋势参考；门槛判定以 np=1 为准（见 evidence/ar004-bench.md）。
+- 复测方法：`scripts/bench_ar004.sh`（含门槛判定），before 侧 `scripts/bench_ar004_baseline.sh`。
+
+---
+
 *Last updated: 2026*
