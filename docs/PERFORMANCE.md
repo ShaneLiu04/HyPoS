@@ -261,7 +261,7 @@ struct Good {
 
 - 单次写入量仅 512 KB，耗时以固定开销（open/view/close、collective 同步）为主，绝对差异在毫秒级；
 - np=1 时 mpibin 略快（单文件直写，无分片索引）；np=4 时分片写各 rank 独立文件更快，单文件 collective 需额外的聚合同步，此为单文件自描述便利性的已知代价；
-- 复测方法：`scripts/bench_t007.sh`（WSL 内执行），原始数据见 `specs/changes/AR003-mpiio-single-file-output/evidence/T007-bench.log`。
+- 复测方法：`scripts/bench_t007.sh`（WSL 内执行），原始数据见 `specs/archive/AR003-mpiio-single-file-output/evidence/T007-bench.log`。
 
 ---
 
