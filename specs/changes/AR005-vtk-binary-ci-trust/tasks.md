@@ -12,7 +12,7 @@
 | ID | 任务描述 | 依赖 | 状态 | 备注 |
 |----|---------|------|------|------|
 | T001 | F1-探针：新增 `MpiEnvTest.SizeProbeMatchesExpected`（`HYPOS_EXPECT_NP` 未设 SKIP/不匹配或非法值 FAIL）+ ctest：np>1 全部 12 条目 ENVIRONMENT 注入 + 8 条 gtest 条目 filter 追加 `:MpiEnvTest.*`（消费方）+ 新增 `mpi_size_probe` 条目（np=4）。测试先行：Red 期以单进程直跑探针二进制（HYPOS_EXPECT_NP=4）验证「假通过会被咬」+ 非法值 fail-safe 态 | - | passing | 2026-10-08 完成；计数勘误：np>1 条目实为 11（gtest 7 + hypos 4，design 第 2 轮门控 M1）；四态验证落 evidence/T001-probe-states.log（Red-1 咬缺陷 FAIL 含诊断/Red-2 abc fail-safe/未设 SKIP/Green PASS）；Release 26/26 + Debug(ASan+UBSan) 26/26 |
-| T002 | D1-c BinaryIOBackend 块写：数据区 i 行连续段一次 `ofs.write(ptr, rowBytes)`；头部不变。测试先行：Red 期固化「同一 u 场输出逐位一致」fixture（块写重构前后文件 hash 相等）；块写耗时不劣化为走查口径 | T001 | pending | |
+| T002 | D1-c BinaryIOBackend 块写：数据区 i 行连续段一次 `ofs.write(ptr, rowBytes)`；头部不变。测试先行：Red 期固化「同一 u 场输出逐位一致」fixture（块写重构前后文件 hash 相等）；块写耗时不劣化为走查口径 | T001 | passing | 2026-10-08 完成；U2 以「从零构造期望字节」固化布局（比对比旧实现更硬）——对现状 GREEN 基线 + 块写实现守护；halo 毒化 sentinel 防 halo 字节混入；Release 26/26 + Debug 26/26 零警告；after 基准并入 T006 统一跑 |
 | T003 | D1-a VTK `.vti` appended binary：XML 头 `header_type="UInt64"` + `format="appended" offset` + `<AppendedData encoding="raw">` UInt64 长度头 + 行主序镜像；遍历序与旧 ASCII 一致。测试先行：更新 VtkPieceAndParallelIndexFiles + 新增最小 appended 解析器测试（还原数值序列） | T002 | pending | |
 | T004 | D1-b `.pvti` 适配：PDataArray 与 piece DataArray 类型/名称一致；pvti 保持 ASCII。测试先行：pvti 断言更新（格式声明一致性） | T003 | pending | |
 | T005 | F1-CI 修复：ci.yml Debug(MPICH) job 换发行版或 pin 修复版（design 记录依据；无可行方案则回退 Debug(OpenMPI) 并记录）。交付：配置文件 + 本地等价命令验证记录 | T001 | pending | |

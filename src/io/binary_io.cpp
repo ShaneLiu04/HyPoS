@@ -40,14 +40,16 @@ void BinaryIOBackend::write(const Subgrid& subgrid, const std::string& filename,
     ofs.write(reinterpret_cast<const char*>(&offsetY), sizeof(Index));
     ofs.write(reinterpret_cast<const char*>(&offsetZ), sizeof(Index));
 
-    // Write interior data only
+    // Write interior data as row-major (x fastest) memory image. Interior
+    // cells along x are contiguous (row-major layout, no padding), so each
+    // (k, j) row is emitted with a single block write instead of one call
+    // per element. File byte layout is identical to the elementwise loop.
     const Real* u = subgrid.u().data();
+    const std::streamsize rowBytes = static_cast<std::streamsize>(nx) * sizeof(Real);
     for (Index k = subgrid.kBegin(); k < subgrid.kEnd(); ++k) {
         for (Index j = subgrid.jBegin(); j < subgrid.jEnd(); ++j) {
-            for (Index i = subgrid.iBegin(); i < subgrid.iEnd(); ++i) {
-                Real val = u[subgrid.index(i, j, k)];
-                ofs.write(reinterpret_cast<const char*>(&val), sizeof(Real));
-            }
+            ofs.write(reinterpret_cast<const char*>(&u[subgrid.index(subgrid.iBegin(), j, k)]),
+                      rowBytes);
         }
     }
 

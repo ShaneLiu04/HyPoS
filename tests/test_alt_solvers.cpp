@@ -10,6 +10,7 @@
 
 #include <filesystem>
 #include <fstream>
+#include <iterator>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -142,6 +143,118 @@ TEST(AltFeatureTest, VtkPieceAndParallelIndexFiles) {
     std::vector<PieceExtent> badPieces = {{0, 0, 0, 100, 4, 1}};
     io.writeParallelIndex(grid, outDir + "/solution_bad", 0, badPieces);
     EXPECT_FALSE(std::filesystem::exists(outDir + "/solution_bad.pvti"));
+}
+
+// ============================================================================
+// AR005 T002 (U2): BinaryIOBackend block-write byte-layout guard.
+// The on-disk contract: 56-byte header (nx, ny, nz, halo, offsetX, offsetY,
+// offsetZ as little-endian 8-byte Index) followed by the interior u field in
+// (k, j, i) row-major order (x fastest), Real = double, no padding, no halo
+// bytes. The expected byte sequence is constructed from scratch — NOT by
+// running the old implementation — so it is a harder guarantee than an
+// old-vs-new diff: any Green block-write implementation that leaks halo
+// sentinel bytes or scrambles the (k, j, i) row order must FAIL here, while
+// the current per-element writer already satisfies the layout (this test is
+// the GREEN baseline guardian, not a Red test).
+// ============================================================================
+TEST(AltFeatureTest, BinaryOutputBitIdenticalToExpectedBytes) {
+    const std::string outDir = "test_out";
+    std::filesystem::create_directories(outDir);
+
+    Subgrid sg(4, 4, 1, 1, MPI_COMM_SELF);
+    sg.setNeighbors(MPI_PROC_NULL, MPI_PROC_NULL, MPI_PROC_NULL, MPI_PROC_NULL);
+    sg.setOffsets(0, 0, 0);
+
+    // Poison the WHOLE padded buffer (every halo cell, every k plane) with a
+    // sentinel, then overwrite only the interior cells in the writer's
+    // k-range: any halo byte leaking into the output is caught by the
+    // sentinel never being allowed to appear in the expected/actual bytes.
+    const Real kHaloSentinel = -999.0;
+    Real* uBuf = sg.u().data();
+    for (Index idx = 0; idx < sg.totalCells(); ++idx) {
+        uBuf[idx] = kHaloSentinel;
+    }
+    for (Index k = sg.kBegin(); k < sg.kEnd(); ++k) {
+        for (Index j = sg.jBegin(); j < sg.jEnd(); ++j) {
+            for (Index i = sg.iBegin(); i < sg.iEnd(); ++i) {
+                sg.at(i, j, k) =
+                    1000.0 * static_cast<Real>(i) + static_cast<Real>(j);
+            }
+        }
+    }
+
+    BinaryIOBackend io;
+    io.write(sg, outDir + "/binary_layout_guard", 0);
+    const std::string fname = outDir + "/binary_layout_guard.bin";
+
+    // ---- Expected bytes: header (little-endian Index on x86) + data ----
+    std::vector<char> expected;
+    expected.reserve(7 * sizeof(Index) + 16 * sizeof(Real));
+
+    auto appendBytes = [&expected](const void* src, std::size_t n) {
+        const char* p = static_cast<const char*>(src);
+        expected.insert(expected.end(), p, p + n);
+    };
+
+    const Index kNx = 4, kNy = 4, kNz = 1, kHw = 1, kOffX = 0, kOffY = 0, kOffZ = 0;
+    const Index headerFields[7] = {kNx, kNy, kNz, kHw, kOffX, kOffY, kOffZ};
+    for (const Index field : headerFields) {
+        appendBytes(&field, sizeof(Index));
+    }
+    for (Index k = sg.kBegin(); k < sg.kEnd(); ++k) {
+        for (Index j = sg.jBegin(); j < sg.jEnd(); ++j) {
+            for (Index i = sg.iBegin(); i < sg.iEnd(); ++i) {
+                const Real v = sg.at(i, j, k);
+                appendBytes(&v, sizeof(Real));
+            }
+        }
+    }
+
+    // ---- Read the actual file back ----
+    std::ifstream ifs(fname, std::ios::binary);
+    ASSERT_TRUE(ifs.good());
+    const std::vector<char> actual((std::istreambuf_iterator<char>(ifs)),
+                                   std::istreambuf_iterator<char>());
+
+    // (1) Total size: 56-byte header + 16 doubles, nothing more.
+    ASSERT_EQ(actual.size(), std::size_t{7 * sizeof(Index) + 16 * sizeof(Real)});
+
+    // (2) Header: 7 little-endian 8-byte fields with the exact values above.
+    for (int f = 0; f < 7; ++f) {
+        Index decoded = 0;
+        std::memcpy(&decoded, actual.data() + f * sizeof(Index), sizeof(Index));
+        EXPECT_EQ(decoded, headerFields[f]) << "header field " << f;
+    }
+
+    // (3) Interior values are exact and the halo sentinel never appears.
+    const Real* data = reinterpret_cast<const Real*>(actual.data() + 7 * sizeof(Index));
+    std::size_t cells = 0;
+    for (Index k = sg.kBegin(); k < sg.kEnd(); ++k) {
+        for (Index j = sg.jBegin(); j < sg.jEnd(); ++j) {
+            for (Index i = sg.iBegin(); i < sg.iEnd(); ++i) {
+                ASSERT_LT(cells, std::size_t{16});
+                EXPECT_EQ(data[cells], sg.at(i, j, k))
+                    << "cell (i=" << i << ", j=" << j << ", k=" << k << ")";
+                EXPECT_NE(data[cells], kHaloSentinel) << "halo leak at data cell " << cells;
+                ++cells;
+            }
+        }
+    }
+    EXPECT_EQ(cells, std::size_t{16});
+
+    // (4) Whole file bit-identical to the expected byte sequence; on mismatch
+    // report the first differing offset for diagnosis (header spans [0, 56),
+    // data starts at 56).
+    ASSERT_EQ(expected.size(), actual.size());
+    if (std::memcmp(actual.data(), expected.data(), expected.size()) != 0) {
+        for (std::size_t b = 0; b < expected.size(); ++b) {
+            if (actual[b] != expected[b]) {
+                ADD_FAILURE() << "first byte difference at offset " << b
+                              << " (header is 56 B, data region starts at 56)";
+                break;
+            }
+        }
+    }
 }
 
 TEST(AltFeatureTest, ProgressCallbackCountsIterations) {
