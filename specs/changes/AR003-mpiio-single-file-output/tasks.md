@@ -57,6 +57,18 @@
 - T004 泄漏走查记录：evidence/T004-leak-walkthrough.md
 - 文档：README/DESIGN/PERFORMANCE 全部同步
 - WSL 构建目录约定：`/root/build-debug`、`/root/build-release`（ext4，保证 IO 测试真实）
+- 证据说明：`T-debug-ctest.log` 为调试中间态（红阶段）记录，保留供过程追溯；最终绿证据以 `T-ctest-debug.log`/`T-ctest-release.log`（16/16）为准
+
+### 2026-10-08 审查记录（第 1 轮：FAIL → 修复）
+
+- 审查结果：FAIL（无功能缺陷；1 Major 证据完整性 + 3 Minor 测试覆盖/表述）
+- 修复的问题：
+  1. **Major（S1）**：绿证据日志因命令行变量转义问题落盘到 WSL 根目录——已补交 evidence/（T-ctest-debug/release/fourranks-np4.log）
+  2. **Minor（S1）**：E-3 格式白名单失败无自动化测试 → 新增 ctest `mpibin_bad_format`（WILL_FAIL）
+  3. **Minor（S1/S4）**：S-5 仅最终解 / S-4 中间文件存在性无断言 → 新增 `mpiio_e2e_final`（无 --save-interval）与 `mpiio_e2e_verify`/`mpiio_e2e_final_verify`（cmake/VerifyMpiioOutput.cmake 精确文件集断言，fixture 串联）
+  4. **Minor（S5）**：T004 走查记录「X-1 断言 WARN 次数」表述失准 → 更正为代码走查口径
+- 回归：Debug 16/16 + Release 16/16（新增 4 个 ctest 后）；evidence/T-ctest-debug.log、T-ctest-release.log 已刷新
+- 审查代理：sdd-gate-reviewer（独立复跑全部验证后给出结论）
 
 ## 阶段门控记录
 

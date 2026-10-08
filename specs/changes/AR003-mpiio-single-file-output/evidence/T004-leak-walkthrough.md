@@ -25,4 +25,4 @@
 ## 测试证据
 
 - X-1（不可写路径）/X-2（截断）：`unit`、`mpiio_np1`、`mpiio_np4` 全绿（见 T-ctest-debug.log / T-ctest-release.log）
-- 告警限流：X-1 断言 WARN 仅出现一次/进程（warn-once 闩锁）
+- 告警限流：X-1 断言失败路径不抛不崩且后续写恢复；`warned_` 闩锁保证每 rank 仅首次告警为**代码走查结论**（X-1 无日志捕获能力，未断言 WARN 次数；MPI 路径无抛出，走查覆盖）

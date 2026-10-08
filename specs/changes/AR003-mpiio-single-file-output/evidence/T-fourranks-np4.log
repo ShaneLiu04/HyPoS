@@ -1,0 +1,8 @@
+[0;32m[       OK ] [mMpiIoOutputTest.FourRanksGlobalAssemblyMatchesReference (7 ms)
+[0;32m[       OK ] [mMpiIoOutputTest.FourRanksGlobalAssemblyMatchesReference (7 ms)
+[0;32m[       OK ] [mMpiIoOutputTest.FourRanksGlobalAssemblyMatchesReference (7 ms)
+[0;32m[       OK ] [mMpiIoOutputTest.FourRanksGlobalAssemblyMatchesReference (7 ms)
+[0;32m[       OK ] [mMpiIoOutputTest.FourRanks3DLayout (4 ms)
+[0;32m[       OK ] [mMpiIoOutputTest.FourRanks3DLayout (4 ms)
+[0;32m[       OK ] [mMpiIoOutputTest.FourRanks3DLayout (4 ms)
+[0;32m[       OK ] [mMpiIoOutputTest.FourRanks3DLayout (4 ms)

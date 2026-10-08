@@ -84,6 +84,11 @@ if(GTest_FOUND)
     add_test(NAME parse_error COMMAND $<TARGET_FILE:hypos> --save-interval abc)
     set_tests_properties(parse_error PROPERTIES WILL_FAIL TRUE TIMEOUT 60)
 
+    # E-3 (design §6.2/§6.7): an unknown --output-format value must be
+    # rejected with a non-zero exit code.
+    add_test(NAME mpibin_bad_format COMMAND $<TARGET_FILE:hypos> --output-format mpibinn)
+    set_tests_properties(mpibin_bad_format PROPERTIES WILL_FAIL TRUE TIMEOUT 60)
+
     if(MPIEXEC_EXECUTABLE)
         # Launcher must match the MPI implementation the binary is linked
         # against; MPICH's mpiexec does not accept --oversubscribe (which
@@ -133,12 +138,34 @@ if(GTest_FOUND)
                     $<TARGET_FILE:hypos> --output-format mpibin --nx 32 --ny 32 --max-iter 20
                     --save-interval 10 --enable-profiling
                     --output-dir ${CMAKE_BINARY_DIR}/ctest_mpiio)
+        # S-4 (design §6.3): assert the save-interval run produced exactly
+        # the expected single-file snapshots (no shards, no index).
+        add_test(NAME mpiio_e2e_verify
+            COMMAND ${CMAKE_COMMAND}
+                    -Ddir=${CMAKE_BINARY_DIR}/ctest_mpiio
+                    "-Dexpected=solution_10.bin;solution_20.bin"
+                    -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/VerifyMpiioOutput.cmake)
+        # S-5 (design §6.3): without --save-interval only the final solution
+        # file is written.
+        add_test(NAME mpiio_e2e_final
+            COMMAND ${HYPOS_MPIEXEC} ${HYPOS_MPIEXEC_FLAGS} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} 4
+                    $<TARGET_FILE:hypos> --output-format mpibin --nx 16 --ny 16 --max-iter 5
+                    --output-dir ${CMAKE_BINARY_DIR}/ctest_mpiio_final)
+        add_test(NAME mpiio_e2e_final_verify
+            COMMAND ${CMAKE_COMMAND}
+                    -Ddir=${CMAKE_BINARY_DIR}/ctest_mpiio_final
+                    "-Dexpected=solution_5.bin"
+                    -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/VerifyMpiioOutput.cmake)
 
         set_tests_properties(halo_2d_mpi halo_3d_mpi solver_mpi overlap_consistency
             PROPERTIES ENVIRONMENT "${HYPOS_TEST_ENV}" TIMEOUT 600)
         set_tests_properties(solver_alt_mpi collective_mpi ranks3_smoke
-            mpiio_np1 mpiio_np4 mpiio_e2e
+            mpiio_np1 mpiio_np4 mpiio_e2e mpiio_e2e_final
             PROPERTIES ENVIRONMENT "${HYPOS_TEST_ENV}" TIMEOUT 600)
+        set_tests_properties(mpiio_e2e PROPERTIES FIXTURES_SETUP mpiio_e2e_files)
+        set_tests_properties(mpiio_e2e_verify PROPERTIES FIXTURES_REQUIRED mpiio_e2e_files)
+        set_tests_properties(mpiio_e2e_final PROPERTIES FIXTURES_SETUP mpiio_e2e_final_files)
+        set_tests_properties(mpiio_e2e_final_verify PROPERTIES FIXTURES_REQUIRED mpiio_e2e_final_files)
     endif()
 elseif(HYPOS_BUILD_TESTS)
     message(WARNING "GTest not found: tests are disabled")
