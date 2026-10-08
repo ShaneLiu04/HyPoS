@@ -129,7 +129,7 @@ stop
 
 - 两后端的行遍历共用同一 (k,j) 外层结构；vtk 版在行循环前多写 XML 头 + 长度头，行循环后写收尾标签。行指针计算 `&u[index(iBegin, j, k)]` 与既有求解循环索引方式一致（AGENT_SPEC row-major）。
 - `nBytes` 用 `Index`（size_t）承载，`ofs.write(reinterpret_cast<const char*>(&nBytes), 8)`——依赖 little-endian 宿主（与 mpibin 后端 README 口径一致）。
-- 写出期间 ofs 保持默认文本模式打开（Linux 语义下与二进制无差，WSL 环境成立）；binary 后端维持 `std::ios::binary` 不变。
+- 写出期间 ofs 的打开模式：实现评审后定为 `std::ios::binary`（偏离本节初稿「默认文本模式」的表述——Windows 宿主文本模式会对 0x0A 字节注入 CR 破坏二进制 payload；Linux 语义下两者无差，binary 模式是跨平台安全的超集。实现提交 22a2c9e 记录该偏离）；binary 后端维持 `std::ios::binary` 不变。
 
 ## 4.3 接口描述
 
@@ -183,7 +183,7 @@ docs/PERFORMANCE.md §12、README、OPTIMIZATION_GUIDE 勾选
 
 | ID | 场景 | 断言 | 追溯 |
 | --- | --- | --- | --- |
-| B1 | e2e：`hypos --output-format vtk --nx 32 --ny 32 --max-iter 5`（np=1）+ binary 同理 | 退出码 0；.vti/.bin 存在；.vti 经 U3 同款解析器外部核验（测试内复用） | srs §3.1/§3.2 验收 |
+| B1 | e2e：`hypos --output-format vtk --nx 32 --ny 32 --max-iter 5`（np=1）+ binary 同理 | 退出码 0；.vti/.bin 存在；.vti 经 U3 同款解析器外部核验（测试内复用） | srs §3.1/§3.2 验收。实现注记（review 第 2 轮）：落地参数为 16×16/max-iter 20/save-interval 10（vtk_e2e/binary_e2e 条目）——save-interval 触发循环内落盘 + final 落盘共两次写出，覆盖强于原文本的单次 final 写；解析器核验由 VerifyAr005Output.cmake 承担（长度头/头部字段），U3 位级核验在单测 |
 | B2 | `mpi_size_probe` ctest 条目（np=4） | 探针 PASS；既有 11 条 np>1 条目全绿（WSL OpenMPI 正常路径） | srs §3.3 验收① |
 | B3 | 探针咬缺陷验证（一次性，evidence） | `HYPOS_EXPECT_NP=4` 不带 mpirun 直跑 → 探针 FAIL 且诊断含实际 size | srs §3.3 验收②（Red 语义） |
 | B4 | 基准对比（T006） | 256²/512²：binary 体积 < ASCII 体积；median(binary 耗时) ≤ median(ASCII 耗时)（req 门控 G9 底线）；binary 块写前后耗时对比 | srs §3.1/§3.2 验收③、srs §4 |

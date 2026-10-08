@@ -240,7 +240,7 @@ HyPoS 的本质定位是**「HPC 工程教学/参考样板」**：用一个小�
 | ★2 | AR005 | I/O 快赢 + CI 可信度：D1 VTK 二进制/块写 + F1（**含 CI mpich 假通过紧急排查**） | S-M | 输出提速 1-2 量级；CI 数据可信 |
 | ★3 | AR006 | 通信范式三部曲 I：C1 派生数据类型直传 + C2 真集合 halo | M | 收尾半成品示范；pack vs datatype 实测 |
 | ★4 | AR007 | 算法深水区第一步：B1a 两层 MG 校正 | M-L | O(N) 算法叙事开局 |
-| 后续 | AR008+ | B1b V-cycle/MG-CG、B2b pipelined CG、B3 Chebyshev、B4 RBGS 通信、C3 RMA、D2 VTI 单文件、E1 PAPI、E2 残差历史、E3 性能门禁、F2/F3 | — | 按依赖与资源排入 |
+| 后续 | AR008+ | B1b V-cycle/MG-CG、B2b pipelined CG、B3 Chebyshev、B4 RBGS 通信、C3 RMA、D2 VTI 单文件、E1 PAPI、E2 残差历史、E3 性能门禁、F2/F3；工程卫生：test_alt_solvers.cpp 拆分（AR005 review 遗留，IO 用例拆至 test_io_layout.cpp） | — | 按依赖与资源排入 |
 
 依赖关系（简化）：
 

@@ -1,0 +1,16 @@
+== Red-1: single-process launch with HYPOS_EXPECT_NP=4 (must FAIL) ==
+exit code: 1
+
+  Process name: [[47668,1],0]
+  Exit code:    1
+--------------------------------------------------------------------------
+== Red-2: HYPOS_EXPECT_NP=abc (must FAIL fail-safe) ==
+exit code: 1
+
+  Process name: [[47649,1],0]
+  Exit code:    1
+--------------------------------------------------------------------------
+== Green: HYPOS_EXPECT_NP=1 (must PASS) ==
+exit code: 0
+[0;32m[==========] [m1 test from 1 test suite ran. (0 ms total)
+[0;32m[  PASSED  ] [m1 test.

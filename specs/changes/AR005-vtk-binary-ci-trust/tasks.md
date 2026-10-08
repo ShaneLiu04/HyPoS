@@ -58,3 +58,20 @@
 - 事故记录：M1/M2 修正时误用 PowerShell 文本 cmdlet 处理 UTF-8 中文文件导致编码损坏，design.md 从上下文完整重建（教训：中文文件一律用 edit/write 工具）
 - 审查代理：sdd-gate-reviewer
 - 亮点：审查者逐行核验 filter 名单与 CMakeLists:139-174 吻合；ci.yml 单 job 结构、subgrid/aligned_buffer 行号引用全部属实
+
+## 实现审查记录
+
+### 2026-10-08 实现审查（第 1 轮）
+
+- 审查结果：FAIL（独立子代理 S/D/C 三维度静态走查）
+- 判定：S1-S3/D1-D3/C1-C3 YES；S4/S5/D4 NO
+- Important×2：①design §6.1-U5（vtk/binary 写不存在目录 WARN 不抛不崩）未实现，§6.4-E1「U5 覆盖」落空；②design §6.3-B1（vtk/binary np=1 e2e）无 ctest 落点——两项均无偏离记录
+- Minor×3：T001 Red 证据 rc=0 伪影（管道采集）；vtk ofs binary 模式偏离 design §4.2.2 措辞未同步；test_alt_solvers.cpp 持续膨胀（837→1085 行）
+- 修复：U5 两用例 + vtk_e2e/binary_e2e 4 条目 + VerifyAr005Output.cmake（文件集精确匹配/长度头/头部字段核验，cmake -P）；重采 T001-probe-red-rc.log（Red rc=1×2、Green rc=0）；design §4.2.2 措辞同步；膨胀项列待办
+
+### 2026-10-08 实现审查（第 2 轮）
+
+- 审查结果：PASS
+- 核验：U5/B1/M1/M2 均 FIXED（逐项证据见审查报告）；S4/S5/D4 改判 YES；新发现 Minor×1（本记录落档）+ Trivial×2（B1 参数偏离注记、U5 恢复性断言+绝对路径——均已顺手修复）
+- 回归：Release 30/30 + Debug(ASan+UBSan) 30/30（ctest 26→30：vtk_e2e(+verify)/binary_e2e(+verify)）
+- 遗留待办（不阻塞）：test_alt_solvers.cpp 职责膨胀（AR005 后 ~1140 行，混合 alt solvers/IO 布局/AR004 回归/AR005 IO），后续 AR 将 AR005 IO 用例拆至 test_io_layout.cpp——已记入 OPTIMIZATION_GUIDE §5 AR008+ 名单

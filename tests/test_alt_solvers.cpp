@@ -413,8 +413,55 @@ TEST(AltFeatureTest, VtkAppendedBinaryParsesBack) {
     ASSERT_GT(lastContent + 1, std::strlen("</VTKFile>"));
     EXPECT_EQ(text.compare(lastContent + 1 - std::strlen("</VTKFile>"),
                            std::strlen("</VTKFile>"), "</VTKFile>"),
-              0)
+               0)
         << "file does not end with </VTKFile>";
+}
+
+// ============================================================================
+// AR005 review-U5 (design §6.4-E1): a write to an unopenable path must WARN
+// and return — never throw, never crash (io layer keeps the MPI-process
+// alive; mirrors MpiIoOutputTest.WriteToInvalidPathWarnsAndSkips).
+// ============================================================================
+TEST(AltFeatureTest, VtkWriteToInvalidPathWarnsAndSkips) {
+    Subgrid sg(4, 4, 1, 1, MPI_COMM_SELF);
+    sg.setNeighbors(MPI_PROC_NULL, MPI_PROC_NULL, MPI_PROC_NULL, MPI_PROC_NULL);
+    sg.setOffsets(0, 0, 0);
+    for (Index j = 0; j < sg.nyTotal(); ++j) {
+        for (Index i = 0; i < sg.nxTotal(); ++i) {
+            sg.at(i, j) = static_cast<Real>(i + j);
+        }
+    }
+
+    VTKIOBackend io(0.25, 0.25, 0.25);
+    EXPECT_NO_THROW(io.write(sg, "/nonexistent_dir_xyz/solution", 0));
+    EXPECT_FALSE(std::filesystem::exists("/nonexistent_dir_xyz/solution.vti"));
+
+    // The process is alive and a follow-up write to a valid path still works.
+    const std::string outDir = "test_out";
+    std::filesystem::create_directories(outDir);
+    EXPECT_NO_THROW(io.write(sg, outDir + "/vtk_warn_recovery", 0));
+    EXPECT_TRUE(std::filesystem::exists(outDir + "/vtk_warn_recovery.vti"));
+}
+
+TEST(AltFeatureTest, BinaryWriteToInvalidPathWarnsAndSkips) {
+    Subgrid sg(4, 4, 1, 1, MPI_COMM_SELF);
+    sg.setNeighbors(MPI_PROC_NULL, MPI_PROC_NULL, MPI_PROC_NULL, MPI_PROC_NULL);
+    sg.setOffsets(0, 0, 0);
+    for (Index j = 0; j < sg.nyTotal(); ++j) {
+        for (Index i = 0; i < sg.nxTotal(); ++i) {
+            sg.at(i, j) = static_cast<Real>(i + j);
+        }
+    }
+
+    BinaryIOBackend io;
+    EXPECT_NO_THROW(io.write(sg, "/nonexistent_dir_xyz/solution", 0));
+    EXPECT_FALSE(std::filesystem::exists("/nonexistent_dir_xyz/solution.bin"));
+
+    // The process is alive and a follow-up write to a valid path still works.
+    const std::string outDir = "test_out";
+    std::filesystem::create_directories(outDir);
+    EXPECT_NO_THROW(io.write(sg, outDir + "/binary_warn_recovery", 0));
+    EXPECT_TRUE(std::filesystem::exists(outDir + "/binary_warn_recovery.bin"));
 }
 
 TEST(AltFeatureTest, ProgressCallbackCountsIterations) {

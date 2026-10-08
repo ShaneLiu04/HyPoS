@@ -205,6 +205,31 @@ if(GTest_FOUND)
                     "-Dexpected=solution_5.bin"
                     -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/VerifyMpiioOutput.cmake)
 
+        # AR005 B1 (design §6.3): np=1 e2e through the vtk and binary
+        # backends. The verify steps check the exact file set plus the
+        # on-disk payload contracts (appended length header / shard header
+        # fields), not just file existence.
+        add_test(NAME vtk_e2e
+            COMMAND ${HYPOS_MPIEXEC} ${HYPOS_MPIEXEC_FLAGS} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} 1
+                    $<TARGET_FILE:hypos> --output-format vtk --nx 16 --ny 16 --max-iter 20
+                    --save-interval 10 --output-dir ${CMAKE_BINARY_DIR}/ctest_vtk)
+        add_test(NAME vtk_e2e_verify
+            COMMAND ${CMAKE_COMMAND}
+                    -Ddir=${CMAKE_BINARY_DIR}/ctest_vtk
+                    "-Dexpected=solution_10.pvti;solution_10_r0.vti;solution_20.pvti;solution_20_r0.vti"
+                    -Dfmt=vtk -Dpiece=solution_10_r0.vti -Dnx=16 -Dny=16 -Dnz=1
+                    -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/VerifyAr005Output.cmake)
+        add_test(NAME binary_e2e
+            COMMAND ${HYPOS_MPIEXEC} ${HYPOS_MPIEXEC_FLAGS} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} 1
+                    $<TARGET_FILE:hypos> --output-format binary --nx 16 --ny 16 --max-iter 20
+                    --save-interval 10 --output-dir ${CMAKE_BINARY_DIR}/ctest_binary)
+        add_test(NAME binary_e2e_verify
+            COMMAND ${CMAKE_COMMAND}
+                    -Ddir=${CMAKE_BINARY_DIR}/ctest_binary
+                    "-Dexpected=solution_10_r0.bin;solution_20_r0.bin"
+                    -Dfmt=binary -Dpiece=solution_10_r0.bin -Dnx=16 -Dny=16 -Dnz=1
+                    -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/VerifyAr005Output.cmake)
+
         # AR005 (design §4.3): inject the expected rank count into every
         # np>1 entry. gtest entries consume it via the MpiEnvTest probe
         # (appended to their --gtest_filter above); the four hypos-binary
@@ -224,6 +249,12 @@ if(GTest_FOUND)
         set_tests_properties(mpiio_e2e_verify PROPERTIES FIXTURES_REQUIRED mpiio_e2e_files)
         set_tests_properties(mpiio_e2e_final PROPERTIES FIXTURES_SETUP mpiio_e2e_final_files)
         set_tests_properties(mpiio_e2e_final_verify PROPERTIES FIXTURES_REQUIRED mpiio_e2e_final_files)
+        set_tests_properties(vtk_e2e binary_e2e
+            PROPERTIES ENVIRONMENT "${HYPOS_TEST_ENV}" TIMEOUT 600)
+        set_tests_properties(vtk_e2e PROPERTIES FIXTURES_SETUP vtk_e2e_files)
+        set_tests_properties(vtk_e2e_verify PROPERTIES FIXTURES_REQUIRED vtk_e2e_files)
+        set_tests_properties(binary_e2e PROPERTIES FIXTURES_SETUP binary_e2e_files)
+        set_tests_properties(binary_e2e_verify PROPERTIES FIXTURES_REQUIRED binary_e2e_files)
     endif()
 elseif(HYPOS_BUILD_TESTS)
     message(WARNING "GTest not found: tests are disabled")
