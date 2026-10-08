@@ -17,7 +17,7 @@
 | T004 | B2a+A4-CG：updatePInterior 抽取（消除 solve/iterate 重复）；初始化循环并行化；区名改 cg_iteration。测试先行：U6（golden 迭代数，先跑基线固化）、E2 | - | passing | 2026-10-08 完成；U6 实测修正设计前提：libgomp 归约按线程到达序合并 → OMP=4 跨运行非位级确定，tier=1 保位级 hash、tier=4 改迭代数+相对差 1e-11（噪声带宽实测 ≤1.4e-12）；golden 绑定 Debug+ASan（NDEBUG 跳过）；E2 以相邻双 inf rhs 确定性触发 pap=NaN 守卫 |
 | T005 | A1 First-touch：zeroInitialize() 外层维度并行（全缓冲，三场单遍历）；applyDirichletBC 保持串行并文档记录。测试先行：U7、B4 | - | passing | 2026-10-08 完成（微型任务，主代理直做）；设计勘误：2D 子域缓冲实含 nzTotal≥3 个 k 平面，设计原文"2D 仅 j/i 全范围"会漏 2/3 缓冲——2D 分支补内层 k 循环、外层仍并行 j（保线程利用率），U7 全缓冲断言（halo=2 构造）守护该语义 |
 | T006 | A3 拓扑一致性：SubgridInfo +cartComm（所有权移交）；partition 用 cart rank 查 coords；main 删除二次 Cart_create。测试先行：B3 | - | passing | 2026-10-08 完成；Red=编译失败（info.cartComm 不存在）；B3 设计勘误：原"Σ nxLocal==nx"全局求和在 2D tiling 下不变式错误（Σ=nx×dims[1]），修正为按行/列分组求和 + 链端点检查（走查 evidence ② 单次 Cart_create 随 Green 落实） |
-| T007 | A4 Profiler：per-thread ThreadData 注册表（热路径零锁）+ 聚合；hpp 注释对齐；test_performance.cpp:83 区名断言复核（RBGS 区名已随 T002 落地）。测试先行：U8、U11 | T004 | pending | design D7；JSON 格式兼容 |
+| T007 | A4 Profiler：per-thread ThreadData 注册表（热路径零锁）+ 聚合；hpp 注释对齐；test_performance.cpp:83 区名断言复核（RBGS 区名已随 T002 落地）。测试先行：U8、U11 | T004 | passing | 2026-10-08 完成；U8 初版（同名区域）不咬缺陷——共享栈下同名错序弹出计数恰好守恒，改为每线程独立区域名 + 全程锁定相位（10/10 确定性 Red）；reset 契约注释（调用方保证无并发剖分） |
 | T008 | 全量回归（Debug/Release + ASan；TSan 不可用则走查佐证）+ 基准（scripts/bench_ar004.sh：Jacobi ±5% 门槛、RBGS k=1/5/10 三档、CG 前后，≥3 次中位数）+ 文档同步（README/AGENT_SPEC/PERFORMANCE §11/GUIDE 勾选 G1/G3/G5/G6、P1/P4/P6） | T001-T007 | pending | SCALING_REPORT 口径注记 |
 
 ## 状态说明
@@ -30,6 +30,15 @@
 ## 进度记录
 
 > 每个开发会话结束后追加，记录完成情况。
+
+### 2026-10-08 会话记录（T007）
+
+- 完成任务：T007 A4 profiler per-thread 重构
+- TDD：Red（子代理写 U8/U11，报告为空但工件已落盘、主代理复核）→ U8 不咬缺陷（同名区域下共享栈错序弹出计数恰好守恒——只有跨名错归属才暴露，生产中 stencil/halo/iteration 混名即此情形）→ 主代理改每线程独立区域名 + 每迭代全程锁定相位 → 10/10 确定性失败（仅 U8 失败，unit 其余绿）
+- Green：profiler.hpp/cpp 重写——thread_local ThreadData（堆分配、首次访问持锁注册、永不释放）、beginRegion/endRegion 纯线程本地零锁、stats()/report() 持 registryMutex_ 聚合（total/calls 求和、min/max 跨线程折叠）、reset() 清数据保注册表（调用方须保证无并发剖分，已注释）；JSON 格式不变；hpp:13 失实注释（"Thread-safe via atomic counters"）改写为真实机制
+- U11（区名契约）：rbgs_iteration/cg_iteration（T002/T004 已落地）固化 + jacobi_iteration 互斥断言，捕获语义基线即绿
+- 修改文件：src/perf/profiler.hpp、src/perf/profiler.cpp、tests/test_performance.cpp（+ProfilerAR004Test 两用例）
+- 测试：ProfilerAR004Test 10/10 零失败；Debug 全量 25/25（105s）；Release 全量 25/25（25s）、0 警告
 
 ### 2026-10-08 会话记录（T006）
 

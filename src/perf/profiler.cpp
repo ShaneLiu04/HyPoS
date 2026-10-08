@@ -10,22 +10,37 @@ Profiler& Profiler::instance() {
     return p;
 }
 
+Profiler::ThreadData& Profiler::threadData() const {
+    // One ThreadData per thread, heap-allocated and registered exactly once.
+    // Never freed: stats of a joined thread must stay readable, and the
+    // registry would dangle otherwise. Reclaimed at process teardown.
+    thread_local ThreadData& td = [this]() -> ThreadData& {
+        ThreadData* p = new ThreadData();
+        std::lock_guard<std::mutex> lock(registryMutex_);
+        registry_.push_back(p);
+        return *p;
+    }();
+    return td;
+}
+
 void Profiler::beginRegion(const std::string& name) {
-    std::lock_guard<std::mutex> lock(mutex_);
-    active_.push_back({name, Timer()});
-    active_.back().second.start();
+    // Hot path: thread-local only, no lock.
+    ThreadData& td = threadData();
+    td.active.push_back({name, Timer()});
+    td.active.back().second.start();
 }
 
 void Profiler::endRegion() {
-    if (active_.empty()) return;
+    // Hot path: thread-local only, no lock.
+    ThreadData& td = threadData();
+    if (td.active.empty()) return;
 
-    auto pair = active_.back();
-    active_.pop_back();
+    auto pair = td.active.back();
+    td.active.pop_back();
     pair.second.stop();
     double elapsed = pair.second.elapsedSeconds();
 
-    std::lock_guard<std::mutex> lock(mutex_);
-    auto& s = stats_[pair.first];
+    auto& s = td.stats[pair.first];
     s.totalSeconds += elapsed;
     s.callCount += 1;
     if (s.callCount == 1) {
@@ -36,25 +51,54 @@ void Profiler::endRegion() {
     }
 }
 
+void Profiler::foldInto(RegionStats& agg, const RegionStats& s) {
+    agg.totalSeconds += s.totalSeconds;
+    const bool firstContributor = (agg.callCount == 0);
+    agg.callCount += s.callCount;
+    if (s.callCount > 0) {
+        if (firstContributor) {
+            agg.minSeconds = s.minSeconds;
+            agg.maxSeconds = s.maxSeconds;
+        } else {
+            agg.minSeconds = std::min(agg.minSeconds, s.minSeconds);
+            agg.maxSeconds = std::max(agg.maxSeconds, s.maxSeconds);
+        }
+    }
+}
+
 RegionStats Profiler::stats(const std::string& name) const {
-    std::lock_guard<std::mutex> lock(mutex_);
-    auto it = stats_.find(name);
-    if (it == stats_.end()) return RegionStats{};
-    return it->second;
+    std::lock_guard<std::mutex> lock(registryMutex_);
+    RegionStats agg;
+    for (const ThreadData* td : registry_) {
+        auto it = td->stats.find(name);
+        if (it == td->stats.end()) continue;
+        foldInto(agg, it->second);
+    }
+    return agg;
 }
 
 void Profiler::reset() noexcept {
-    std::lock_guard<std::mutex> lock(mutex_);
-    stats_.clear();
-    active_.clear();
+    // Caller contract: no thread is inside a region while reset() runs.
+    std::lock_guard<std::mutex> lock(registryMutex_);
+    for (ThreadData* td : registry_) {
+        td->stats.clear();
+        td->active.clear();
+    }
 }
 
 std::string Profiler::report() const {
-    std::lock_guard<std::mutex> lock(mutex_);
+    std::lock_guard<std::mutex> lock(registryMutex_);
+    std::unordered_map<std::string, RegionStats> combined;
+    for (const ThreadData* td : registry_) {
+        for (const auto& kv : td->stats) {
+            foldInto(combined[kv.first], kv.second);
+        }
+    }
+
     std::ostringstream oss;
     oss << "{\n";
     bool first = true;
-    for (const auto& kv : stats_) {
+    for (const auto& kv : combined) {
         if (!first) oss << ",\n";
         first = false;
         const auto& s = kv.second;
