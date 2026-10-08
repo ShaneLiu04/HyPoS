@@ -8,7 +8,10 @@ on:
 
 jobs:
   build-and-test:
-    runs-on: ubuntu-latest
+    # AR005 D4: pinned runner image. ubuntu-latest aliases a rolling
+    # distribution whose MPICH packages may break or disappear (test
+    # trust depends on the MPI-variant matrix actually running).
+    runs-on: ubuntu-22.04
 
     steps:
     - uses: actions/checkout@v3

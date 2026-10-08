@@ -119,12 +119,18 @@ TEST(AltFeatureTest, VtkPieceAndParallelIndexFiles) {
     };
     io.writeParallelIndex(grid, outDir + "/solution_0", 0, pieces);
 
-    std::ifstream piece(outDir + "/solution_0_r0.vti");
+    std::ifstream piece(outDir + "/solution_0_r0.vti", std::ios::binary);
     ASSERT_TRUE(piece.good());
     std::stringstream pieceBuf;
     pieceBuf << piece.rdbuf();
-    EXPECT_NE(pieceBuf.str().find("ImageData"), std::string::npos);
-    EXPECT_NE(pieceBuf.str().find("Origin=\"0 0 0\""), std::string::npos);
+    const std::string pieceText = pieceBuf.str();
+    EXPECT_NE(pieceText.find("ImageData"), std::string::npos);
+    EXPECT_NE(pieceText.find("Origin=\"0 0 0\""), std::string::npos);
+    // AR005: piece files are appended-raw binary (structure guard; payload
+    // byte-level verification lives in VtkAppendedBinaryParsesBack).
+    EXPECT_NE(pieceText.find("header_type=\"UInt64\""), std::string::npos);
+    EXPECT_NE(pieceText.find("format=\"appended\""), std::string::npos);
+    EXPECT_EQ(pieceText.find("format=\"ascii\""), std::string::npos);
 
     std::ifstream index(outDir + "/solution_0.pvti");
     ASSERT_TRUE(index.good());
@@ -134,6 +140,9 @@ TEST(AltFeatureTest, VtkPieceAndParallelIndexFiles) {
     EXPECT_NE(indexText.find("PImageData"), std::string::npos);
     EXPECT_NE(indexText.find("solution_0_r0.vti"), std::string::npos);
     EXPECT_NE(indexText.find("solution_0_r1.vti"), std::string::npos);
+    // AR005 D5: the parallel index stays ASCII XML, unchanged structure.
+    EXPECT_NE(indexText.find("GhostLevel=\"0\""), std::string::npos);
+    EXPECT_NE(indexText.find("<PDataArray type=\"Float64\" Name=\"u\"/>"), std::string::npos);
 
     // Empty piece list: no index file is written.
     io.writeParallelIndex(grid, outDir + "/solution_empty", 0, {});
