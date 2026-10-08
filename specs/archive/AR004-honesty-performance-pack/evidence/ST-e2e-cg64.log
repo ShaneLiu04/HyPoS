@@ -1,0 +1,5 @@
+[2026-10-08 11:03:50.056] [RANK 0] [INFO] HyPoS — Hybrid Poisson Solver
+[2026-10-08 11:03:50.056] [RANK 0] [INFO] Grid: 64x64x1, MPI procs: 1, OMP threads: 16
+[2026-10-08 11:03:50.069] [RANK 0] [INFO] Converged at iteration 183, residual = 8.88123e-07
+[2026-10-08 11:03:50.069] [RANK 0] [INFO] CG finished in 183 iterations, time = 0.00911901 s
+[2026-10-08 11:03:50.069] [RANK 0] [INFO] Total time: 0.00913692 s, Iterations: 183, Est. FLOP/s: 6.56299e+08

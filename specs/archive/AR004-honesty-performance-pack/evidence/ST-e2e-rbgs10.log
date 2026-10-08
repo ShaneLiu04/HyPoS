@@ -1,0 +1,74 @@
+[2026-10-08 11:03:50.418] [RANK 0] [INFO] HyPoS — Hybrid Poisson Solver
+[2026-10-08 11:03:50.419] [RANK 0] [INFO] Grid: 64x64x1, MPI procs: 1, OMP threads: 16
+[2026-10-08 11:03:50.505] [RANK 0] [INFO] Iteration 500, residual = 272.549
+[2026-10-08 11:03:50.527] [RANK 0] [INFO] Iteration 1000, residual = 84.7162
+[2026-10-08 11:03:50.534] [RANK 0] [INFO] Iteration 1500, residual = 26.3337
+[2026-10-08 11:03:50.550] [RANK 0] [INFO] Iteration 2000, residual = 8.18575
+[2026-10-08 11:03:50.589] [RANK 0] [INFO] Iteration 2500, residual = 2.54451
+[2026-10-08 11:03:50.621] [RANK 0] [INFO] Iteration 3000, residual = 0.790953
+[2026-10-08 11:03:50.647] [RANK 0] [INFO] Iteration 3500, residual = 0.245865
+[2026-10-08 11:03:50.689] [RANK 0] [INFO] Iteration 4000, residual = 0.0764264
+[2026-10-08 11:03:50.731] [RANK 0] [INFO] Iteration 4500, residual = 0.0237569
+[2026-10-08 11:03:50.741] [RANK 0] [INFO] Iteration 5000, residual = 0.00738475
+[2026-10-08 11:03:50.870] [RANK 0] [INFO] Iteration 5500, residual = 0.00229552
+[2026-10-08 11:03:50.933] [RANK 0] [INFO] Iteration 6000, residual = 0.000713556
+[2026-10-08 11:03:50.941] [RANK 0] [INFO] Iteration 6500, residual = 0.000221806
+[2026-10-08 11:03:50.955] [RANK 0] [INFO] Iteration 7000, residual = 6.89478e-05
+[2026-10-08 11:03:50.996] [RANK 0] [INFO] Iteration 7500, residual = 2.14322e-05
+[2026-10-08 11:03:51.018] [RANK 0] [INFO] Iteration 8000, residual = 6.66212e-06
+[2026-10-08 11:03:51.038] [RANK 0] [INFO] Iteration 8500, residual = 2.0709e-06
+[2026-10-08 11:03:51.043] [RANK 0] [INFO] Converged at iteration 8820, residual = 9.80367e-07
+[2026-10-08 11:03:51.043] [RANK 0] [INFO] RedBlackGS finished in 8820 iterations, time = 0.620055 s
+[2026-10-08 11:03:51.043] [RANK 0] [INFO] Total time: 0.620063 s, Iterations: 8820, Est. FLOP/s: 4.66104e+08
+{
+  "halo_exchange": {
+    "total_sec": 0.001152,
+    "calls": 17640,
+    "avg_ms": 0.000065,
+    "min_ms": 0.000035,
+    "max_ms": 0.000823
+  },
+  "residual_confirm": {
+    "total_sec": 0.000009,
+    "calls": 1,
+    "avg_ms": 0.009325,
+    "min_ms": 0.009325,
+    "max_ms": 0.009325
+  },
+  "stencil_interior": {
+    "total_sec": 0.287192,
+    "calls": 8820,
+    "avg_ms": 0.032561,
+    "min_ms": 0.003712,
+    "max_ms": 4.709338
+  },
+  "stencil_boundary": {
+    "total_sec": 0.269192,
+    "calls": 8820,
+    "avg_ms": 0.030521,
+    "min_ms": 0.003498,
+    "max_ms": 4.564241
+  },
+  "rbgs_iteration": {
+    "total_sec": 0.618937,
+    "calls": 8820,
+    "avg_ms": 0.070174,
+    "min_ms": 0.011392,
+    "max_ms": 9.513113
+  },
+  "residual_allreduce": {
+    "total_sec": 0.025297,
+    "calls": 882,
+    "avg_ms": 0.028682,
+    "min_ms": 0.003822,
+    "max_ms": 4.671497
+  },
+  "solver_total": {
+    "total_sec": 0.620061,
+    "calls": 1,
+    "avg_ms": 620.060961,
+    "min_ms": 620.060961,
+    "max_ms": 620.060961
+  }
+}
+

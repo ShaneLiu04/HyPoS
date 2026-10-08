@@ -1,0 +1,39 @@
+[2026-10-08 11:03:46.132] [RANK 0] [INFO] HyPoS — Hybrid Poisson Solver
+[2026-10-08 11:03:46.132] [RANK 0] [INFO] Grid: 64x64x1, MPI procs: 1, OMP threads: 16
+[2026-10-08 11:03:46.204] [RANK 0] [INFO] Iteration 500, residual = 345.966
+[2026-10-08 11:03:46.281] [RANK 0] [INFO] Iteration 1000, residual = 192.834
+[2026-10-08 11:03:46.372] [RANK 0] [INFO] Iteration 1500, residual = 107.507
+[2026-10-08 11:03:46.446] [RANK 0] [INFO] Iteration 2000, residual = 59.9384
+[2026-10-08 11:03:46.514] [RANK 0] [INFO] Iteration 2500, residual = 33.4178
+[2026-10-08 11:03:46.639] [RANK 0] [INFO] Iteration 3000, residual = 18.6316
+[2026-10-08 11:03:46.701] [RANK 0] [INFO] Iteration 3500, residual = 10.3878
+[2026-10-08 11:03:46.775] [RANK 0] [INFO] Iteration 4000, residual = 5.79158
+[2026-10-08 11:03:46.824] [RANK 0] [INFO] Iteration 4500, residual = 3.22902
+[2026-10-08 11:03:46.916] [RANK 0] [INFO] Iteration 5000, residual = 1.80029
+[2026-10-08 11:03:46.932] [RANK 0] [INFO] Iteration 5500, residual = 1.00373
+[2026-10-08 11:03:46.948] [RANK 0] [INFO] Iteration 6000, residual = 0.559615
+[2026-10-08 11:03:47.003] [RANK 0] [INFO] Iteration 6500, residual = 0.312006
+[2026-10-08 11:03:47.027] [RANK 0] [INFO] Iteration 7000, residual = 0.173954
+[2026-10-08 11:03:47.077] [RANK 0] [INFO] Iteration 7500, residual = 0.0969859
+[2026-10-08 11:03:47.167] [RANK 0] [INFO] Iteration 8000, residual = 0.0540732
+[2026-10-08 11:03:47.221] [RANK 0] [INFO] Iteration 8500, residual = 0.0301478
+[2026-10-08 11:03:47.262] [RANK 0] [INFO] Iteration 9000, residual = 0.0168085
+[2026-10-08 11:03:47.319] [RANK 0] [INFO] Iteration 9500, residual = 0.00937133
+[2026-10-08 11:03:47.359] [RANK 0] [INFO] Iteration 10000, residual = 0.00522486
+[2026-10-08 11:03:47.390] [RANK 0] [INFO] Iteration 10500, residual = 0.00291305
+[2026-10-08 11:03:47.417] [RANK 0] [INFO] Iteration 11000, residual = 0.00162413
+[2026-10-08 11:03:47.472] [RANK 0] [INFO] Iteration 11500, residual = 0.000905511
+[2026-10-08 11:03:47.507] [RANK 0] [INFO] Iteration 12000, residual = 0.000504855
+[2026-10-08 11:03:47.541] [RANK 0] [INFO] Iteration 12500, residual = 0.000281475
+[2026-10-08 11:03:47.599] [RANK 0] [INFO] Iteration 13000, residual = 0.000156932
+[2026-10-08 11:03:47.688] [RANK 0] [INFO] Iteration 13500, residual = 8.74955e-05
+[2026-10-08 11:03:47.823] [RANK 0] [INFO] Iteration 14000, residual = 4.87819e-05
+[2026-10-08 11:03:47.879] [RANK 0] [INFO] Iteration 14500, residual = 2.71977e-05
+[2026-10-08 11:03:47.975] [RANK 0] [INFO] Iteration 15000, residual = 1.51637e-05
+[2026-10-08 11:03:48.041] [RANK 0] [INFO] Iteration 15500, residual = 8.45431e-06
+[2026-10-08 11:03:48.162] [RANK 0] [INFO] Iteration 16000, residual = 4.71359e-06
+[2026-10-08 11:03:48.236] [RANK 0] [INFO] Iteration 16500, residual = 2.628e-06
+[2026-10-08 11:03:48.291] [RANK 0] [INFO] Iteration 17000, residual = 1.4652e-06
+[2026-10-08 11:03:48.353] [RANK 0] [INFO] Converged at iteration 17327, residual = 9.9991e-07
+[2026-10-08 11:03:48.353] [RANK 0] [INFO] Solver finished in 17327 iterations, time = 2.21617 s
+[2026-10-08 11:03:48.353] [RANK 0] [INFO] Total time: 2.21618 s, Iterations: 17327, Est. FLOP/s: 2.56193e+08

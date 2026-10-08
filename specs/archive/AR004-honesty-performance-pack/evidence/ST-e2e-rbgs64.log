@@ -1,0 +1,22 @@
+[2026-10-08 11:03:48.704] [RANK 0] [INFO] HyPoS — Hybrid Poisson Solver
+[2026-10-08 11:03:48.704] [RANK 0] [INFO] Grid: 64x64x1, MPI procs: 1, OMP threads: 16
+[2026-10-08 11:03:48.792] [RANK 0] [INFO] Iteration 500, residual = 272.549
+[2026-10-08 11:03:48.822] [RANK 0] [INFO] Iteration 1000, residual = 84.7162
+[2026-10-08 11:03:48.888] [RANK 0] [INFO] Iteration 1500, residual = 26.3337
+[2026-10-08 11:03:48.909] [RANK 0] [INFO] Iteration 2000, residual = 8.18575
+[2026-10-08 11:03:48.947] [RANK 0] [INFO] Iteration 2500, residual = 2.54451
+[2026-10-08 11:03:48.985] [RANK 0] [INFO] Iteration 3000, residual = 0.790953
+[2026-10-08 11:03:49.005] [RANK 0] [INFO] Iteration 3500, residual = 0.245865
+[2026-10-08 11:03:49.071] [RANK 0] [INFO] Iteration 4000, residual = 0.0764264
+[2026-10-08 11:03:49.167] [RANK 0] [INFO] Iteration 4500, residual = 0.0237569
+[2026-10-08 11:03:49.214] [RANK 0] [INFO] Iteration 5000, residual = 0.00738475
+[2026-10-08 11:03:49.247] [RANK 0] [INFO] Iteration 5500, residual = 0.00229552
+[2026-10-08 11:03:49.357] [RANK 0] [INFO] Iteration 6000, residual = 0.000713556
+[2026-10-08 11:03:49.412] [RANK 0] [INFO] Iteration 6500, residual = 0.000221806
+[2026-10-08 11:03:49.456] [RANK 0] [INFO] Iteration 7000, residual = 6.89478e-05
+[2026-10-08 11:03:49.510] [RANK 0] [INFO] Iteration 7500, residual = 2.14322e-05
+[2026-10-08 11:03:49.582] [RANK 0] [INFO] Iteration 8000, residual = 6.66212e-06
+[2026-10-08 11:03:49.633] [RANK 0] [INFO] Iteration 8500, residual = 2.0709e-06
+[2026-10-08 11:03:49.714] [RANK 0] [INFO] Converged at iteration 8812, residual = 9.98865e-07
+[2026-10-08 11:03:49.714] [RANK 0] [INFO] RedBlackGS finished in 8812 iterations, time = 1.00494 s
+[2026-10-08 11:03:49.714] [RANK 0] [INFO] Total time: 1.00495 s, Iterations: 8812, Est. FLOP/s: 2.87328e+08
