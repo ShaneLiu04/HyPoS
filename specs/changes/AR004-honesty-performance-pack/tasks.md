@@ -93,6 +93,7 @@
 - TDD：Red（子代理写 5 用例：U4/U5/R-I1s/R-I5s/R-E4s，运行期断言失败确认，24 既有测试保持绿）→ Green（主代理，一次通过）→ Refactor（新增共享 globalTrueResidual 并回改 Jacobi 确认扫描消除内联重复；design §4.3.1 补录该接口）
 - 修改文件：src/solver/residual.hpp/cpp（+globalTrueResidual）、src/solver/solver.hpp（RBGS 文档 + iterateCore 声明）、src/solver/red_black_gs_solver.cpp（iterateCore/iterate/solve 重写 + rbgs_iteration 区名）、src/solver/jacobi_solver.cpp（确认扫描改用共享 helper）、tests/test_alt_solvers.cpp（+5 用例）
 - 测试：unit 全绿（Debug 9.92s / Release 2.38s）；Debug 全量 ctest 16/16 绿（144s，较 T001 前增加——RBGS 扫描的诚实成本，Debug+ASan 口径）；Release 0 警告
+- B5 覆盖口径（review D4 补记）：design §6.3 B5（RBGS k=1/5/10 三档收敛 + 迭代数差<k）未作独立自动化用例——语义分片覆盖：R-I1s/R-I5s/R-E4s（k 档计数精确断言）+ U4（k=1 收敛口径）+ T008 bench evidence（64² 收敛 8812 vs 8820，差 8<10）；「差值<k」不变量的固化用例列为后续 AR 候选
 
 ### 2026-10-08 会话记录（T001）
 
@@ -131,3 +132,20 @@
 - 审查项数：9 项（3 项 Minor WARN）
 - 修复的问题：G3 §4 残差一致性补 CG 递推/容差口径；G4 §1「全部缺口」措辞收敛为实际范围；G4 §3.3 补 applyDirichletBC 评估点。特别核验 5/5 与代码相符（Jacobi ω=1 代数关系、CG dot(r,r) 不可跳、RBGS 无换算关系均实证）
 - 审查代理：sdd-gate-reviewer
+
+## 实现审查记录
+
+> 由 sdd-task-review skill 在开发完成后追加（S/D/C 三维度合规审查，独立子代理静态走查）。
+
+### 2026-10-08 实现审查记录（第 1 轮，T001-T008 完成后）
+
+- 审查结论：**PASS**（S1-S5 全 YES；D2/D3 YES；C1-C3 全 YES；D1/D4 NO 但仅 Minor）
+- 审查范围：srs/design/tasks、AGENT_SPEC、两份 evidence、全部改动头/源文件、四个测试文件 + test_solver_mpi.cpp、CMakeLists.txt、VerifyAr004Cli.cmake、README/GUIDE 勾选；`git diff --name-status aa5c282..HEAD` 核对改动文件集；grep MPI_COMM_WORLD
+- 发现问题（4 项 Minor，均已当日修复）：
+  1. D1：`RunConfig::residualCheckInterval` 实现为 `int`，design §4.3.1 声明 `Index`，未记录 → design §4.3.1 补录类型修正说明（与 CLI `get<int>` 同型、序列化直出、`static_cast<Index>` 注入无溢出）
+  2. D1：`CGSolver::updatePInterior` 非 const + `Subgrid&`，design §4.3.1 声明 const 签名，仅模糊带过 → design §4.3.1 补录签名修正说明（`AlignedBuffer::data()` 无 const 重载；与 axpyInterior 等既有私有 helper 口径一致）
+  3. D4：design §4.4 声明 test_solver_mpi.cpp [修改] 实际未改（既有 ConvergedSolutionMatchesManufacturedSine np=4 已覆盖真实残差口径）→ 本轮记录豁免
+  4. D4：design §6.3 B5（RBGS 三档收敛 + 差<k）未独立落地 → T002 会话记录补记替代覆盖口径（R-I* 计数 + U4 k=1 收敛 + T008 evidence 8812 vs 8820 差 8<10）；「差值<k」固化用例列为后续 AR 候选
+- 亮点：已知偏差记录链完整（design 补录 ↔ tasks.md 会话记录 ↔ evidence 三方互证，5 项全中）；S1 追溯逐需求到具体测试/ctest 条目；C2 grep 证实库内零 MPI_COMM_WORLD 新增
+- 审查代理：独立 general 子代理（静态走查，未运行构建/测试；上下文：Debug 25/25 ASan+UBSan 零报告、Release 25/25、0 警告）
+

@@ -143,10 +143,10 @@ stop
 | 真实残差 helper | `namespace hypo { Real trueResidualSquaredLocal(const Subgrid& subgrid); }`（新文件 `src/solver/residual.hpp/cpp`） | 新增 | 内部点 Σ(D·u − Σnb + rhs)²，OpenMP 归约；调用方须先 exchange + applyPhysicalBoundary |
 | 全局真实残差 | `namespace hypo { Real globalTrueResidual(Subgrid& subgrid, HaloExchanger& exchanger); }`（同文件） | 新增（T002 实现期补充：4 处调用点复用——Jacobi/RBGS 出口确认 + RBGS 检查扫描/iterate） | exchange(u) + trueResidualSquaredLocal + MPI_Allreduce，返回全局 ‖r‖；内部无 profiler 区名，由调用方包裹（residual_confirm / residual_allreduce） |
 | 残差检查频率 | `void PoissonSolver::setResidualCheckInterval(Index interval)`（基类，默认实现存 `residualCheckInterval_ = max(1, interval)`；protected 成员 `Index residualCheckInterval_ = 1`） | 新增 | Jacobi/RBGS 读取；CG 不读取（main 层 WARN 拦截） |
-| CG p 更新 | `void CGSolver::updatePInterior(const Subgrid& subgrid, Real beta) const`（private） | 新增 | `pp = rp + beta*pp`，solve/iterate 复用 |
+| CG p 更新 | `void CGSolver::updatePInterior(const Subgrid& subgrid, Real beta) const`（private） | 新增 | `pp = rp + beta*pp`，solve/iterate 复用。**实现期签名修正（T004，review D1 补录）**：实际为 `void updatePInterior(Subgrid& subgrid, Real beta)`（非 const）——`AlignedBuffer::data()` 无 const 重载（const 对象返回 `const Real*`），写 `p_`须经非 const 访问；`Subgrid&` 亦取非 const 与 `axpyInterior` 等既有私有 helper 一致 |
 | RBGS 迭代拆分 | `Real RedBlackGSSolver::iterateCore(Subgrid&, HaloExchanger&) const`（private，双扫 + applyPhysicalBoundary，返回 Σdiff²） | 新增 | solve() 非检查迭代走此路径 |
 | 拓扑带出 | `SubgridInfo::cartComm`（新字段，`MPI_Comm`，默认 `MPI_COMM_NULL`） | 修改（additive 字段） | 所有权移交调用方 |
-| 报告配置 | `RunConfig::residualCheckInterval`（新字段，`Index`，默认 1）+ reporter 序列化 | 修改（additive 字段） | json/csv 报告透出 k |
+| 报告配置 | `RunConfig::residualCheckInterval`（新字段，`Index`，默认 1）+ reporter 序列化 | 修改（additive 字段） | json/csv 报告透出 k。**实现期类型修正（T003，review D1 补录）**：实际为 `int`（默认 1）——与 CLI 解析 `parser.get<int>` 同型、JSON/CSV 序列化直接输出；值域经 main 校验（≥1）后 `static_cast<Index>` 注入 setter，无溢出路径 |
 
 **CLI：**
 
