@@ -72,6 +72,7 @@ Grid (全局描述) --> GridPartition (策略) --> Subgrid (本地子域 + Halo)
 - **IOBackend**: 抽象接口（含可选的并行索引接口 `writeParallelIndex`）
 - **BinaryIOBackend**: 原始二进制输出，最高性能（每 rank 分片，头部含真实全局 offsets）
 - **VTKIOBackend**: VTK XML ImageData 分片（每 rank `.vti`，带全局 Origin/Extent 偏移）+ rank0 `PImageData` 索引（`.pvti`），直接支持 ParaView
+- **MPIIOBinaryBackend**: MPI-IO 单文件二进制输出（`--output-format mpibin`）。`write()` 为 collective：全 rank 在 `subgrid.comm()` 上以相同文件名调用，经 `MPI_File_set_view`（文件侧 subarray=全局网格内本 rank 内点盒）+ `MPI_File_write_all`（内存侧 subarray=padded 缓冲内点盒）零拷贝直写全局位置。文件布局：72 字节自描述头（magic/version/全局尺寸/间距/边界类型/数据区 offset，小端、固定宽度字段）+ 全局行主序数据区（x 最快）；`MPI_File_set_size` 先行截断旧文件。I/O 失败不抛出：WARN（每 rank 限一次）并跳过本次输出，依赖文件默认 error handler `MPI_ERRORS_RETURN` 保证 open 失败全 rank 一致返回，无 collective 挂死。与分片方案（Binary/VTK）的取舍：单文件自描述、产物简洁，适合归档与第三方读取；分片方案无聚合依赖、天然并行可扩展——两者并存，`writeParallelIndex` 在单文件后端为 no-op。
 
 ### 2.7 工具层（utils/）
 

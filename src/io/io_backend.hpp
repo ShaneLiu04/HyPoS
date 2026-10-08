@@ -82,4 +82,30 @@ private:
     Real dx_ = 1.0, dy_ = 1.0, dz_ = 1.0;
 };
 
+/**
+ * @brief MPI-IO single-file binary output (parallel aggregated).
+ *
+ * All ranks collectively write ONE self-describing file: a fixed 72-byte
+ * header (magic "HYPS", version, global dims, spacing, boundary-condition
+ * code, data offset) followed by the global interior field in row-major
+ * order (x fastest). Each rank writes its interior box directly at its
+ * global position using MPI subarray file/memory views ("native"
+ * representation; little-endian hosts assumed, documented in README).
+ *
+ * write() is COLLECTIVE on subgrid.comm(): every rank must call it with
+ * the same filename. I/O failures never throw — they are reported as
+ * warnings (first failure per rank only) and the output is skipped.
+ */
+class MPIIOBinaryBackend final : public IOBackend {
+public:
+    explicit MPIIOBinaryBackend(const Grid& grid);
+
+    void write(const Subgrid& subgrid, const std::string& filename, int step = 0) override;
+    std::string format() const override { return "mpibin"; }
+
+private:
+    Grid grid_;            ///< Global grid description (dims + spacing)
+    bool warned_ = false;  ///< First-failure-only warning latch
+};
+
 } // namespace hypo

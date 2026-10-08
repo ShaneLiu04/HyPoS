@@ -25,7 +25,7 @@
 ### 依赖
 
 - **CMake** ≥ 3.16
-- **MPI** 实现：OpenMPI、MPICH 或 Intel MPI
+- **MPI** 实现：OpenMPI、MPICH 或 Intel MPI（注意：Ubuntu 24.04 的 `mpich 4.2.0` 包存在 PMI/PMIx 不匹配缺陷，应用会静默退化为单进程运行；该环境请使用 OpenMPI，可用 `mpirun -n 4 <app>` 验证 `MPI_Comm_size` 是否为 4）
 - **OpenMP** 支持（GCC/Clang/Intel 编译器）
 - **C++17** 编译器：GCC 10+、Clang 14+、Intel oneAPI 2023+
 - 可选：GoogleTest（测试）、PAPI（硬件计数器）
@@ -69,7 +69,7 @@ mpirun -np 16 ./build/hypos --nx 2048 --ny 2048 --max-iter 10000 --enable-profil
 | `--comm-mode` | p2p | 通信模式（p2p / collective；collective 当前为 P2P 回退） |
 | `--enable-profiling` | false | 启用详细性能分析 |
 | `--overlap-comm` | false | 启用通信-计算重叠 |
-| `--output-format` | json | 输出格式（json / csv / vtk / binary；vtk=每 rank `.vti` 分片+rank0 `.pvti` 索引，binary=每 rank `.bin` 含真实 offsets） |
+| `--output-format` | json | 输出格式（json / csv / vtk / binary / mpibin；vtk=每 rank `.vti` 分片+rank0 `.pvti` 索引，binary=每 rank `.bin` 含真实 offsets，mpibin=MPI-IO 单文件 `solution_<step>.bin`：72 字节自描述头+全局行主序数据区，全 rank 集体写，小端） |
 | `--output-dir` | ./output | 输出目录（启动时自动创建） |
 | `--save-interval` | 0 | 每 N 次迭代输出中间解（文件名含步号；0=不保存） |
 
@@ -110,8 +110,9 @@ HyPoS/
 │   │   └── reporter.cpp
 │   ├── io/
 │   │   ├── io_backend.hpp      # I/O 抽象接口
-│   │   ├── binary_io.cpp       # 二进制输出
-│   │   └── vtk_io.cpp          # VTK 格式输出
+│   │   ├── binary_io.cpp       # 二进制输出（每 rank 分片）
+│   │   ├── vtk_io.cpp          # VTK 格式输出（.vti/.pvti）
+│   │   └── mpiio_binary.cpp    # MPI-IO 单文件二进制输出（mpibin）
 │   └── utils/
 │       ├── mpi_env.hpp         # MPI 环境 RAII 封装
 │       ├── logger.hpp          # 分级日志
@@ -217,7 +218,8 @@ chmod +x scripts/benchmark.sh
      v                     v                      v
 +-------------+     +----------------+     +------------------+
 |  Logger     |     |  Profiler      |     |  IOBackend       |
-|  Reporter   |     |  Timer         |     |  (VTK/Binary)    |
+|  Reporter   |     |  Timer         |     |  (VTK/Binary/    |
+|             |     |                |     |   MPI-IO 单文件) |
 +-------------+     +----------------+     +------------------+
 ```
 

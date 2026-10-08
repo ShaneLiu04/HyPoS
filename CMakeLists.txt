@@ -38,6 +38,7 @@ set(HYPOS_CORE_SOURCES
     src/utils/cmdline_parser.cpp
     src/io/binary_io.cpp
     src/io/vtk_io.cpp
+    src/io/mpiio_binary.cpp
 )
 
 # Core library shared by the executable and tests
@@ -70,6 +71,7 @@ if(GTest_FOUND)
         tests/test_halo_exchange.cpp
         tests/test_solver_mpi.cpp
         tests/test_performance.cpp
+        tests/test_mpiio_output.cpp
     )
     target_link_libraries(test_hypos PRIVATE hypos_core GTest::gtest)
 
@@ -120,10 +122,22 @@ if(GTest_FOUND)
             COMMAND ${HYPOS_MPIEXEC} ${HYPOS_MPIEXEC_FLAGS} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} 3
                     $<TARGET_FILE:hypos> --nx 24 --ny 24 --max-iter 20
                     --output-dir ${CMAKE_BINARY_DIR}/ctest_ranks3)
+        add_test(NAME mpiio_np1
+            COMMAND ${HYPOS_MPIEXEC} ${HYPOS_MPIEXEC_FLAGS} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} 1
+                    $<TARGET_FILE:test_hypos> --gtest_filter=MpiIoOutputTest.*)
+        add_test(NAME mpiio_np4
+            COMMAND ${HYPOS_MPIEXEC} ${HYPOS_MPIEXEC_FLAGS} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} 4
+                    $<TARGET_FILE:test_hypos> --gtest_filter=MpiIoOutputTest.*)
+        add_test(NAME mpiio_e2e
+            COMMAND ${HYPOS_MPIEXEC} ${HYPOS_MPIEXEC_FLAGS} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} 4
+                    $<TARGET_FILE:hypos> --output-format mpibin --nx 32 --ny 32 --max-iter 20
+                    --save-interval 10 --enable-profiling
+                    --output-dir ${CMAKE_BINARY_DIR}/ctest_mpiio)
 
         set_tests_properties(halo_2d_mpi halo_3d_mpi solver_mpi overlap_consistency
             PROPERTIES ENVIRONMENT "${HYPOS_TEST_ENV}" TIMEOUT 600)
         set_tests_properties(solver_alt_mpi collective_mpi ranks3_smoke
+            mpiio_np1 mpiio_np4 mpiio_e2e
             PROPERTIES ENVIRONMENT "${HYPOS_TEST_ENV}" TIMEOUT 600)
     endif()
 elseif(HYPOS_BUILD_TESTS)

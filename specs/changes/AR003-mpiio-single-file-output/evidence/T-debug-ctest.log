@@ -1,0 +1,754 @@
+Internal ctest changing into directory: /root/build-debug
+Test project /root/build-debug
+      Start  1: unit
+ 1/12 Test  #1: unit .............................***Failed    7.16 sec
+[==========] Running 53 tests from 11 test suites.
+[----------] Global test environment set-up.
+[----------] 7 tests from MpiIoOutputTest
+[ RUN      ] MpiIoOutputTest.SingleRankHeaderAndDataMatchReference
+/mnt/d/hy-po-s/tests/test_mpiio_output.cpp:234: Failure
+Value of: dataAreaMatches(buf, h, &ref2D)
+  Actual: false
+Expected: true
+data area must match f(gI,gJ)=gI+1000*gJ for all 256 cells
+
+[  FAILED  ] MpiIoOutputTest.SingleRankHeaderAndDataMatchReference (1 ms)
+[ RUN      ] MpiIoOutputTest.FourRanksGlobalAssemblyMatchesReference
+/mnt/d/hy-po-s/tests/test_mpiio_output.cpp:251: Skipped
+FourRanksGlobalAssemblyMatchesReference requires exactly 4 processes
+
+[  SKIPPED ] MpiIoOutputTest.FourRanksGlobalAssemblyMatchesReference (0 ms)
+[ RUN      ] MpiIoOutputTest.FourRanks3DLayout
+/mnt/d/hy-po-s/tests/test_mpiio_output.cpp:322: Skipped
+FourRanks3DLayout requires exactly 4 processes
+
+[  SKIPPED ] MpiIoOutputTest.FourRanks3DLayout (0 ms)
+[ RUN      ] MpiIoOutputTest.WriteToInvalidPathWarnsAndSkips
+[2026-10-08 04:52:23.447] [RANK 0] [WARN] MPI-IO: cannot open output file: /nonexistent_dir_xyz/solution.bin
+/mnt/d/hy-po-s/tests/test_mpiio_output.cpp:417: Failure
+Value of: dataAreaMatches(buf, h, &ref2D)
+  Actual: false
+Expected: true
+
+[  FAILED  ] MpiIoOutputTest.WriteToInvalidPathWarnsAndSkips (1 ms)
+[ RUN      ] MpiIoOutputTest.TruncatesStaleLongerFile
+/mnt/d/hy-po-s/tests/test_mpiio_output.cpp:470: Failure
+Value of: dataAreaMatches(buf, h, &ref2D)
+  Actual: false
+Expected: true
+
+[  FAILED  ] MpiIoOutputTest.TruncatesStaleLongerFile (1 ms)
+[ RUN      ] MpiIoOutputTest.SuffixHandling
+[       OK ] MpiIoOutputTest.SuffixHandling (3 ms)
+[ RUN      ] MpiIoOutputTest.FormatIsMpibin
+[       OK ] MpiIoOutputTest.FormatIsMpibin (0 ms)
+[----------] 7 tests from MpiIoOutputTest (7 ms total)
+
+[----------] 4 tests from PerfTest
+[ RUN      ] PerfTest.TimerAccuracy
+[       OK ] PerfTest.TimerAccuracy (100 ms)
+[ RUN      ] PerfTest.ProfilerRegions
+[       OK ] PerfTest.ProfilerRegions (10 ms)
+[ RUN      ] PerfTest.SolveRecordsProfilerRegionsOffMode
+[2026-10-08 04:52:23.565] [RANK 0] [INFO] Solver finished in 10 iterations, time = 0.00120615 s
+[       OK ] PerfTest.SolveRecordsProfilerRegionsOffMode (1 ms)
+[ RUN      ] PerfTest.SolveRecordsProfilerRegionsOverlapMode
+[2026-10-08 04:52:23.566] [RANK 0] [INFO] Solver finished in 10 iterations, time = 0.000659748 s
+[       OK ] PerfTest.SolveRecordsProfilerRegionsOverlapMode (0 ms)
+[----------] 4 tests from PerfTest (112 ms total)
+
+[----------] 6 tests from SolverMpiTest
+[ RUN      ] SolverMpiTest.ConvergedSolutionMatchesManufacturedSine
+/mnt/d/hy-po-s/tests/test_solver_mpi.cpp:48: Skipped
+ConvergedSolutionMatchesManufacturedSine requires exactly 4 processes
+
+[  SKIPPED ] SolverMpiTest.ConvergedSolutionMatchesManufacturedSine (0 ms)
+[ RUN      ] SolverMpiTest.FixedIterationsMatchesSerialReference
+/mnt/d/hy-po-s/tests/test_solver_mpi.cpp:123: Skipped
+FixedIterationsMatchesSerialReference requires exactly 4 processes
+
+[  SKIPPED ] SolverMpiTest.FixedIterationsMatchesSerialReference (0 ms)
+[ RUN      ] SolverMpiTest.ThreeDNoZDecompositionProcNullAndRun
+/mnt/d/hy-po-s/tests/test_solver_mpi.cpp:183: Skipped
+ThreeDNoZDecompositionProcNullAndRun requires exactly 4 processes
+
+[  SKIPPED ] SolverMpiTest.ThreeDNoZDecompositionProcNullAndRun (0 ms)
+[ RUN      ] SolverMpiTest.TinyDecompositionSmoke
+/mnt/d/hy-po-s/tests/test_solver_mpi.cpp:232: Skipped
+TinyDecompositionSmoke requires exactly 4 processes
+
+[  SKIPPED ] SolverMpiTest.TinyDecompositionSmoke (0 ms)
+[ RUN      ] SolverMpiTest.AltSolversConvergeFasterThanJacobi2D
+/mnt/d/hy-po-s/tests/test_solver_mpi.cpp:375: Skipped
+AltSolversConvergeFasterThanJacobi2D requires exactly 4 processes
+
+[  SKIPPED ] SolverMpiTest.AltSolversConvergeFasterThanJacobi2D (0 ms)
+[ RUN      ] SolverMpiTest.AltSolvers3DSmoke
+/mnt/d/hy-po-s/tests/test_solver_mpi.cpp:463: Skipped
+AltSolvers3DSmoke requires exactly 4 processes
+
+[  SKIPPED ] SolverMpiTest.AltSolvers3DSmoke (0 ms)
+[----------] 6 tests from SolverMpiTest (0 ms total)
+
+[----------] 8 tests from HaloExchangeTest
+[ RUN      ] HaloExchangeTest.DirectionSemanticsSelfLoop2D
+[       OK ] HaloExchangeTest.DirectionSemanticsSelfLoop2D (0 ms)
+[ RUN      ] HaloExchangeTest.FaceBuffersSafeSelfLoop2DMultiHalo
+[       OK ] HaloExchangeTest.FaceBuffersSafeSelfLoop2DMultiHalo (0 ms)
+[ RUN      ] HaloExchangeTest.ProcNullKeepsHaloUnchanged
+[       OK ] HaloExchangeTest.ProcNullKeepsHaloUnchanged (0 ms)
+[ RUN      ] HaloExchangeTest.CollectiveExchangerDelegatesToP2P
+[2026-10-08 04:52:23.567] [RANK 0] [WARN] CollectiveExchanger currently falls back to PointToPointExchanger (MPI_Neighbor_allgatherv is a roadmap item)
+[       OK ] HaloExchangeTest.CollectiveExchangerDelegatesToP2P (0 ms)
+[ RUN      ] HaloExchangeTest.MpiNonUniform4RanksHalos
+/mnt/d/hy-po-s/tests/test_halo_exchange.cpp:157: Skipped
+MpiNonUniform4RanksHalos requires exactly 4 processes
+
+[  SKIPPED ] HaloExchangeTest.MpiNonUniform4RanksHalos (0 ms)
+[ RUN      ] HaloExchangeTest.SelfLoop3DDirectionSemantics
+[       OK ] HaloExchangeTest.SelfLoop3DDirectionSemantics (0 ms)
+[ RUN      ] HaloExchangeTest.SelfLoop3DMultiHaloSmoke
+[       OK ] HaloExchangeTest.SelfLoop3DMultiHaloSmoke (0 ms)
+[ RUN      ] HaloExchangeTest.MpiNonUniform8RanksHalos3D
+/mnt/d/hy-po-s/tests/test_halo_exchange.cpp:377: Skipped
+MpiNonUniform8RanksHalos3D requires exactly 8 processes
+
+[  SKIPPED ] HaloExchangeTest.MpiNonUniform8RanksHalos3D (0 ms)
+[----------] 8 tests from HaloExchangeTest (1 ms total)
+
+[----------] 2 tests from OverlapTest
+[ RUN      ] OverlapTest.SelfLoopOnOffConsistency
+[2026-10-08 04:52:23.585] [RANK 0] [INFO] Iteration 500, residual = 4
+[2026-10-08 04:52:23.602] [RANK 0] [INFO] Iteration 1000, residual = 4
+[2026-10-08 04:52:23.622] [RANK 0] [INFO] Iteration 1500, residual = 4
+[2026-10-08 04:52:23.637] [RANK 0] [INFO] Iteration 2000, residual = 4
+[2026-10-08 04:52:23.653] [RANK 0] [INFO] Iteration 2500, residual = 4
+[2026-10-08 04:52:23.669] [RANK 0] [INFO] Iteration 3000, residual = 4
+[2026-10-08 04:52:23.684] [RANK 0] [INFO] Iteration 3500, residual = 4
+[2026-10-08 04:52:23.699] [RANK 0] [INFO] Iteration 4000, residual = 4
+[2026-10-08 04:52:23.718] [RANK 0] [INFO] Iteration 4500, residual = 4
+[2026-10-08 04:52:23.734] [RANK 0] [INFO] Iteration 5000, residual = 4
+[2026-10-08 04:52:23.735] [RANK 0] [INFO] Solver finished in 5000 iterations, time = 0.166883 s
+[2026-10-08 04:52:23.753] [RANK 0] [INFO] Iteration 500, residual = 4
+[2026-10-08 04:52:23.769] [RANK 0] [INFO] Iteration 1000, residual = 4
+[2026-10-08 04:52:23.786] [RANK 0] [INFO] Iteration 1500, residual = 4
+[2026-10-08 04:52:23.803] [RANK 0] [INFO] Iteration 2000, residual = 4
+[2026-10-08 04:52:23.820] [RANK 0] [INFO] Iteration 2500, residual = 4
+[2026-10-08 04:52:23.836] [RANK 0] [INFO] Iteration 3000, residual = 4
+[2026-10-08 04:52:23.852] [RANK 0] [INFO] Iteration 3500, residual = 4
+[2026-10-08 04:52:23.868] [RANK 0] [INFO] Iteration 4000, residual = 4
+[2026-10-08 04:52:23.884] [RANK 0] [INFO] Iteration 4500, residual = 4
+[2026-10-08 04:52:23.900] [RANK 0] [INFO] Iteration 5000, residual = 4
+[2026-10-08 04:52:23.900] [RANK 0] [INFO] Solver finished in 5000 iterations, time = 0.165725 s
+[       OK ] OverlapTest.SelfLoopOnOffConsistency (332 ms)
+[ RUN      ] OverlapTest.MpiFourRanksOnOffConsistency
+/mnt/d/hy-po-s/tests/test_overlap.cpp:68: Skipped
+MpiFourRanksOnOffConsistency requires exactly 4 processes
+
+[  SKIPPED ] OverlapTest.MpiFourRanksOnOffConsistency (0 ms)
+[----------] 2 tests from OverlapTest (333 ms total)
+
+[----------] 12 tests from AltFeatureTest
+[ RUN      ] AltFeatureTest.SubgridOffsetsAccessors
+[       OK ] AltFeatureTest.SubgridOffsetsAccessors (0 ms)
+[ RUN      ] AltFeatureTest.VtkPieceAndParallelIndexFiles
+[2026-10-08 04:52:23.901] [RANK 0] [INFO] Wrote VTK piece to test_out/solution_0_r0.vti
+[2026-10-08 04:52:23.901] [RANK 0] [INFO] Wrote VTK parallel index to test_out/solution_0.pvti
+[2026-10-08 04:52:23.901] [RANK 0] [WARN] VTK parallel index skipped: empty piece list
+[2026-10-08 04:52:23.902] [RANK 0] [WARN] VTK parallel index skipped: piece extents exceed the global grid
+[       OK ] AltFeatureTest.VtkPieceAndParallelIndexFiles (0 ms)
+[ RUN      ] AltFeatureTest.ProgressCallbackCountsIterations
+[2026-10-08 04:52:23.902] [RANK 0] [INFO] Solver finished in 10 iterations, time = 0.000452255 s
+[       OK ] AltFeatureTest.ProgressCallbackCountsIterations (0 ms)
+[ RUN      ] AltFeatureTest.ProgressCallbackLastOneWins
+[2026-10-08 04:52:23.903] [RANK 0] [INFO] Solver finished in 3 iterations, time = 0.000111052 s
+[       OK ] AltFeatureTest.ProgressCallbackLastOneWins (0 ms)
+[ RUN      ] AltFeatureTest.PhysicalBoundaryDirichletFillsFaces
+[       OK ] AltFeatureTest.PhysicalBoundaryDirichletFillsFaces (0 ms)
+[ RUN      ] AltFeatureTest.PhysicalBoundaryNeumannMirrorsInterior
+[       OK ] AltFeatureTest.PhysicalBoundaryNeumannMirrorsInterior (0 ms)
+[ RUN      ] AltFeatureTest.PhysicalBoundaryOnlyTouchesProcNullFaces
+[       OK ] AltFeatureTest.PhysicalBoundaryOnlyTouchesProcNullFaces (0 ms)
+[ RUN      ] AltFeatureTest.FusedResidualBitIdenticalAcrossOverlapModes
+[2026-10-08 04:52:23.915] [RANK 0] [INFO] Solver finished in 400 iterations, time = 0.0121623 s
+[2026-10-08 04:52:23.928] [RANK 0] [INFO] Solver finished in 400 iterations, time = 0.0124653 s
+[       OK ] AltFeatureTest.FusedResidualBitIdenticalAcrossOverlapModes (25 ms)
+[ RUN      ] AltFeatureTest.ExchangeWithExternalBufferMatchesU
+[       OK ] AltFeatureTest.ExchangeWithExternalBufferMatchesU (0 ms)
+[ RUN      ] AltFeatureTest.ExchangeNullDataIsSafeNoOp
+[2026-10-08 04:52:23.928] [RANK 0] [ERROR] PointToPointExchanger::beginExchange called before initialize or with null data buffer; ignored
+[2026-10-08 04:52:23.928] [RANK 0] [ERROR] PointToPointExchanger::endExchange called before initialize or with null data buffer; ignored
+[       OK ] AltFeatureTest.ExchangeNullDataIsSafeNoOp (0 ms)
+[ RUN      ] AltFeatureTest.ExchangeBeforeInitializeIsSafeNoOp
+[2026-10-08 04:52:23.928] [RANK 0] [ERROR] PointToPointExchanger::beginExchange called before initialize or with null data buffer; ignored
+[2026-10-08 04:52:23.928] [RANK 0] [ERROR] PointToPointExchanger::endExchange called before initialize or with null data buffer; ignored
+[       OK ] AltFeatureTest.ExchangeBeforeInitializeIsSafeNoOp (0 ms)
+[ RUN      ] AltFeatureTest.PackStrideAsymmetricSelfLoop3D
+[       OK ] AltFeatureTest.PackStrideAsymmetricSelfLoop3D (0 ms)
+[----------] 12 tests from AltFeatureTest (28 ms total)
+
+[----------] 3 tests from AltSolverTest
+[ RUN      ] AltSolverTest.RedBlackGSConvergesFasterThanJacobi
+[2026-10-08 04:52:23.968] [RANK 0] [INFO] Iteration 500, residual = 0.0211847
+[2026-10-08 04:52:24.009] [RANK 0] [INFO] Iteration 1000, residual = 0.0118112
+[2026-10-08 04:52:24.048] [RANK 0] [INFO] Iteration 1500, residual = 0.00658519
+[2026-10-08 04:52:24.086] [RANK 0] [INFO] Iteration 2000, residual = 0.00367148
+[2026-10-08 04:52:24.124] [RANK 0] [INFO] Iteration 2500, residual = 0.00204699
+[2026-10-08 04:52:24.159] [RANK 0] [INFO] Iteration 3000, residual = 0.00114127
+[2026-10-08 04:52:24.203] [RANK 0] [INFO] Iteration 3500, residual = 0.000636299
+[2026-10-08 04:52:24.243] [RANK 0] [INFO] Iteration 4000, residual = 0.00035476
+[2026-10-08 04:52:24.280] [RANK 0] [INFO] Iteration 4500, residual = 0.000197791
+[2026-10-08 04:52:24.318] [RANK 0] [INFO] Iteration 5000, residual = 0.000110276
+[2026-10-08 04:52:24.357] [RANK 0] [INFO] Iteration 5500, residual = 6.14828e-05
+[2026-10-08 04:52:24.392] [RANK 0] [INFO] Iteration 6000, residual = 3.42789e-05
+[2026-10-08 04:52:24.427] [RANK 0] [INFO] Iteration 6500, residual = 1.91117e-05
+[2026-10-08 04:52:24.467] [RANK 0] [INFO] Iteration 7000, residual = 1.06555e-05
+[2026-10-08 04:52:24.510] [RANK 0] [INFO] Iteration 7500, residual = 5.94081e-06
+[2026-10-08 04:52:24.553] [RANK 0] [INFO] Iteration 8000, residual = 3.31222e-06
+[2026-10-08 04:52:24.596] [RANK 0] [INFO] Iteration 8500, residual = 1.84668e-06
+[2026-10-08 04:52:24.633] [RANK 0] [INFO] Iteration 9000, residual = 1.02959e-06
+[2026-10-08 04:52:24.669] [RANK 0] [INFO] Iteration 9500, residual = 5.74035e-07
+[2026-10-08 04:52:24.707] [RANK 0] [INFO] Iteration 10000, residual = 3.20045e-07
+[2026-10-08 04:52:24.742] [RANK 0] [INFO] Iteration 10500, residual = 1.78437e-07
+[2026-10-08 04:52:24.782] [RANK 0] [INFO] Iteration 11000, residual = 9.9485e-08
+[2026-10-08 04:52:24.817] [RANK 0] [INFO] Iteration 11500, residual = 5.54665e-08
+[2026-10-08 04:52:24.860] [RANK 0] [INFO] Iteration 12000, residual = 3.09246e-08
+[2026-10-08 04:52:24.902] [RANK 0] [INFO] Iteration 12500, residual = 1.72416e-08
+[2026-10-08 04:52:24.954] [RANK 0] [INFO] Converged at iteration 12967, residual = 9.9907e-09
+[2026-10-08 04:52:24.954] [RANK 0] [INFO] Solver finished in 12967 iterations, time = 1.02392 s
+[2026-10-08 04:52:25.000] [RANK 0] [INFO] Iteration 500, residual = 0.0236501
+[2026-10-08 04:52:25.037] [RANK 0] [INFO] Iteration 1000, residual = 0.00735156
+[2026-10-08 04:52:25.077] [RANK 0] [INFO] Iteration 1500, residual = 0.00228521
+[2026-10-08 04:52:25.112] [RANK 0] [INFO] Iteration 2000, residual = 0.000710349
+[2026-10-08 04:52:25.146] [RANK 0] [INFO] Iteration 2500, residual = 0.00022081
+[2026-10-08 04:52:25.185] [RANK 0] [INFO] Iteration 3000, residual = 6.86379e-05
+[2026-10-08 04:52:25.226] [RANK 0] [INFO] Iteration 3500, residual = 2.13359e-05
+[2026-10-08 04:52:25.261] [RANK 0] [INFO] Iteration 4000, residual = 6.63218e-06
+[2026-10-08 04:52:25.296] [RANK 0] [INFO] Iteration 4500, residual = 2.06159e-06
+[2026-10-08 04:52:25.335] [RANK 0] [INFO] Iteration 5000, residual = 6.40839e-07
+[2026-10-08 04:52:25.374] [RANK 0] [INFO] Iteration 5500, residual = 1.99203e-07
+[2026-10-08 04:52:25.412] [RANK 0] [INFO] Iteration 6000, residual = 6.19215e-08
+[2026-10-08 04:52:25.448] [RANK 0] [INFO] Iteration 6500, residual = 1.92481e-08
+[2026-10-08 04:52:25.470] [RANK 0] [INFO] Converged at iteration 6781, residual = 9.98156e-09
+[2026-10-08 04:52:25.471] [RANK 0] [INFO] RedBlackGS finished in 6781 iterations, time = 0.514641 s
+[2026-10-08 04:52:25.507] [RANK 0] [INFO] Iteration 500, residual = 0.0211847
+[2026-10-08 04:52:25.541] [RANK 0] [INFO] Iteration 1000, residual = 0.0118112
+[2026-10-08 04:52:25.586] [RANK 0] [INFO] Iteration 1500, residual = 0.00658519
+[2026-10-08 04:52:25.622] [RANK 0] [INFO] Iteration 2000, residual = 0.00367148
+[2026-10-08 04:52:25.663] [RANK 0] [INFO] Iteration 2500, residual = 0.00204699
+[2026-10-08 04:52:25.706] [RANK 0] [INFO] Iteration 3000, residual = 0.00114127
+[2026-10-08 04:52:25.758] [RANK 0] [INFO] Iteration 3500, residual = 0.000636299
+[2026-10-08 04:52:25.793] [RANK 0] [INFO] Iteration 4000, residual = 0.00035476
+[2026-10-08 04:52:25.831] [RANK 0] [INFO] Iteration 4500, residual = 0.000197791
+[2026-10-08 04:52:25.871] [RANK 0] [INFO] Iteration 5000, residual = 0.000110276
+[2026-10-08 04:52:25.905] [RANK 0] [INFO] Iteration 5500, residual = 6.14828e-05
+[2026-10-08 04:52:25.940] [RANK 0] [INFO] Iteration 6000, residual = 3.42789e-05
+[2026-10-08 04:52:25.974] [RANK 0] [INFO] Iteration 6500, residual = 1.91117e-05
+[2026-10-08 04:52:26.010] [RANK 0] [INFO] Iteration 7000, residual = 1.06555e-05
+[2026-10-08 04:52:26.045] [RANK 0] [INFO] Iteration 7500, residual = 5.94081e-06
+[2026-10-08 04:52:26.089] [RANK 0] [INFO] Iteration 8000, residual = 3.31222e-06
+[2026-10-08 04:52:26.129] [RANK 0] [INFO] Iteration 8500, residual = 1.84668e-06
+[2026-10-08 04:52:26.167] [RANK 0] [INFO] Iteration 9000, residual = 1.02959e-06
+[2026-10-08 04:52:26.203] [RANK 0] [INFO] Iteration 9500, residual = 5.74035e-07
+[2026-10-08 04:52:26.238] [RANK 0] [INFO] Iteration 10000, residual = 3.20045e-07
+[2026-10-08 04:52:26.271] [RANK 0] [INFO] Iteration 10500, residual = 1.78437e-07
+[2026-10-08 04:52:26.308] [RANK 0] [INFO] Iteration 11000, residual = 9.9485e-08
+[2026-10-08 04:52:26.345] [RANK 0] [INFO] Iteration 11500, residual = 5.54665e-08
+[2026-10-08 04:52:26.389] [RANK 0] [INFO] Iteration 12000, residual = 3.09246e-08
+[2026-10-08 04:52:26.424] [RANK 0] [INFO] Iteration 12500, residual = 1.72416e-08
+[2026-10-08 04:52:26.463] [RANK 0] [INFO] Iteration 13000, residual = 9.6128e-09
+[2026-10-08 04:52:26.501] [RANK 0] [INFO] Iteration 13500, residual = 5.35949e-09
+[2026-10-08 04:52:26.539] [RANK 0] [INFO] Iteration 14000, residual = 2.98811e-09
+[2026-10-08 04:52:26.574] [RANK 0] [INFO] Iteration 14500, residual = 1.66598e-09
+[2026-10-08 04:52:26.613] [RANK 0] [INFO] Iteration 15000, residual = 9.28843e-10
+[2026-10-08 04:52:26.649] [RANK 0] [INFO] Iteration 15500, residual = 5.17864e-10
+[2026-10-08 04:52:26.684] [RANK 0] [INFO] Iteration 16000, residual = 2.88728e-10
+[2026-10-08 04:52:26.724] [RANK 0] [INFO] Iteration 16500, residual = 1.60976e-10
+[2026-10-08 04:52:26.762] [RANK 0] [INFO] Iteration 17000, residual = 8.97501e-11
+[2026-10-08 04:52:26.804] [RANK 0] [INFO] Iteration 17500, residual = 5.00388e-11
+[2026-10-08 04:52:26.841] [RANK 0] [INFO] Iteration 18000, residual = 2.78985e-11
+[2026-10-08 04:52:26.878] [RANK 0] [INFO] Iteration 18500, residual = 1.55544e-11
+[2026-10-08 04:52:26.913] [RANK 0] [INFO] Iteration 19000, residual = 8.67218e-12
+[2026-10-08 04:52:26.948] [RANK 0] [INFO] Iteration 19500, residual = 4.83499e-12
+[2026-10-08 04:52:26.983] [RANK 0] [INFO] Iteration 20000, residual = 2.69562e-12
+[2026-10-08 04:52:27.017] [RANK 0] [INFO] Iteration 20500, residual = 1.503e-12
+[2026-10-08 04:52:27.041] [RANK 0] [INFO] Converged at iteration 20849, residual = 9.99776e-13
+[2026-10-08 04:52:27.041] [RANK 0] [INFO] Solver finished in 20849 iterations, time = 1.56876 s
+[2026-10-08 04:52:27.083] [RANK 0] [INFO] Iteration 500, residual = 0.0236501
+[2026-10-08 04:52:27.137] [RANK 0] [INFO] Iteration 1000, residual = 0.00735156
+[2026-10-08 04:52:27.174] [RANK 0] [INFO] Iteration 1500, residual = 0.00228521
+[2026-10-08 04:52:27.210] [RANK 0] [INFO] Iteration 2000, residual = 0.000710349
+[2026-10-08 04:52:27.243] [RANK 0] [INFO] Iteration 2500, residual = 0.00022081
+[2026-10-08 04:52:27.275] [RANK 0] [INFO] Iteration 3000, residual = 6.86379e-05
+[2026-10-08 04:52:27.308] [RANK 0] [INFO] Iteration 3500, residual = 2.13359e-05
+[2026-10-08 04:52:27.341] [RANK 0] [INFO] Iteration 4000, residual = 6.63218e-06
+[2026-10-08 04:52:27.380] [RANK 0] [INFO] Iteration 4500, residual = 2.06159e-06
+[2026-10-08 04:52:27.412] [RANK 0] [INFO] Iteration 5000, residual = 6.40839e-07
+[2026-10-08 04:52:27.446] [RANK 0] [INFO] Iteration 5500, residual = 1.99203e-07
+[2026-10-08 04:52:27.481] [RANK 0] [INFO] Iteration 6000, residual = 6.19215e-08
+[2026-10-08 04:52:27.520] [RANK 0] [INFO] Iteration 6500, residual = 1.92481e-08
+[2026-10-08 04:52:27.562] [RANK 0] [INFO] Iteration 7000, residual = 5.9832e-09
+[2026-10-08 04:52:27.596] [RANK 0] [INFO] Iteration 7500, residual = 1.85986e-09
+[2026-10-08 04:52:27.634] [RANK 0] [INFO] Iteration 8000, residual = 5.78131e-10
+[2026-10-08 04:52:27.676] [RANK 0] [INFO] Iteration 8500, residual = 1.7971e-10
+[2026-10-08 04:52:27.693] [RANK 0] [INFO] Converged at iteration 8751, residual = 9.9961e-11
+[2026-10-08 04:52:27.693] [RANK 0] [INFO] RedBlackGS finished in 8751 iterations, time = 0.650686 s
+[       OK ] AltSolverTest.RedBlackGSConvergesFasterThanJacobi (3764 ms)
+[ RUN      ] AltSolverTest.CGConvergesMuchFasterThanJacobi
+[2026-10-08 04:52:27.736] [RANK 0] [INFO] Iteration 500, residual = 0.0211847
+[2026-10-08 04:52:27.774] [RANK 0] [INFO] Iteration 1000, residual = 0.0118112
+[2026-10-08 04:52:27.810] [RANK 0] [INFO] Iteration 1500, residual = 0.00658519
+[2026-10-08 04:52:27.848] [RANK 0] [INFO] Iteration 2000, residual = 0.00367148
+[2026-10-08 04:52:27.891] [RANK 0] [INFO] Iteration 2500, residual = 0.00204699
+[2026-10-08 04:52:27.931] [RANK 0] [INFO] Iteration 3000, residual = 0.00114127
+[2026-10-08 04:52:27.967] [RANK 0] [INFO] Iteration 3500, residual = 0.000636299
+[2026-10-08 04:52:28.007] [RANK 0] [INFO] Iteration 4000, residual = 0.00035476
+[2026-10-08 04:52:28.046] [RANK 0] [INFO] Iteration 4500, residual = 0.000197791
+[2026-10-08 04:52:28.080] [RANK 0] [INFO] Iteration 5000, residual = 0.000110276
+[2026-10-08 04:52:28.113] [RANK 0] [INFO] Iteration 5500, residual = 6.14828e-05
+[2026-10-08 04:52:28.153] [RANK 0] [INFO] Iteration 6000, residual = 3.42789e-05
+[2026-10-08 04:52:28.193] [RANK 0] [INFO] Iteration 6500, residual = 1.91117e-05
+[2026-10-08 04:52:28.232] [RANK 0] [INFO] Iteration 7000, residual = 1.06555e-05
+[2026-10-08 04:52:28.267] [RANK 0] [INFO] Iteration 7500, residual = 5.94081e-06
+[2026-10-08 04:52:28.310] [RANK 0] [INFO] Iteration 8000, residual = 3.31222e-06
+[2026-10-08 04:52:28.346] [RANK 0] [INFO] Iteration 8500, residual = 1.84668e-06
+[2026-10-08 04:52:28.387] [RANK 0] [INFO] Iteration 9000, residual = 1.02959e-06
+[2026-10-08 04:52:28.421] [RANK 0] [INFO] Iteration 9500, residual = 5.74035e-07
+[2026-10-08 04:52:28.465] [RANK 0] [INFO] Iteration 10000, residual = 3.20045e-07
+[2026-10-08 04:52:28.499] [RANK 0] [INFO] Iteration 10500, residual = 1.78437e-07
+[2026-10-08 04:52:28.539] [RANK 0] [INFO] Converged at iteration 10996, residual = 9.99511e-08
+[2026-10-08 04:52:28.539] [RANK 0] [INFO] Solver finished in 10996 iterations, time = 0.844667 s
+[2026-10-08 04:52:28.541] [RANK 0] [INFO] Converged at iteration 1, residual = 1.72019e-11
+[2026-10-08 04:52:28.541] [RANK 0] [INFO] CG finished in 1 iterations, time = 0.000823374 s
+[2026-10-08 04:52:28.579] [RANK 0] [INFO] Iteration 500, residual = 0.0211847
+[2026-10-08 04:52:28.617] [RANK 0] [INFO] Iteration 1000, residual = 0.0118112
+[2026-10-08 04:52:28.656] [RANK 0] [INFO] Iteration 1500, residual = 0.00658519
+[2026-10-08 04:52:28.693] [RANK 0] [INFO] Iteration 2000, residual = 0.00367148
+[2026-10-08 04:52:28.734] [RANK 0] [INFO] Iteration 2500, residual = 0.00204699
+[2026-10-08 04:52:28.768] [RANK 0] [INFO] Iteration 3000, residual = 0.00114127
+[2026-10-08 04:52:28.806] [RANK 0] [INFO] Iteration 3500, residual = 0.000636299
+[2026-10-08 04:52:28.843] [RANK 0] [INFO] Iteration 4000, residual = 0.00035476
+[2026-10-08 04:52:28.879] [RANK 0] [INFO] Iteration 4500, residual = 0.000197791
+[2026-10-08 04:52:28.913] [RANK 0] [INFO] Iteration 5000, residual = 0.000110276
+[2026-10-08 04:52:28.947] [RANK 0] [INFO] Iteration 5500, residual = 6.14828e-05
+[2026-10-08 04:52:28.982] [RANK 0] [INFO] Iteration 6000, residual = 3.42789e-05
+[2026-10-08 04:52:29.020] [RANK 0] [INFO] Iteration 6500, residual = 1.91117e-05
+[2026-10-08 04:52:29.062] [RANK 0] [INFO] Iteration 7000, residual = 1.06555e-05
+[2026-10-08 04:52:29.100] [RANK 0] [INFO] Iteration 7500, residual = 5.94081e-06
+[2026-10-08 04:52:29.135] [RANK 0] [INFO] Iteration 8000, residual = 3.31222e-06
+[2026-10-08 04:52:29.182] [RANK 0] [INFO] Iteration 8500, residual = 1.84668e-06
+[2026-10-08 04:52:29.220] [RANK 0] [INFO] Iteration 9000, residual = 1.02959e-06
+[2026-10-08 04:52:29.260] [RANK 0] [INFO] Iteration 9500, residual = 5.74035e-07
+[2026-10-08 04:52:29.305] [RANK 0] [INFO] Iteration 10000, residual = 3.20045e-07
+[2026-10-08 04:52:29.350] [RANK 0] [INFO] Iteration 10500, residual = 1.78437e-07
+[2026-10-08 04:52:29.392] [RANK 0] [INFO] Iteration 11000, residual = 9.9485e-08
+[2026-10-08 04:52:29.442] [RANK 0] [INFO] Iteration 11500, residual = 5.54665e-08
+[2026-10-08 04:52:29.497] [RANK 0] [INFO] Iteration 12000, residual = 3.09246e-08
+[2026-10-08 04:52:29.533] [RANK 0] [INFO] Iteration 12500, residual = 1.72416e-08
+[2026-10-08 04:52:29.568] [RANK 0] [INFO] Iteration 13000, residual = 9.6128e-09
+[2026-10-08 04:52:29.613] [RANK 0] [INFO] Iteration 13500, residual = 5.35949e-09
+[2026-10-08 04:52:29.655] [RANK 0] [INFO] Iteration 14000, residual = 2.98811e-09
+[2026-10-08 04:52:29.689] [RANK 0] [INFO] Iteration 14500, residual = 1.66598e-09
+[2026-10-08 04:52:29.725] [RANK 0] [INFO] Iteration 15000, residual = 9.28843e-10
+[2026-10-08 04:52:29.761] [RANK 0] [INFO] Iteration 15500, residual = 5.17864e-10
+[2026-10-08 04:52:29.795] [RANK 0] [INFO] Iteration 16000, residual = 2.88728e-10
+[2026-10-08 04:52:29.833] [RANK 0] [INFO] Iteration 16500, residual = 1.60976e-10
+[2026-10-08 04:52:29.870] [RANK 0] [INFO] Iteration 17000, residual = 8.97501e-11
+[2026-10-08 04:52:29.908] [RANK 0] [INFO] Iteration 17500, residual = 5.00388e-11
+[2026-10-08 04:52:29.946] [RANK 0] [INFO] Iteration 18000, residual = 2.78985e-11
+[2026-10-08 04:52:29.983] [RANK 0] [INFO] Iteration 18500, residual = 1.55544e-11
+[2026-10-08 04:52:30.019] [RANK 0] [INFO] Iteration 19000, residual = 8.67218e-12
+[2026-10-08 04:52:30.053] [RANK 0] [INFO] Iteration 19500, residual = 4.83499e-12
+[2026-10-08 04:52:30.093] [RANK 0] [INFO] Iteration 20000, residual = 2.69562e-12
+[2026-10-08 04:52:30.131] [RANK 0] [INFO] Iteration 20500, residual = 1.503e-12
+[2026-10-08 04:52:30.161] [RANK 0] [INFO] Converged at iteration 20849, residual = 9.99776e-13
+[2026-10-08 04:52:30.161] [RANK 0] [INFO] Solver finished in 20849 iterations, time = 1.61831 s
+[       OK ] AltSolverTest.CGConvergesMuchFasterThanJacobi (2468 ms)
+[ RUN      ] AltSolverTest.CgIterateBeforeSolveIsSafe
+[2026-10-08 04:52:30.162] [RANK 0] [WARN] CGSolver::iterate called before solve(); returning 0
+[       OK ] AltSolverTest.CgIterateBeforeSolveIsSafe (0 ms)
+[----------] 3 tests from AltSolverTest (6233 ms total)
+
+[----------] 1 test from SolverTest
+[ RUN      ] SolverTest.JacobiConvergence
+[2026-10-08 04:52:30.191] [RANK 0] [INFO] Iteration 500, residual = 0.693532
+[2026-10-08 04:52:30.213] [RANK 0] [INFO] Iteration 1000, residual = 0.0717091
+[2026-10-08 04:52:30.237] [RANK 0] [INFO] Iteration 1500, residual = 0.0074145
+[2026-10-08 04:52:30.258] [RANK 0] [INFO] Iteration 2000, residual = 0.000766636
+[2026-10-08 04:52:30.283] [RANK 0] [INFO] Iteration 2500, residual = 7.92678e-05
+[2026-10-08 04:52:30.306] [RANK 0] [INFO] Converged at iteration 2957, residual = 9.96223e-06
+[2026-10-08 04:52:30.306] [RANK 0] [INFO] Solver finished in 2957 iterations, time = 0.143657 s
+[       OK ] SolverTest.JacobiConvergence (144 ms)
+[----------] 1 test from SolverTest (144 ms total)
+
+[----------] 7 tests from SolverApiTest
+[ RUN      ] SolverApiTest.OverlapFlagDefaultsAndGetter
+[       OK ] SolverApiTest.OverlapFlagDefaultsAndGetter (0 ms)
+[ RUN      ] SolverApiTest.LastResidualZeroBeforeSolve
+[       OK ] SolverApiTest.LastResidualZeroBeforeSolve (0 ms)
+[ RUN      ] SolverApiTest.ZeroMaxIterations
+[2026-10-08 04:52:30.306] [RANK 0] [INFO] Solver finished in 0 iterations, time = 1.86e-07 s
+[       OK ] SolverApiTest.ZeroMaxIterations (0 ms)
+[ RUN      ] SolverApiTest.FirstIterationConvergenceSemantics
+[2026-10-08 04:52:30.306] [RANK 0] [INFO] Converged at iteration 1, residual = 0
+[2026-10-08 04:52:30.306] [RANK 0] [INFO] Solver finished in 1 iterations, time = 9.08e-05 s
+[       OK ] SolverApiTest.FirstIterationConvergenceSemantics (0 ms)
+[ RUN      ] SolverApiTest.LastResidualAfterConvergence
+[2026-10-08 04:52:30.328] [RANK 0] [INFO] Iteration 500, residual = 0.693532
+[2026-10-08 04:52:30.355] [RANK 0] [INFO] Iteration 1000, residual = 0.0717091
+[2026-10-08 04:52:30.379] [RANK 0] [INFO] Iteration 1500, residual = 0.0074145
+[2026-10-08 04:52:30.400] [RANK 0] [INFO] Iteration 2000, residual = 0.000766636
+[2026-10-08 04:52:30.422] [RANK 0] [INFO] Iteration 2500, residual = 7.92678e-05
+[2026-10-08 04:52:30.445] [RANK 0] [INFO] Converged at iteration 2957, residual = 9.96223e-06
+[2026-10-08 04:52:30.445] [RANK 0] [INFO] Solver finished in 2957 iterations, time = 0.1382 s
+[       OK ] SolverApiTest.LastResidualAfterConvergence (138 ms)
+[ RUN      ] SolverApiTest.BaseClassLastResidualDefault
+[       OK ] SolverApiTest.BaseClassLastResidualDefault (0 ms)
+[ RUN      ] SolverApiTest.NonConvergenceAfterMaxIterations
+[2026-10-08 04:52:30.445] [RANK 0] [INFO] Solver finished in 1 iterations, time = 7.5453e-05 s
+[       OK ] SolverApiTest.NonConvergenceAfterMaxIterations (0 ms)
+[----------] 7 tests from SolverApiTest (139 ms total)
+
+[----------] 2 tests from GridTest
+[ RUN      ] GridTest.Dimensions
+[       OK ] GridTest.Dimensions (0 ms)
+[ RUN      ] GridTest.PartitionUniform
+[       OK ] GridTest.PartitionUniform (0 ms)
+[----------] 2 tests from GridTest (0 ms total)
+
+[----------] 1 test from SubgridTest
+[ RUN      ] SubgridTest.MemoryAllocation
+[       OK ] SubgridTest.MemoryAllocation (1 ms)
+[----------] 1 test from SubgridTest (1 ms total)
+
+[----------] Global test environment tear-down
+[==========] 53 tests from 11 test suites ran. (7001 ms total)
+[  PASSED  ] 39 tests.
+[  SKIPPED ] 11 tests, listed below:
+[  SKIPPED ] MpiIoOutputTest.FourRanksGlobalAssemblyMatchesReference
+[  SKIPPED ] MpiIoOutputTest.FourRanks3DLayout
+[  SKIPPED ] SolverMpiTest.ConvergedSolutionMatchesManufacturedSine
+[  SKIPPED ] SolverMpiTest.FixedIterationsMatchesSerialReference
+[  SKIPPED ] SolverMpiTest.ThreeDNoZDecompositionProcNullAndRun
+[  SKIPPED ] SolverMpiTest.TinyDecompositionSmoke
+[  SKIPPED ] SolverMpiTest.AltSolversConvergeFasterThanJacobi2D
+[  SKIPPED ] SolverMpiTest.AltSolvers3DSmoke
+[  SKIPPED ] HaloExchangeTest.MpiNonUniform4RanksHalos
+[  SKIPPED ] HaloExchangeTest.MpiNonUniform8RanksHalos3D
+[  SKIPPED ] OverlapTest.MpiFourRanksOnOffConsistency
+[  FAILED  ] 3 tests, listed below:
+[  FAILED  ] MpiIoOutputTest.SingleRankHeaderAndDataMatchReference
+[  FAILED  ] MpiIoOutputTest.WriteToInvalidPathWarnsAndSkips
+[  FAILED  ] MpiIoOutputTest.TruncatesStaleLongerFile
+
+ 3 FAILED TESTS
+
+      Start  2: parse_error
+ 2/12 Test  #2: parse_error ......................   Passed    0.13 sec
+      Start  3: halo_2d_mpi
+ 3/12 Test  #3: halo_2d_mpi ......................   Passed    0.21 sec
+      Start  4: halo_3d_mpi
+ 4/12 Test  #4: halo_3d_mpi ......................   Passed    0.28 sec
+      Start  5: solver_mpi
+ 5/12 Test  #5: solver_mpi .......................   Passed    0.20 sec
+      Start  6: overlap_consistency
+ 6/12 Test  #6: overlap_consistency ..............   Passed    0.83 sec
+      Start  7: solver_alt_mpi
+ 7/12 Test  #7: solver_alt_mpi ...................   Passed    0.20 sec
+      Start  8: collective_mpi
+ 8/12 Test  #8: collective_mpi ...................   Passed    0.20 sec
+      Start  9: ranks3_smoke
+ 9/12 Test  #9: ranks3_smoke .....................   Passed    0.18 sec
+      Start 10: mpiio_np1
+10/12 Test #10: mpiio_np1 ........................***Failed    0.16 sec
+Note: Google Test filter = MpiIoOutputTest.*
+[==========] Running 7 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 7 tests from MpiIoOutputTest
+[ RUN      ] MpiIoOutputTest.SingleRankHeaderAndDataMatchReference
+/mnt/d/hy-po-s/tests/test_mpiio_output.cpp:234: Failure
+Value of: dataAreaMatches(buf, h, &ref2D)
+  Actual: false
+Expected: true
+data area must match f(gI,gJ)=gI+1000*gJ for all 256 cells
+
+[  FAILED  ] MpiIoOutputTest.SingleRankHeaderAndDataMatchReference (1 ms)
+[ RUN      ] MpiIoOutputTest.FourRanksGlobalAssemblyMatchesReference
+/mnt/d/hy-po-s/tests/test_mpiio_output.cpp:251: Skipped
+FourRanksGlobalAssemblyMatchesReference requires exactly 4 processes
+
+[  SKIPPED ] MpiIoOutputTest.FourRanksGlobalAssemblyMatchesReference (0 ms)
+[ RUN      ] MpiIoOutputTest.FourRanks3DLayout
+/mnt/d/hy-po-s/tests/test_mpiio_output.cpp:322: Skipped
+FourRanks3DLayout requires exactly 4 processes
+
+[  SKIPPED ] MpiIoOutputTest.FourRanks3DLayout (0 ms)
+[ RUN      ] MpiIoOutputTest.WriteToInvalidPathWarnsAndSkips
+[2026-10-08 04:52:32.857] [RANK 0] [WARN] MPI-IO: cannot open output file: /nonexistent_dir_xyz/solution.bin
+/mnt/d/hy-po-s/tests/test_mpiio_output.cpp:417: Failure
+Value of: dataAreaMatches(buf, h, &ref2D)
+  Actual: false
+Expected: true
+
+[  FAILED  ] MpiIoOutputTest.WriteToInvalidPathWarnsAndSkips (1 ms)
+[ RUN      ] MpiIoOutputTest.TruncatesStaleLongerFile
+/mnt/d/hy-po-s/tests/test_mpiio_output.cpp:470: Failure
+Value of: dataAreaMatches(buf, h, &ref2D)
+  Actual: false
+Expected: true
+
+[  FAILED  ] MpiIoOutputTest.TruncatesStaleLongerFile (1 ms)
+[ RUN      ] MpiIoOutputTest.SuffixHandling
+[       OK ] MpiIoOutputTest.SuffixHandling (3 ms)
+[ RUN      ] MpiIoOutputTest.FormatIsMpibin
+[       OK ] MpiIoOutputTest.FormatIsMpibin (0 ms)
+[----------] 7 tests from MpiIoOutputTest (7 ms total)
+
+[----------] Global test environment tear-down
+[==========] 7 tests from 1 test suite ran. (7 ms total)
+[  PASSED  ] 2 tests.
+[  SKIPPED ] 2 tests, listed below:
+[  SKIPPED ] MpiIoOutputTest.FourRanksGlobalAssemblyMatchesReference
+[  SKIPPED ] MpiIoOutputTest.FourRanks3DLayout
+[  FAILED  ] 3 tests, listed below:
+[  FAILED  ] MpiIoOutputTest.SingleRankHeaderAndDataMatchReference
+[  FAILED  ] MpiIoOutputTest.WriteToInvalidPathWarnsAndSkips
+[  FAILED  ] MpiIoOutputTest.TruncatesStaleLongerFile
+
+ 3 FAILED TESTS
+
+      Start 11: mpiio_np4
+11/12 Test #11: mpiio_np4 ........................***Failed    0.20 sec
+Note: Google Test filter = MpiIoOutputTest.*
+[==========] Running 7 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 7 tests from MpiIoOutputTest
+[ RUN      ] MpiIoOutputTest.SingleRankHeaderAndDataMatchReference
+/mnt/d/hy-po-s/tests/test_mpiio_output.cpp:234: Failure
+Value of: dataAreaMatches(buf, h, &ref2D)
+  Actual: false
+Expected: true
+data area must match f(gI,gJ)=gI+1000*gJ for all 256 cells
+
+[  FAILED  ] MpiIoOutputTest.SingleRankHeaderAndDataMatchReference (1 ms)
+[ RUN      ] MpiIoOutputTest.FourRanksGlobalAssemblyMatchesReference
+/mnt/d/hy-po-s/tests/test_mpiio_output.cpp:251: Skipped
+FourRanksGlobalAssemblyMatchesReference requires exactly 4 processes
+
+[  SKIPPED ] MpiIoOutputTest.FourRanksGlobalAssemblyMatchesReference (0 ms)
+[ RUN      ] MpiIoOutputTest.FourRanks3DLayout
+/mnt/d/hy-po-s/tests/test_mpiio_output.cpp:322: Skipped
+FourRanks3DLayout requires exactly 4 processes
+
+[  SKIPPED ] MpiIoOutputTest.FourRanks3DLayout (0 ms)
+[ RUN      ] MpiIoOutputTest.WriteToInvalidPathWarnsAndSkips
+[2026-10-08 04:52:33.047] [RANK 0] [WARN] MPI-IO: cannot open output file: /nonexistent_dir_xyz/solution.bin
+Note: Google Test filter = MpiIoOutputTest.*
+[==========] Running 7 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 7 tests from MpiIoOutputTest
+[ RUN      ] MpiIoOutputTest.SingleRankHeaderAndDataMatchReference
+/mnt/d/hy-po-s/tests/test_mpiio_output.cpp:417: Failure
+Value of: dataAreaMatches(buf, h, &ref2D)
+  Actual: false
+Expected: true
+
+[  FAILED  ] MpiIoOutputTest.WriteToInvalidPathWarnsAndSkips (1 ms)
+[ RUN      ] MpiIoOutputTest.TruncatesStaleLongerFile
+/mnt/d/hy-po-s/tests/test_mpiio_output.cpp:234: Failure
+Value of: dataAreaMatches(buf, h, &ref2D)
+  Actual: false
+Expected: true
+data area must match f(gI,gJ)=gI+1000*gJ for all 256 cells
+
+[  FAILED  ] MpiIoOutputTest.SingleRankHeaderAndDataMatchReference (1 ms)
+[ RUN      ] MpiIoOutputTest.FourRanksGlobalAssemblyMatchesReference
+/mnt/d/hy-po-s/tests/test_mpiio_output.cpp:251: Skipped
+FourRanksGlobalAssemblyMatchesReference requires exactly 4 processes
+
+[  SKIPPED ] MpiIoOutputTest.FourRanksGlobalAssemblyMatchesReference (0 ms)
+[ RUN      ] MpiIoOutputTest.FourRanks3DLayout
+/mnt/d/hy-po-s/tests/test_mpiio_output.cpp:322: Skipped
+FourRanks3DLayout requires exactly 4 processes
+
+[  SKIPPED ] MpiIoOutputTest.FourRanks3DLayout (0 ms)
+[ RUN      ] MpiIoOutputTest.WriteToInvalidPathWarnsAndSkips
+/mnt/d/hy-po-s/tests/test_mpiio_output.cpp:470: Failure
+Value of: dataAreaMatches(buf, h, &ref2D)
+  Actual: false
+Expected: true
+
+[  FAILED  ] MpiIoOutputTest.TruncatesStaleLongerFile (1 ms)
+[ RUN      ] MpiIoOutputTest.SuffixHandling
+[2026-10-08 04:52:33.050] [RANK 0] [WARN] MPI-IO: cannot open output file: /nonexistent_dir_xyz/solution.bin
+/mnt/d/hy-po-s/tests/test_mpiio_output.cpp:417: Failure
+Value of: dataAreaMatches(buf, h, &ref2D)
+  Actual: false
+Expected: true
+
+[  FAILED  ] MpiIoOutputTest.WriteToInvalidPathWarnsAndSkips (1 ms)
+[ RUN      ] MpiIoOutputTest.TruncatesStaleLongerFile
+/mnt/d/hy-po-s/tests/test_mpiio_output.cpp:470: Failure
+Value of: dataAreaMatches(buf, h, &ref2D)
+  Actual: false
+Expected: true
+
+[  FAILED  ] MpiIoOutputTest.TruncatesStaleLongerFile (1 ms)
+[ RUN      ] MpiIoOutputTest.SuffixHandling
+[       OK ] MpiIoOutputTest.SuffixHandling (3 ms)
+[ RUN      ] MpiIoOutputTest.FormatIsMpibin
+[       OK ] MpiIoOutputTest.FormatIsMpibin (0 ms)
+[----------] 7 tests from MpiIoOutputTest (8 ms total)
+
+[----------] Global test environment tear-down
+[==========] 7 tests from 1 test suite ran. (8 ms total)
+[  PASSED  ] 2 tests.
+[  SKIPPED ] 2 tests, listed below:
+[  SKIPPED ] MpiIoOutputTest.FourRanksGlobalAssemblyMatchesReference
+[  SKIPPED ] MpiIoOutputTest.FourRanks3DLayout
+[  FAILED  ] 3 tests, listed below:
+[  FAILED  ] MpiIoOutputTest.SingleRankHeaderAndDataMatchReference
+[  FAILED  ] MpiIoOutputTest.WriteToInvalidPathWarnsAndSkips
+[  FAILED  ] MpiIoOutputTest.TruncatesStaleLongerFile
+
+ 3 FAILED TESTS
+Note: Google Test filter = MpiIoOutputTest.*
+[==========] Running 7 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 7 tests from MpiIoOutputTest
+[ RUN      ] MpiIoOutputTest.SingleRankHeaderAndDataMatchReference
+/mnt/d/hy-po-s/tests/test_mpiio_output.cpp:234: Failure
+Value of: dataAreaMatches(buf, h, &ref2D)
+  Actual: false
+Expected: true
+data area must match f(gI,gJ)=gI+1000*gJ for all 256 cells
+
+[  FAILED  ] MpiIoOutputTest.SingleRankHeaderAndDataMatchReference (1 ms)
+[ RUN      ] MpiIoOutputTest.FourRanksGlobalAssemblyMatchesReference
+/mnt/d/hy-po-s/tests/test_mpiio_output.cpp:251: Skipped
+FourRanksGlobalAssemblyMatchesReference requires exactly 4 processes
+
+[  SKIPPED ] MpiIoOutputTest.FourRanksGlobalAssemblyMatchesReference (0 ms)
+[ RUN      ] MpiIoOutputTest.FourRanks3DLayout
+/mnt/d/hy-po-s/tests/test_mpiio_output.cpp:322: Skipped
+FourRanks3DLayout requires exactly 4 processes
+
+Note: Google Test filter = MpiIoOutputTest.*
+[==========] Running 7 tests from 1 test suite.
+[----------] Global test environment set-up.
+[  SKIPPED ] MpiIoOutputTest.FourRanks3DLayout (0 ms)
+[ RUN      ] MpiIoOutputTest.WriteToInvalidPathWarnsAndSkips
+[----------] 7 tests from MpiIoOutputTest
+[ RUN      ] MpiIoOutputTest.SingleRankHeaderAndDataMatchReference
+[       OK ] MpiIoOutputTest.SuffixHandling (4 ms)
+[ RUN      ] MpiIoOutputTest.FormatIsMpibin
+[2026-10-08 04:52:33.057] [RANK 0] [WARN] MPI-IO: cannot open output file: /nonexistent_dir_xyz/solution.bin
+[       OK ] MpiIoOutputTest.FormatIsMpibin (0 ms)
+[----------] 7 tests from MpiIoOutputTest (9 ms total)
+
+[----------] Global test environment tear-down
+[==========] 7 tests from 1 test suite ran. (9 ms total)
+[  PASSED  ] 2 tests.
+[  SKIPPED ] 2 tests, listed below:
+[  SKIPPED ] MpiIoOutputTest.FourRanksGlobalAssemblyMatchesReference
+[  SKIPPED ] MpiIoOutputTest.FourRanks3DLayout
+[  FAILED  ] 3 tests, listed below:
+[  FAILED  ] MpiIoOutputTest.SingleRankHeaderAndDataMatchReference
+[  FAILED  ] MpiIoOutputTest.WriteToInvalidPathWarnsAndSkips
+[  FAILED  ] MpiIoOutputTest.TruncatesStaleLongerFile
+
+ 3 FAILED TESTS
+/mnt/d/hy-po-s/tests/test_mpiio_output.cpp:417: Failure
+Value of: dataAreaMatches(buf, h, &ref2D)
+  Actual: false
+Expected: true
+
+[  FAILED  ] MpiIoOutputTest.WriteToInvalidPathWarnsAndSkips (1 ms)
+[ RUN      ] MpiIoOutputTest.TruncatesStaleLongerFile
+/mnt/d/hy-po-s/tests/test_mpiio_output.cpp:234: Failure
+Value of: dataAreaMatches(buf, h, &ref2D)
+  Actual: false
+Expected: true
+data area must match f(gI,gJ)=gI+1000*gJ for all 256 cells
+
+[  FAILED  ] MpiIoOutputTest.SingleRankHeaderAndDataMatchReference (1 ms)
+[ RUN      ] MpiIoOutputTest.FourRanksGlobalAssemblyMatchesReference
+/mnt/d/hy-po-s/tests/test_mpiio_output.cpp:251: Skipped
+FourRanksGlobalAssemblyMatchesReference requires exactly 4 processes
+
+[  SKIPPED ] MpiIoOutputTest.FourRanksGlobalAssemblyMatchesReference (0 ms)
+[ RUN      ] MpiIoOutputTest.FourRanks3DLayout
+/mnt/d/hy-po-s/tests/test_mpiio_output.cpp:322: Skipped
+FourRanks3DLayout requires exactly 4 processes
+
+[  SKIPPED ] MpiIoOutputTest.FourRanks3DLayout (0 ms)
+[ RUN      ] MpiIoOutputTest.WriteToInvalidPathWarnsAndSkips
+[2026-10-08 04:52:33.060] [RANK 0] [WARN] MPI-IO: cannot open output file: /nonexistent_dir_xyz/solution.bin
+/mnt/d/hy-po-s/tests/test_mpiio_output.cpp:470: Failure
+Value of: dataAreaMatches(buf, h, &ref2D)
+  Actual: false
+Expected: true
+
+[  FAILED  ] MpiIoOutputTest.TruncatesStaleLongerFile (1 ms)
+[ RUN      ] MpiIoOutputTest.SuffixHandling
+/mnt/d/hy-po-s/tests/test_mpiio_output.cpp:417: Failure
+Value of: dataAreaMatches(buf, h, &ref2D)
+  Actual: false
+Expected: true
+
+[  FAILED  ] MpiIoOutputTest.WriteToInvalidPathWarnsAndSkips (1 ms)
+[ RUN      ] MpiIoOutputTest.TruncatesStaleLongerFile
+/mnt/d/hy-po-s/tests/test_mpiio_output.cpp:470: Failure
+Value of: dataAreaMatches(buf, h, &ref2D)
+  Actual: false
+Expected: true
+
+[  FAILED  ] MpiIoOutputTest.TruncatesStaleLongerFile (1 ms)
+[ RUN      ] MpiIoOutputTest.SuffixHandling
+[       OK ] MpiIoOutputTest.SuffixHandling (3 ms)
+[ RUN      ] MpiIoOutputTest.FormatIsMpibin
+[       OK ] MpiIoOutputTest.FormatIsMpibin (0 ms)
+[----------] 7 tests from MpiIoOutputTest (8 ms total)
+
+[----------] Global test environment tear-down
+[==========] 7 tests from 1 test suite ran. (8 ms total)
+[  PASSED  ] 2 tests.
+[  SKIPPED ] 2 tests, listed below:
+[  SKIPPED ] MpiIoOutputTest.FourRanksGlobalAssemblyMatchesReference
+[  SKIPPED ] MpiIoOutputTest.FourRanks3DLayout
+[  FAILED  ] 3 tests, listed below:
+[  FAILED  ] MpiIoOutputTest.SingleRankHeaderAndDataMatchReference
+[  FAILED  ] MpiIoOutputTest.WriteToInvalidPathWarnsAndSkips
+[  FAILED  ] MpiIoOutputTest.TruncatesStaleLongerFile
+
+ 3 FAILED TESTS
+[       OK ] MpiIoOutputTest.SuffixHandling (3 ms)
+[ RUN      ] MpiIoOutputTest.FormatIsMpibin
+[       OK ] MpiIoOutputTest.FormatIsMpibin (0 ms)
+[----------] 7 tests from MpiIoOutputTest (8 ms total)
+
+[----------] Global test environment tear-down
+[==========] 7 tests from 1 test suite ran. (8 ms total)
+[  PASSED  ] 2 tests.
+[  SKIPPED ] 2 tests, listed below:
+[  SKIPPED ] MpiIoOutputTest.FourRanksGlobalAssemblyMatchesReference
+[  SKIPPED ] MpiIoOutputTest.FourRanks3DLayout
+[  FAILED  ] 3 tests, listed below:
+[  FAILED  ] MpiIoOutputTest.SingleRankHeaderAndDataMatchReference
+[  FAILED  ] MpiIoOutputTest.WriteToInvalidPathWarnsAndSkips
+[  FAILED  ] MpiIoOutputTest.TruncatesStaleLongerFile
+
+ 3 FAILED TESTS
+
+      Start 12: mpiio_e2e
+12/12 Test #12: mpiio_e2e ........................   Passed    0.21 sec
+
+75% tests passed, 3 tests failed out of 12
+
+Total Test time (real) =   9.99 sec
+
+The following tests FAILED:
+	  1 - unit (Failed)
+	 10 - mpiio_np1 (Failed)
+	 11 - mpiio_np4 (Failed)
+Errors while running CTest

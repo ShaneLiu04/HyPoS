@@ -51,7 +51,7 @@ void printUsage(const std::string& programName) {
               << "  --enable-profiling           Enable detailed performance profiling\n"
               << "  --overlap-comm               Enable communication-computation overlap\n\n"
               << "I/O Options:\n"
-              << "  --output-format <string>     Output format: json, csv, vtk, binary (default: json)\n"
+              << "  --output-format <string>     Output format: json, csv, vtk, binary, mpibin (default: json)\n"
               << "  --output-dir <path>          Output directory (default: ./output)\n"
               << "  --save-interval <int>        Save intermediate results every N steps (0=none)\n\n"
               << "Other:\n"
@@ -204,6 +204,12 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
+    if (outputFormat != "json" && outputFormat != "csv" && outputFormat != "vtk" &&
+        outputFormat != "binary" && outputFormat != "mpibin") {
+        HYPOS_ERROR("Unknown output format: " << outputFormat);
+        return 1;
+    }
+
     std::unique_ptr<HaloExchanger> exchanger;
     if (commMode == "p2p") {
         exchanger = std::make_unique<PointToPointExchanger>();
@@ -228,16 +234,26 @@ int main(int argc, char* argv[]) {
         io = std::make_unique<VTKIOBackend>(grid.dx, grid.dy, grid.dz);
     } else if (outputFormat == "binary") {
         io = std::make_unique<BinaryIOBackend>();
+    } else if (outputFormat == "mpibin") {
+        io = std::make_unique<MPIIOBinaryBackend>(grid);
     }
 
-    // Snapshot writer shared by the final output and --save-interval saves:
-    // every rank writes its piece; rank 0 writes the parallel index.
+    // Snapshot writer shared by the final output and --save-interval saves.
+    // Sharded backends (vtk/binary): every rank writes its piece and rank 0
+    // writes the parallel index. Single-file backend (mpibin): all ranks
+    // collectively write the SAME file — no per-rank suffix, no index.
+    const bool singleFile = (outputFormat == "mpibin");
     const auto writeSolution = [&](Index step) {
         if (!io) {
             return;
         }
+        HYPOS_PROFILE("io_write");
         const std::string base = outputDir + "/solution_" + std::to_string(step);
-        io->write(subgrid, base + "_r" + std::to_string(rank), static_cast<int>(step));
+        io->write(subgrid, singleFile ? base : base + "_r" + std::to_string(rank),
+                  static_cast<int>(step));
+        if (singleFile) {
+            return;
+        }
 
         const PieceExtent localPiece{info.offsetX, info.offsetY, info.offsetZ,
                                      subgrid.nxLocal(), subgrid.nyLocal(), subgrid.nzLocal()};

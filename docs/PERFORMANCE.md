@@ -250,4 +250,19 @@ struct Good {
 
 ---
 
+## 10. AR003 MPI-IO 单文件输出基准（io_write 剖面）
+
+取数口径：`--enable-profiling` 报告的 `io_write` 区段 `total_sec`（rank 0）；256² 网格、`--max-iter 100 --save-interval 10`（累计 10 次写入，每次 512 KB）、OMP=1、WSL 单机、Release 构建、每组合 3 次取中位数。
+
+| 输出格式 | np=1 | np=4 |
+|----------|------|------|
+| `mpibin`（单文件，collective） | **0.0070 s** | 0.0125 s |
+| `binary`（分片 + 索引） | 0.0126 s | **0.0049 s** |
+
+- 单次写入量仅 512 KB，耗时以固定开销（open/view/close、collective 同步）为主，绝对差异在毫秒级；
+- np=1 时 mpibin 略快（单文件直写，无分片索引）；np=4 时分片写各 rank 独立文件更快，单文件 collective 需额外的聚合同步，此为单文件自描述便利性的已知代价；
+- 复测方法：`scripts/bench_t007.sh`（WSL 内执行），原始数据见 `specs/changes/AR003-mpiio-single-file-output/evidence/T007-bench.log`。
+
+---
+
 *Last updated: 2026*
