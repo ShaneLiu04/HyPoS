@@ -258,6 +258,8 @@ chmod +x scripts/benchmark.sh
 
 ## 路线图（当前版本未实现）
 
+> 各路线图条目的动机、证据（file:line）、优先级排序、验收判据与建议 AR 拆分，见 [docs/OPTIMIZATION_GUIDE.md](docs/OPTIMIZATION_GUIDE.md)——后续优化以其为指导。
+
 以下能力在早期文档中被提及，但**当前版本未实现**，在此明示避免误导：
 
 - RMA（单边通信）Exchanger
