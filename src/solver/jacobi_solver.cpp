@@ -1,4 +1,5 @@
 #include "solver/solver.hpp"
+#include "solver/residual.hpp"
 #include "comm/halo_exchanger.hpp"
 #include "perf/profiler.hpp"
 #include "utils/logger.hpp"
@@ -150,7 +151,10 @@ Real JacobiSolver::iterate(Subgrid& subgrid, HaloExchanger& exchanger) {
     subgrid.swapU();
     subgrid.applyPhysicalBoundary();
 
-    return std::sqrt(residual);
+    // Exact identity r = D * diff (see class doc): the converted value is
+    // the true residual of the state BEFORE this update.
+    const Real denom = is2D ? 4.0 : 6.0;
+    return denom * std::sqrt(residual);
 }
 
 Index JacobiSolver::solve(Subgrid& subgrid,
@@ -166,24 +170,46 @@ Index JacobiSolver::solve(Subgrid& subgrid,
         Real localResidual = iterate(subgrid, exchanger);
         ++completed;
 
-        Real globalResidual = 0.0;
-        {
-            HYPOS_PROFILE("residual_allreduce");
-            Real localSquared = localResidual * localResidual;
-            MPI_Allreduce(&localSquared, &globalResidual, 1, MPI_DOUBLE, MPI_SUM, subgrid.comm());
-            globalResidual = std::sqrt(globalResidual);
-        }
-        lastResidual_ = globalResidual;
-        notifyProgress(completed);
+        // Convergence is only evaluated every residualCheckInterval_
+        // iterations: each skipped check saves one global reduction.
+        if (completed % residualCheckInterval_ == 0) {
+            Real globalResidual = 0.0;
+            {
+                HYPOS_PROFILE("residual_allreduce");
+                // localResidual is already the converted true residual of
+                // the previous iterate (D * ||diff||), so this reduction
+                // directly yields the criterion value.
+                Real localSquared = localResidual * localResidual;
+                MPI_Allreduce(&localSquared, &globalResidual, 1, MPI_DOUBLE, MPI_SUM, subgrid.comm());
+                globalResidual = std::sqrt(globalResidual);
+            }
+            lastResidual_ = globalResidual;
+            notifyProgress(completed);
 
-        if (globalResidual < tolerance) {
-            HYPOS_INFO("Converged at iteration " << completed << ", residual = " << globalResidual);
-            break;
-        }
+            if (globalResidual < tolerance) {
+                HYPOS_INFO("Converged at iteration " << completed << ", residual = " << globalResidual);
+                break;
+            }
 
-        if (completed % 500 == 0) {
-            HYPOS_INFO("Iteration " << completed << ", residual = " << globalResidual);
+            if (completed % 500 == 0) {
+                HYPOS_INFO("Iteration " << completed << ", residual = " << globalResidual);
+            }
+        } else {
+            notifyProgress(completed);
         }
+    }
+
+    // Exit confirmation scan (converged or maxIter): refresh the neighbor
+    // halos of the final iterate and report its exact true residual, so
+    // lastResidual() is always the residual of the state we return. Skipped
+    // when no iteration ran, keeping the "0 before any iteration" contract.
+    if (completed > 0) {
+        HYPOS_PROFILE("residual_confirm");
+        exchanger.exchange(subgrid);
+        Real localSquared = trueResidualSquaredLocal(subgrid);
+        Real globalSquared = 0.0;
+        MPI_Allreduce(&localSquared, &globalSquared, 1, MPI_DOUBLE, MPI_SUM, subgrid.comm());
+        lastResidual_ = std::sqrt(globalSquared);
     }
 
     totalTimer.stop();

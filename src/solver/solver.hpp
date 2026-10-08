@@ -29,6 +29,23 @@ public:
     }
 
     /**
+     * @brief Set how often (in iterations) the convergence criterion is
+     * evaluated via a global reduction. Values < 1 and wrapped-around
+     * negatives (size_t two's complement) are clamped to 1 (every
+     * iteration); intervals beyond any sane iteration budget are treated
+     * the same. Only stationary-iteration solvers (Jacobi, Red-Black GS)
+     * honor this — CG's beta recurrence needs a reduction every iteration
+     * and ignores the setting.
+     */
+    void setResidualCheckInterval(Index interval) noexcept {
+        constexpr Index kMaxResidualCheckInterval = Index(1) << 30;
+        residualCheckInterval_ =
+            (interval < Index(1) || interval > kMaxResidualCheckInterval)
+                ? Index(1)
+                : interval;
+    }
+
+    /**
      * @brief Solve the Poisson equation on the given subdomain.
      * @param subgrid Local subdomain with current u, uNext, and rhs.
      * @param exchanger Halo exchange handler for boundary synchronization.
@@ -62,6 +79,12 @@ protected:
         }
     }
 
+    /**
+     * @brief Convergence-check interval in iterations (see
+     * setResidualCheckInterval); 1 = check after every iteration.
+     */
+    Index residualCheckInterval_ = 1;
+
 private:
     ProgressCallback progressCallback_;
 };
@@ -70,6 +93,15 @@ private:
  * @brief Classic Jacobi solver with OpenMP acceleration.
  * Supports optional communication-computation overlap: the interior box is
  * updated while halo messages are in flight, followed by the boundary band.
+ *
+ * Residual semantics (AR004): the fused update accumulates sum(diff^2) with
+ * diff = uNew - u, which satisfies the exact algebraic identity
+ * r = D * diff for the system A u = b (A = D*I - S, b = -rhs). iterate()
+ * therefore returns denom * ||diff|| — the true residual of the state
+ * BEFORE the update. solve() evaluates the convergence criterion on this
+ * converted value and, at loop exit (converged or maxIter), runs one
+ * confirmation scan so lastResidual() is the true residual of the final
+ * iterate.
  */
 class JacobiSolver : public PoissonSolver {
 public:

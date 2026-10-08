@@ -26,6 +26,7 @@ set(HYPOS_CORE_SOURCES
     src/grid/subgrid.cpp
     src/grid/partition.cpp
     src/solver/jacobi_solver.cpp
+    src/solver/residual.cpp
     src/solver/red_black_gs_solver.cpp
     src/solver/cg_solver.cpp
     src/comm/p2p_exchanger.cpp
