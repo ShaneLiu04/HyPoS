@@ -21,6 +21,7 @@ struct RunConfig {
     Index maxIter = kDefaultMaxIter;
     Real tolerance = kDefaultTolerance;
     bool overlapComm = false;
+    int residualCheckInterval = 1;
 };
 
 struct PerformanceMetrics {

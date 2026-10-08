@@ -13,7 +13,7 @@
 |----|---------|------|------|------|
 | T001 | A2-Jacobi 真实残差 + interval：新增 src/solver/residual.hpp/cpp（trueResidualSquaredLocal）；iterate() 返回 denom×‖diff‖；solve() 判据换算 + 出口统一确认扫描（区名 residual_confirm）。测试先行：U1-U3、U10、B2 期望值更新 | - | passing | 2026-10-08 完成；新增 solver 级 interval 用例 I1s/I5s/E4s 一并落地；maxIter=0 出口跳过确认扫描（保基类契约） |
 | T002 | A2-RBGS 真实残差 + interval：iterateCore/iterate 拆分（iterate 每调用必扫描）；solve() 每 k 步判定。测试先行：U4/U5、B5 | T001 | passing | 2026-10-08 完成；新增 R-I1s/R-I5s/R-E4s；rbgs_iteration 区名随 solve 重写落地（原 T007 项）；新增共享 globalTrueResidual（design §4.3.1 已补录） |
-| T003 | A2-CLI `--residual-check-interval`：基类 setResidualCheckInterval（0 钳 1）；main 解析/校验（<1 退出码 1；CG 传入 WARN 忽略）；RunConfig +residualCheckInterval 透出。测试先行：U9、I1-I6 | T001 | pending | design D4/D9；U9 已随 T001 落地 |
+| T003 | A2-CLI `--residual-check-interval`：基类 setResidualCheckInterval（0 钳 1）；main 解析/校验（<1 退出码 1；CG 传入 WARN 忽略）；RunConfig +residualCheckInterval 透出。测试先行：U9、I1-I6 | T001 | passing | 2026-10-08 完成；I1-I6 以 ctest 条目 + cmake/VerifyAr004Cli.cmake 四模式（interval10/default/cg_warn/help）落地；CSV 列插入 overlap_comm 后（17 列，位置由 default 模式守护）；拒绝类 4 项 WILL_FAIL；CG 不调用 setter（WARN 语义一致）；Red 期修正：verify 条目需 HYPOS_TEST_ENV（LSan 噪声） |
 | T004 | B2a+A4-CG：updatePInterior 抽取（消除 solve/iterate 重复）；初始化循环并行化；区名改 cg_iteration。测试先行：U6（golden 迭代数，先跑基线固化）、E2 | - | pending | design §4.2.2-4；位级不变 |
 | T005 | A1 First-touch：zeroInitialize() 外层维度并行（全缓冲，三场单遍历）；applyDirichletBC 保持串行并文档记录。测试先行：U7、B4 | - | pending | design D8 |
 | T006 | A3 拓扑一致性：SubgridInfo +cartComm（所有权移交）；partition 用 cart rank 查 coords；main 删除二次 Cart_create。测试先行：B3 | - | pending | 接口变更授权见 design §4.3.1；design D5/D6 |
@@ -30,6 +30,14 @@
 ## 进度记录
 
 > 每个开发会话结束后追加，记录完成情况。
+
+### 2026-10-08 会话记录（T003）
+
+- 完成任务：T003 A2-CLI + RunConfig 透出
+- TDD：Red（子代理：cmake/VerifyAr004Cli.cmake 四模式 + CMakeLists 8 条目；8 项全失败、旧测试不受影响；两处偏差均合理——verify 条目补 HYPOS_TEST_ENV 抑制 LSan 噪声、拒绝类 Red 期以 Timeout 失败属预期）→ Green（主代理：main.cpp 解析/校验/WARN/setter/RunConfig、reporter.hpp/cpp JSON+CSV 序列化、printUsage；一次通过 8/8）
+- 修改文件：src/main.cpp（:137 解析、:202-213 校验+WARN+setter、:332 RunConfig、printUsage+1 行）、src/perf/reporter.hpp（RunConfig +residualCheckInterval=1）、src/perf/reporter.cpp（JSON config 段 +1 字段、CSV +1 列）、CMakeLists.txt（+8 ctest 条目）、cmake/VerifyAr004Cli.cmake（新增）
+- 测试：ar004_* 8/8 绿；Debug 全量 ctest 24/24 绿（340s）；Release 构建 0 警告 + unit 绿
+- 设计决策落地：CG 与 k≠1 → WARN 含 "ignored"、不调用 setter（与 overlap-comm 先例 :198-200 同构）；CSV 新列插 overlap_comm 后（无按位消费者，经 grep 证实）
 
 ### 2026-10-08 会话记录（T002）
 

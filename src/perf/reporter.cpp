@@ -43,7 +43,8 @@ std::string Reporter::toJson() const {
     oss << "    \"comm_mode\": \"" << config_.commMode << "\",\n";
     oss << "    \"max_iter\": " << config_.maxIter << ",\n";
     oss << "    \"tolerance\": " << config_.tolerance << ",\n";
-    oss << "    \"overlap_comm\": " << (config_.overlapComm ? "true" : "false") << "\n";
+    oss << "    \"overlap_comm\": " << (config_.overlapComm ? "true" : "false") << ",\n";
+    oss << "    \"residual_check_interval\": " << config_.residualCheckInterval << "\n";
     oss << "  },\n";
     oss << "  \"performance\": {\n";
     oss << "    \"total_time_sec\": " << std::fixed << std::setprecision(4) << metrics_.totalTimeSec << ",\n";
@@ -69,6 +70,7 @@ std::string Reporter::toCsv() const {
         << config_.solver << "," << config_.commMode << ","
         << config_.maxIter << "," << config_.tolerance << ","
         << (config_.overlapComm ? "1" : "0") << ","
+        << config_.residualCheckInterval << ","
         << metrics_.totalTimeSec << ","
         << metrics_.iterTimeMs << ","
         << metrics_.commOverheadRatio << ","

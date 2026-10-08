@@ -49,7 +49,8 @@ void printUsage(const std::string& programName) {
               << "  --comm-mode <string>         Communication mode: p2p, collective (default: p2p)\n\n"
               << "Performance Options:\n"
               << "  --enable-profiling           Enable detailed performance profiling\n"
-              << "  --overlap-comm               Enable communication-computation overlap\n\n"
+              << "  --overlap-comm               Enable communication-computation overlap\n"
+              << "  --residual-check-interval <int>  Check convergence every N iterations (jacobi/red_black_gs; default: 1)\n\n"
               << "I/O Options:\n"
               << "  --output-format <string>     Output format: json, csv, vtk, binary, mpibin (default: json)\n"
               << "  --output-dir <path>          Output directory (default: ./output)\n"
@@ -134,6 +135,7 @@ int main(int argc, char* argv[]) {
     std::string outputDir = parser.get<std::string>("output-dir", "./output");
     std::string bcType = parser.get<std::string>("bc", "dirichlet");
     int saveInterval = parser.get<int>("save-interval", 0);
+    int residualCheckInterval = parser.get<int>("residual-check-interval", 1);
     bool enableProfiling = parser.has("enable-profiling");
     bool overlapComm = parser.has("overlap-comm");
 
@@ -197,6 +199,17 @@ int main(int argc, char* argv[]) {
 
     if (overlapComm && solverName != "jacobi" && rank == 0) {
         HYPOS_WARN("--overlap-comm is only supported by the jacobi solver; ignored");
+    }
+
+    if (residualCheckInterval < 1) {
+        HYPOS_ERROR("--residual-check-interval must be >= 1, got " << residualCheckInterval);
+        return 1;
+    }
+    if (solverName == "cg" && residualCheckInterval != 1 && rank == 0) {
+        HYPOS_WARN("--residual-check-interval is only supported by the jacobi and red_black_gs solvers; ignored");
+    }
+    if (solverName != "cg") {
+        solver->setResidualCheckInterval(static_cast<Index>(residualCheckInterval));
     }
 
     if (bcType != "dirichlet" && bcType != "neumann") {
@@ -329,6 +342,7 @@ int main(int argc, char* argv[]) {
     config.maxIter = maxIter;
     config.tolerance = tolerance;
     config.overlapComm = overlapComm;
+    config.residualCheckInterval = residualCheckInterval;
 
     PerformanceMetrics metrics;
     metrics.totalTimeSec = totalTime;

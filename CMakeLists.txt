@@ -90,6 +90,37 @@ if(GTest_FOUND)
     add_test(NAME mpibin_bad_format COMMAND $<TARGET_FILE:hypos> --output-format mpibinn)
     set_tests_properties(mpibin_bad_format PROPERTIES WILL_FAIL TRUE TIMEOUT 60)
 
+    # AR004 T003: invalid --residual-check-interval usage must be rejected
+    # with exit code 1 (WILL_FAIL, mirroring parse_error/mpibin_bad_format).
+    add_test(NAME ar004_interval_zero COMMAND $<TARGET_FILE:hypos> --residual-check-interval=0)
+    add_test(NAME ar004_interval_neg COMMAND $<TARGET_FILE:hypos> --residual-check-interval=-5)
+    add_test(NAME ar004_interval_nan COMMAND $<TARGET_FILE:hypos> --residual-check-interval=abc)
+    add_test(NAME ar004_interval_missing COMMAND $<TARGET_FILE:hypos> --residual-check-interval)
+    set_tests_properties(ar004_interval_zero ar004_interval_neg ar004_interval_nan ar004_interval_missing
+        PROPERTIES WILL_FAIL TRUE TIMEOUT 60)
+
+    # AR004 T003: CLI e2e verification (report JSON field, CSV column
+    # position, cg WARN, --help listing) via the script-mode verifier.
+    add_test(NAME ar004_cli_interval10
+        COMMAND ${CMAKE_COMMAND} -Dexe=$<TARGET_FILE:hypos>
+                -Ddir=${CMAKE_BINARY_DIR}/ar004_cli_interval10 -Dmode=interval10
+                -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/VerifyAr004Cli.cmake)
+    add_test(NAME ar004_cli_default
+        COMMAND ${CMAKE_COMMAND} -Dexe=$<TARGET_FILE:hypos>
+                -Ddir=${CMAKE_BINARY_DIR}/ar004_cli_default -Dmode=default
+                -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/VerifyAr004Cli.cmake)
+    add_test(NAME ar004_cli_cg_warn
+        COMMAND ${CMAKE_COMMAND} -Dexe=$<TARGET_FILE:hypos>
+                -Ddir=${CMAKE_BINARY_DIR}/ar004_cli_cg_warn -Dmode=cg_warn
+                -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/VerifyAr004Cli.cmake)
+    add_test(NAME ar004_cli_help
+        COMMAND ${CMAKE_COMMAND} -Dexe=$<TARGET_FILE:hypos>
+                -Ddir=${CMAKE_BINARY_DIR}/ar004_cli_help -Dmode=help
+                -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/VerifyAr004Cli.cmake)
+    set_tests_properties(ar004_cli_interval10 ar004_cli_default ar004_cli_cg_warn ar004_cli_help
+        PROPERTIES TIMEOUT 60 WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        ENVIRONMENT "${HYPOS_TEST_ENV}")
+
     if(MPIEXEC_EXECUTABLE)
         # Launcher must match the MPI implementation the binary is linked
         # against; MPICH's mpiexec does not accept --oversubscribe (which
