@@ -112,14 +112,15 @@ initialize(subgrid):
     recvTypes_[i] = recv 型 of f_i + commit;  recvFace_[i] = f_i
   # alltoallw 参数数组按 activeDirs_ 枚举序
   sendcounts_[i] = recvcounts_[i] = 1
-  sdispls_[i] = faceSendFirst(d_i) 相对 data 的字节偏移
-  rdispls_[i] = faceRecvFirst(recvFace_[i]) 同理    # 每次 exchange 时按当次 data 重算
+  sdispls_[i] = rdispls_[i] = 0     # 型内嵌绝对定位（§4.1 sizes+starts），块位置完全由型自述——
+                                    # 与 FP2 直发 MPI_Isend(data,1,type) 同一机制；displs 再取面首
+                                    # 偏移会双重偏移越界（第 3 轮复审 Important P1）
 
 exchange(subgrid, data):
   MPI_Neighbor_alltoallw(data, sendcounts_, sdispls_, sendTypes_,
                          data, recvcounts_, rdispls_, recvTypes_, graphComm_)
 
-beginExchange: MPI_Ineighbor_alltoallw(同参数, &req_)     # MPI-3 非阻塞变体
+beginExchange: MPI_Ineighbor_alltoallw(同参数, &req_)     # MPI-4.0 非阻塞变体（第 3 轮复审 P2 勘误）
 endExchange:    MPI_Wait(&req_)
 
 ~CollectiveExchanger(): 防御 finalized；在途 req_ 非 NULL 则 MPI_Request_free；
@@ -134,7 +135,7 @@ np=1：`activeDirs_` 空 → `MPI_Dist_graph_create_adjacent` 建空图（0 进 
 - **recv 块 i 分情形落位**（本地判定，不依赖对端枚举序——唯一边按邻居身份配对，天然免疫两侧 activeDirs 差异）：
   - 唯一边（n(d_i)≠self）：对端 X=n(d_i) 面向我的一面是 X 的 opposite(d_i)，X 发来 interior_X(opposite(d_i))，落 **halo(d_i)**
   - 平行边（n(d_i)==self；非周期笛卡尔下平行边仅自环，即该维 np=1）：MPI 按出现序配对——我 destinations 中 self 第 a 次出现（send 块=interior(d_i)）↔ sources 中 self 第 a 次出现（recv 块 i）；由恒等式落 **halo(opposite(d_i))**
-  - 统一式：`f_i = (n(d_i)==self) ? opposite(d_i) : d_i`，recvTypes_[i]/rdispls_[i] 取 f_i 面。自环时 n(d_i)=self ⟹ n(opposite(d_i))=self ⟹ opposite(d_i)∈activeDirs_，建型无缺失
+  - 统一式：`f_i = (n(d_i)==self) ? opposite(d_i) : d_i`，recvTypes_[i] 取 f_i 面的绝对定位型（rdispls 恒 0，位置由型自述）。自环时 n(d_i)=self ⟹ n(opposite(d_i))=self ⟹ opposite(d_i)∈activeDirs_，建型无缺失
 - 三情形复算：①唯一边（含边界角点）：rank(0,0,0) recv 块 0 收 n(Right) 的 interior(Left) 落 halo(Right) ✓；②自环（全平行边）：send 块 i=interior(d_i) 按位回到 recv 块 i 落 halo(opposite(d_i))——镜像语义 ✓；③混合（2×1 切分）：rank(0,0) active={Right,Down,Up}（n(Down)=n(Up)=self）：recv 块 0 落 halo(Right)，recv 块 1（self 第 1 次出现↔interior(Down)）落 halo(Up)，recv 块 2 落 halo(Down) ✓
 - 前置假设：非周期笛卡尔（本仓库 decomposition 现状）；周期 np=2 维会产生对同一真邻居的平行边（按出现序同法推导，本 AR 不涉及）
 - 教训记录：第 1 轮「recv 侧整体 opposite 序」修法只修复自环、破坏笛卡尔边界——sources 退化为 [PROC_NULL×n]，与对端 destinations 声明不一致且 halo 永不填充（第 2 轮复审 Important，B1-B4/collective_mpi 必挂）
@@ -215,7 +216,7 @@ ctest 条目（CMakeLists，np>1 带 `HYPOS_EXPECT_NP`，gtest filter 追加 `:M
 | 风险 | 缓解 |
 |------|------|
 | subarray 维度序错误（AR003 陷阱） | §4.1 参数表 + U1-U3 自环测试逐方向暴露错位；与 packFace 逐面语义对照评审 |
-| alltoallw displs 字节偏移算错 | U/B 系列 halo 带内容断言（非均匀切分下错位必现）；sdispls 相对 data 首址（不依赖 MPI_BOTTOM） |
-| Ineighbor_alltoallw 平台支持 | MPI-3 标准（OpenMPI 1.7+/MPICH 3.0+），WSL OpenMPI 实测即证；不支持则编译期无该符号会立即暴露 |
+| alltoallw displs 字节偏移算错 | **sdispls=rdispls=0**：块位置由绝对定位型自述（第 3 轮 P1 双重偏移修复）；U/B 系列 halo 带内容断言（非均匀切分下错位必现） |
+| Ineighbor_alltoallw 平台支持 | **MPI-4.0 新增**（OpenMPI ≥4.0 / MPICH ≥3.4 系；第 3 轮 P2 勘误——非 MPI-3）；WSL OpenMPI 4.1.6 实测含符号；若目标 MPI 缺符号编译期即暴露，begin/end 拆分语义不可退化为阻塞版（E2 依赖），需回设计再议 |
 | np4 本机漂移 | bench 沿 ±15% 惯例注记；np=1 作锚 |
 | 行数预算 | 净增估算 ~500 行（实现 ~300 + 测试 ~200 + 脚本/文档），≤800 预算 |
