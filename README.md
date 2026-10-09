@@ -66,7 +66,7 @@ mpirun -np 16 ./build/hypos --nx 2048 --ny 2048 --max-iter 10000 --enable-profil
 | `--tol` | 1e-6 | 收敛容差（真实残差 ‖Au−f‖₂ 口径；`final_residual` 报告同口径） |
 | `--bc` | dirichlet | 物理边界条件（dirichlet / neumann） |
 | `--omp-threads` | 系统核心数 | OpenMP 线程数 |
-| `--comm-mode` | p2p | 通信模式（p2p / collective；collective 当前为 P2P 回退） |
+| `--comm-mode` | p2p | 通信模式（p2p / datatype / collective；datatype=派生数据类型直传，collective=真集合 Dist graph + alltoallw） |
 | `--enable-profiling` | false | 启用详细性能分析 |
 | `--overlap-comm` | false | 启用通信-计算重叠 |
 | `--residual-check-interval` | 1 | 每 N 次迭代检查一次收敛（jacobi / red_black_gs；N≥1，默认每迭代；CG 不支持并警告忽略）。判据为真实残差 ‖Au−f‖₂ |
@@ -264,9 +264,10 @@ chmod +x scripts/benchmark.sh
 以下能力在早期文档中被提及，但**当前版本未实现**，在此明示避免误导：
 
 - RMA（单边通信）Exchanger
-- 真集合通信（`MPI_Neighbor_allgatherv`）——`--comm-mode collective` 当前委托 P2P 实现
 - HDF5 输出、PAPI 硬件计数器
 - SOR 求解器、CG 预条件子、Hilbert 曲线分区
+
+> halo 通信范式已扩展为三值：`--comm-mode p2p|datatype|collective`（默认 `p2p`）——`datatype` 为 MPI 派生数据类型直传（无打包缓冲），`collective` 为真集合（Dist graph + `MPI_Neighbor_alltoallw`）；性能对比见 [docs/PERFORMANCE.md](docs/PERFORMANCE.md) §13。
 
 ---
 

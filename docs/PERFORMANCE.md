@@ -300,6 +300,24 @@ struct Good {
 - 提速来源：vtk 每元素 ~24 字符文本格式化 → 每 (k,j) 行一次块写；binary 每 1 元素 1 次 write syscall（256² = 65,536 次）→ 每行 1 次（256 次）。
 - ParaView 兼容口径：本地无 GUI 环境，以 U3 最小解析器测试（位级还原）+ VTK XML 规范走查替代（srs §4），未做真实加载演示。
 
+## 13. AR006 halo 通信范式基准（pack p2p vs datatype 直传 vs 真集合 alltoallw）
+
+取数口径：Jacobi 256²、`--max-iter 200 --tol 0.0 --residual-check-interval 10000`（残差开销旁路）、`halo_exchange` 剖面区段（默认非 overlap 路径：begin+end 均在区段内；`halo_wait` 仅 overlap 路径存在，本表为 0 不列）、np=1/4（np4 = 2×2 切分，OMP=1 per rank）、WSL 单机、Release 构建、每组合 3 次取中位数。复测：`scripts/bench_ar006.sh`（记录式判定，design D6——无通过门槛，劣化如实记录）。
+
+| np | comm_mode | halo_exchange sec（200 迭代累计） | 相对 p2p |
+|----|-----------|-----------------------------------|----------|
+| 1 | p2p | 0.000030 | 1.00× |
+| 1 | datatype | 0.000025 | 0.83× |
+| 1 | collective | 0.000148 | 4.93× |
+| 4 | p2p | 0.000936 | 1.00× |
+| 4 | datatype | 0.001340 | 1.43× |
+| 4 | collective | 0.002195 | **2.34×** |
+
+- **如实记录：本负载下两种新范式都不占优。** 每次交换均摊：np4 p2p ≈ 4.7µs——小面（256/2=128 列 × hw=1）下 pack 路径一次 memcpy 的成本低于派生数据类型路径的型解释/非连续段抓取，也低于 alltoallw 的图邻居查表与分块派发；collective 劣化 2.34× 触发 D6 的「劣化超 2×」评审条款。
+- **评审结论（D6 → D1 回退条款）**：默认值本就保持 `p2p` 未动，无需回退动作；datatype/collective 定位为**范式可选与正交性验证**（`--comm-mode` 三值，正确性由 B/U 系列与 e2e 全绿保证），非默认提速手段。GUIDE C1「小面 datatype 可能更慢」的领域预告在本机得到印证；更大面/更大 halo 宽度下的收益空间未测，不作失实外推。
+- np=1 为无面对照（所有邻居 PROC_NULL）：p2p 与 datatype 接近零开销，collective 的 148µs 来自每迭代对空图 alltoallw 的固定调用开销（200 次 × ~0.74µs）。
+- 正确性对照：U4（3D hw=2，P2P vs Datatype 双 exchanger halo 带逐元素一致）、B1-B4（np4 非均匀/np8 3D 两新范式）、B5（collective 与 p2p 自环等价 + begin/end 拆分）全绿——三范式行为等价，性能差异纯属实现路径。
+
 ---
 
 *Last updated: 2026*

@@ -52,7 +52,7 @@ HyPoS 的本质定位是**「HPC 工程教学/参考样板」**：用一个小�
 | ID | 缺口 | 证据 | 状态 |
 |----|------|------|------|
 | G1 | **First-touch 宣称无实现**：README:16 与 AGENT_SPEC.md:54 宣称 first-touch 初始化，但 `zeroInitialize()` 是单线程 `std::fill`（subgrid.cpp:31-35），首次触摸全部由主线程完成——NUMA 语境下是教科书级反例 | subgrid.cpp:31-35 | ✅ 已完成（AR004/T005：外层维度 omp parallel for 三场单遍历全缓冲；applyDirichletBC 决策保持串行——setup 期单次、仅 halo 带） |
-| G2 | **`--comm-mode collective` 为纯 P2P 委托** + WARN（collective_exchanger.cpp:6-27），真集合通信不存在 | collective_exchanger.cpp:12-13 | 未开始（对应 C2） |
+| G2 | **`--comm-mode collective` 为纯 P2P 委托** + WARN（collective_exchanger.cpp:6-27），真集合通信不存在 | collective_exchanger.cpp:12-13 | ✅ 已完成（AR006：Dist graph + `MPI_Neighbor_alltoallw` 真实现，委托与 WARN 物理删除；见 PERFORMANCE §13） |
 | G3 | **tol 语义失实**：`--tol` 判据用**递推残差**（更新量平方和，jacobi_solver.cpp:47-48,64-65），非 ‖Au−f‖₂。SCALING_REPORT.md:92 记录恶果：tol 未达时 final_residual=204.6，"没收敛但停了"无从解释 | jacobi_solver.cpp:47-48 | ✅ 已完成（AR004/T001/T002：三求解器判据与 lastResidual 均为真实残差口径；Jacobi 融合换算≈零开销 +4%，RBGS 每 k 步扫描） |
 | G4 | **性能叙事数据缺口**：强扩展 256² np4 加速比 2.21（效率 55%）、np4 通信占比 13%——"通信-计算重叠"的价值在当前规模下数据支撑不足 | SCALING_REPORT.md:86-105 | 持续项（B/C 系列改善后复测） |
 | G5 | **RBGS 剖面区名误用** `"jacobi_iteration"`**（复制粘贴残留），观测数据失真 | red_black_gs_solver.cpp:101 | ✅ 已完成（AR004/T002 rbgs_iteration、T004 cg_iteration；U11 断言三求解器区名互斥） |
@@ -68,7 +68,7 @@ HyPoS 的本质定位是**「HPC 工程教学/参考样板」**：用一个小�
 | P4 | **残差 Allreduce 每迭代一次，无检查频率参数**——归约开销管理是 HPC 经典课题，项目把它写死 | jacobi_solver.cpp:169-175 | ✅ 已完成（AR004/T003：`--residual-check-interval N`（Jacobi/RBGS），RunConfig/JSON 透出；Jacobi k=10 np4 实测 −27%/iter） |
 | P5 | **VTK 输出为 ASCII Float64**（512² 一次输出数百 MB 文本）；binary 后端逐元素 `ofstream.write` 非块写 | vtk_io.cpp:50-60；binary_io.cpp:44-52 | ✅ 已完成（AR005/T002-T004：.vti 改 appended raw binary（vtk 36-49×/体积 -58%）、.bin 块写（3.4-3.8×，字节布局不变）；U2/U3 位级守护 + pvti 零变更） |
 | P6 | **拓扑重复创建**：`UniformPartition::partition()` 内建 cart comm 用后即 free（partition.cpp:36-38），main.cpp:168 再建一次；两次均 `reorder=1`，理论上可给出**不同的 rank→coord 映射**（当前靠实现巧合保持一致） | partition.cpp:38 + main.cpp:168 | ✅ 已完成（AR004/T006：SubgridInfo.cartComm 所有权移交 + cart rank 查 coords（修 reorder 错位）+ main 删除二次创建；B3 拓扑一致性测试） |
-| P7 | **halo 打包用 memcpy 中间缓冲**而非 MPI 派生数据类型直传（pack/unpack 与面缓冲均可省） | p2p_exchanger.cpp:139-242 | 未开始（对应 C1） |
+| P7 | **halo 打包用 memcpy 中间缓冲**而非 MPI 派生数据类型直传（pack/unpack 与面缓冲均可省） | p2p_exchanger.cpp:139-242 | ✅ 已完成（AR006：`--comm-mode datatype` 六方向 subarray 直传，p2p pack 路径保留为 A/B 基线；见 PERFORMANCE §13） |
 
 ### 3.4 架构层"深度天花板"
 
@@ -238,7 +238,7 @@ HyPoS 的本质定位是**「HPC 工程教学/参考样板」**：用一个小�
 |------|---------|----------------|------|---------|
 | ★1 | AR004 | 诚实性修复包：A1 first-touch + A2 真实残差/检查频率 + A3 拓扑 + A4 观测自愈 + B2a CG 并行化 | M | 消灭全部宣称缺口；CG 性能修复立竿见影 |
 | ★2 | AR005 | I/O 快赢 + CI 可信度：D1 VTK 二进制/块写 + F1（**含 CI mpich 假通过紧急排查**） | S-M | 输出提速 1-2 量级；CI 数据可信 |
-| ★3 | AR006 | 通信范式三部曲 I：C1 派生数据类型直传 + C2 真集合 halo | M | 收尾半成品示范；pack vs datatype 实测 |
+| ★3 | ~~AR006 通信范式三部曲 I：C1 派生数据类型直传 + C2 真集合 halo~~ **已完成**（PERFORMANCE §13：小面下 p2p 仍最优，datatype/collective 为范式可选） | M | 收尾半成品示范；pack vs datatype 实测 |
 | ★4 | AR007 | 算法深水区第一步：B1a 两层 MG 校正 | M-L | O(N) 算法叙事开局 |
 | 后续 | AR008+ | B1b V-cycle/MG-CG、B2b pipelined CG、B3 Chebyshev、B4 RBGS 通信、C3 RMA、D2 VTI 单文件、E1 PAPI、E2 残差历史、E3 性能门禁、F2/F3；工程卫生：test_alt_solvers.cpp 拆分（AR005 review 遗留，IO 用例拆至 test_io_layout.cpp） | — | 按依赖与资源排入 |
 
