@@ -78,6 +78,11 @@ if(GTest_FOUND)
 
     set(HYPOS_TEST_ENV
         "OMP_NUM_THREADS=4;ASAN_OPTIONS=detect_leaks=0;OMPI_ALLOW_RUN_AS_ROOT=1;OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1")
+    # MPI-launched tests run one OpenMP thread per rank: on small CI runners
+    # (4 cores) oversubscribing ranks x threads collapses libgomp regions
+    # (measured ~100 ms/iteration vs ~5 us) and times the suite out.
+    set(HYPOS_TEST_ENV_MPI
+        "OMP_NUM_THREADS=1;ASAN_OPTIONS=detect_leaks=0;OMPI_ALLOW_RUN_AS_ROOT=1;OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1")
 
     add_test(NAME unit COMMAND $<TARGET_FILE:test_hypos>)
     set_tests_properties(unit PROPERTIES ENVIRONMENT "${HYPOS_TEST_ENV}" TIMEOUT 120)
@@ -123,18 +128,25 @@ if(GTest_FOUND)
 
     if(MPIEXEC_EXECUTABLE)
         # Launcher must match the MPI implementation the binary is linked
-        # against; MPICH's mpiexec does not accept --oversubscribe (which
-        # keeps the np=8 test runnable on machines with fewer cores).
+        # against; MPICH's mpiexec rejects --oversubscribe (OpenMPI's
+        # accepts it). CI pins -DMPIEXEC_EXECUTABLE=... per leg, so honor
+        # that value first; otherwise fall back to name-based detection.
         set(HYPOS_MPIEXEC "${MPIEXEC_EXECUTABLE}")
         set(HYPOS_MPIEXEC_FLAGS "")
-        if(MPI_CXX_COMPILER MATCHES "mpich")
-            find_program(HYPOS_MPIEXEC_MPICH NAMES mpiexec.mpich mpirun.mpich)
-            if(HYPOS_MPIEXEC_MPICH)
-                set(HYPOS_MPIEXEC "${HYPOS_MPIEXEC_MPICH}")
+        if(MPI_CXX_COMPILER MATCHES "mpich" OR MPI_CXX_LIBRARIES MATCHES "mpich"
+           OR MPIEXEC_EXECUTABLE MATCHES "mpich")
+            if(NOT MPIEXEC_EXECUTABLE MATCHES "mpich")
+                find_program(HYPOS_MPIEXEC_MPICH NAMES mpiexec.mpich mpirun.mpich)
+                if(HYPOS_MPIEXEC_MPICH)
+                    set(HYPOS_MPIEXEC "${HYPOS_MPIEXEC_MPICH}")
+                else()
+                    message(WARNING "MPICH detected but mpiexec.mpich not found; MPI tests may fail")
+                endif()
             endif()
         else()
             set(HYPOS_MPIEXEC_FLAGS --oversubscribe)
         endif()
+        message(STATUS "HyPoS MPI test launcher: ${HYPOS_MPIEXEC} ${HYPOS_MPIEXEC_FLAGS}")
 
         add_test(NAME halo_2d_mpi
             COMMAND ${HYPOS_MPIEXEC} ${HYPOS_MPIEXEC_FLAGS} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} 4
@@ -157,7 +169,7 @@ if(GTest_FOUND)
             COMMAND ${HYPOS_MPIEXEC} ${HYPOS_MPIEXEC_FLAGS} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} 4
                     $<TARGET_FILE:test_hypos> --gtest_filter=PartitionTopologyTest.*:MpiEnvTest.*)
         set_tests_properties(topology_consistency PROPERTIES
-            ENVIRONMENT "${HYPOS_TEST_ENV};HYPOS_EXPECT_NP=4" TIMEOUT 60)
+            ENVIRONMENT "${HYPOS_TEST_ENV_MPI};HYPOS_EXPECT_NP=4" TIMEOUT 60)
         # AR005 (design §4.1 FP1): standalone process-count probe entry.
         # Makes the "multi-rank launch silently degraded to one process"
         # failure mode (mpich 4.2.0 on Ubuntu 24.04) a deterministic FAIL
@@ -166,7 +178,7 @@ if(GTest_FOUND)
             COMMAND ${HYPOS_MPIEXEC} ${HYPOS_MPIEXEC_FLAGS} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} 4
                     $<TARGET_FILE:test_hypos> --gtest_filter=MpiEnvTest.*)
         set_tests_properties(mpi_size_probe PROPERTIES
-            ENVIRONMENT "${HYPOS_TEST_ENV};HYPOS_EXPECT_NP=4" TIMEOUT 60)
+            ENVIRONMENT "${HYPOS_TEST_ENV_MPI};HYPOS_EXPECT_NP=4" TIMEOUT 60)
         add_test(NAME collective_mpi
             COMMAND ${HYPOS_MPIEXEC} ${HYPOS_MPIEXEC_FLAGS} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} 4
                     $<TARGET_FILE:hypos> --comm-mode collective --nx 32 --ny 32 --max-iter 20
@@ -236,15 +248,26 @@ if(GTest_FOUND)
         # entries are declarative self-documentation only -- their guard is
         # the environment-level probe (decision D7: launch degradation is an
         # all-or-nothing property of the mpirun environment).
-        set_tests_properties(halo_2d_mpi solver_mpi overlap_consistency
-            solver_alt_mpi mpiio_np4 collective_mpi mpiio_e2e mpiio_e2e_final
-            PROPERTIES ENVIRONMENT "${HYPOS_TEST_ENV};HYPOS_EXPECT_NP=4" TIMEOUT 600)
+        # ENV base is HYPOS_TEST_ENV_MPI (CI fix, commit 4ce4bea): MPI-launched
+        # tests run one OpenMP thread per rank to avoid oversubscribing
+        # small CI runners.
+        set_tests_properties(halo_2d_mpi
+            PROPERTIES ENVIRONMENT "${HYPOS_TEST_ENV_MPI};HYPOS_EXPECT_NP=4" TIMEOUT 600)
         set_tests_properties(halo_3d_mpi
-            PROPERTIES ENVIRONMENT "${HYPOS_TEST_ENV};HYPOS_EXPECT_NP=8" TIMEOUT 600)
+            PROPERTIES ENVIRONMENT "${HYPOS_TEST_ENV_MPI};HYPOS_EXPECT_NP=8" TIMEOUT 600)
+        # Heavy multi-iteration suites get extra headroom for the slow
+        # Debug+ASan CI leg; they finish in seconds on normal hardware.
+        set_tests_properties(solver_mpi overlap_consistency solver_alt_mpi
+            PROPERTIES ENVIRONMENT "${HYPOS_TEST_ENV_MPI};HYPOS_EXPECT_NP=4" TIMEOUT 900)
+        set_tests_properties(collective_mpi
+            mpiio_e2e mpiio_e2e_final
+            PROPERTIES ENVIRONMENT "${HYPOS_TEST_ENV_MPI};HYPOS_EXPECT_NP=4" TIMEOUT 600)
+        set_tests_properties(mpiio_np4
+            PROPERTIES ENVIRONMENT "${HYPOS_TEST_ENV_MPI};HYPOS_EXPECT_NP=4" TIMEOUT 600)
         set_tests_properties(ranks3_smoke
-            PROPERTIES ENVIRONMENT "${HYPOS_TEST_ENV};HYPOS_EXPECT_NP=3" TIMEOUT 600)
+            PROPERTIES ENVIRONMENT "${HYPOS_TEST_ENV_MPI};HYPOS_EXPECT_NP=3" TIMEOUT 600)
         set_tests_properties(mpiio_np1
-            PROPERTIES ENVIRONMENT "${HYPOS_TEST_ENV}" TIMEOUT 600)
+            PROPERTIES ENVIRONMENT "${HYPOS_TEST_ENV_MPI}" TIMEOUT 600)
         set_tests_properties(mpiio_e2e PROPERTIES FIXTURES_SETUP mpiio_e2e_files)
         set_tests_properties(mpiio_e2e_verify PROPERTIES FIXTURES_REQUIRED mpiio_e2e_files)
         set_tests_properties(mpiio_e2e_final PROPERTIES FIXTURES_SETUP mpiio_e2e_final_files)

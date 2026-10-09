@@ -12,6 +12,10 @@ jobs:
     # distribution whose MPICH packages may break or disappear (test
     # trust depends on the MPI-variant matrix actually running).
     runs-on: ubuntu-22.04
+    env:
+      # Runner has 4 cores; keep plain `mpirun` steps from oversubscribing
+      # OpenMP threads (ctest sets its own per-test values).
+      OMP_NUM_THREADS: "1"
 
     steps:
     - uses: actions/checkout@v3
@@ -24,8 +28,15 @@ jobs:
 
     - name: Build Release (OpenMPI)
       run: |
-        cmake -B build -DCMAKE_BUILD_TYPE=Release
+        cmake -B build -DCMAKE_BUILD_TYPE=Release \
+          -DMPIEXEC_EXECUTABLE=/usr/bin/mpiexec.openmpi
         cmake --build build --parallel $(nproc)
+
+    - name: Verify MPI world size (Release)
+      run: |
+        /usr/bin/mpiexec.openmpi --allow-run-as-root --oversubscribe -n 4 \
+          ./build/hypos --nx 8 --ny 8 --max-iter 1 --output-dir ./sanity-release \
+          | grep -q "MPI procs: 4"
 
     - name: Run tests (Release)
       run: ctest --test-dir build --output-on-failure
@@ -39,8 +50,15 @@ jobs:
     - name: Build Debug with sanitizers (MPICH)
       run: |
         cmake -B build-debug -DCMAKE_BUILD_TYPE=Debug \
-          -DCMAKE_CXX_COMPILER=/usr/bin/mpicxx.mpich
+          -DCMAKE_CXX_COMPILER=/usr/bin/mpicxx.mpich \
+          -DMPIEXEC_EXECUTABLE=/usr/bin/mpiexec.mpich
         cmake --build build-debug --parallel $(nproc)
+
+    - name: Verify MPI world size (Debug)
+      run: |
+        /usr/bin/mpiexec.mpich -n 4 \
+          ./build-debug/hypos --nx 8 --ny 8 --max-iter 1 --output-dir ./sanity-debug \
+          | grep -q "MPI procs: 4"
 
     - name: Run tests (Debug + Address/UB sanitizers)
       run: ctest --test-dir build-debug --output-on-failure
