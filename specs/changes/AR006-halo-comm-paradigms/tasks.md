@@ -65,3 +65,11 @@
 - 修复：①sdispls=rdispls=**0**（块位置完全由绝对定位型自述，与 FP2 直发同机制——最小改动，FP1 型复用声明不变）；②「按当次 data 重算」误注删除；③:122 与风险表 MPI 版本勘误 + 缺符号时不退化阻塞版（E2 拆分语义）注记；④§4.3 推导节统一式措辞同步（rdispls 恒 0）
 - 教训：alltoallw 与点对点直发混用同一型时，displs 语义是「块基址偏移」而非「元素定位」——型已自述位置则 displs 必须为 0；跨 API 复用 datatype 时逐项核对「定位职责归谁」
 - 审查代理：sdd-gate-reviewer
+
+### 2026-10-09 design 门控记录（第 4 轮，终）
+
+- 门控结果：**PASS**
+- R1 sdispls=0 与 FP2 直发机制严格同一、全册无残留「displs 承担定位」表述；R2 MPI-4.0 声明准确 + WSL 实测 `nm -D libmpi.so` 确认符号存在（OpenMPI 4.1.6）；R3 伪码/推导节/风险表/T004 四处显式一致（D4 辖域为配对定律不含 displs，无矛盾）；R4 全册终审——FP1-FP6 ↔ srs R1-R4 验收标准映射逐项完整、约束/NFR 全覆盖、bench 记录式判定无失实宣称
+- 1 Minor 顺手修复：srs.md :117 假设行 Ineighbor_alltoallw「MPI-3」括注失实 → 改 MPI-4.0（与 design 勘误同步，三册口径一致）
+- 设计阶段闭环：4 轮门控（1 FAIL→修→2 FAIL 修法回归→修→3 FAIL 新发现双重偏移→修→4 PASS），配对定律/落位机制/资源生命周期经独立复算与实测验证
+- 审查代理：sdd-gate-reviewer

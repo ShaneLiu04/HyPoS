@@ -114,7 +114,7 @@ OPTIMIZATION_GUIDE.md §3 诊断 P7：halo 打包用 memcpy 中间缓冲（`std:
 - 测试环境：WSL 单机 OpenMPI；np>1 条目受 AR005 探针守卫（HYPOS_EXPECT_NP）
 
 **假设：**
-- OpenMPI 支持 MPI_Dist_graph_create_adjacent 与 MPI_Ineighbor_alltoallw（MPI-3 标准，3.0+ 实现）
+- OpenMPI 支持 MPI_Dist_graph_create_adjacent（MPI-3）与 MPI_Ineighbor_alltoallw（MPI-4.0 新增，OpenMPI ≥4.0 系；design 第 3 轮 P2 勘误）
 - AR003 的 subarray 经验（MPI_ORDER_C 维度序 [z][y][x]）适用——面描述以「慢维到快维」顺序给出
 - halo 测试矩阵（既有 8 用例 + np4 非均匀 + np8 3D）对 wire 布局变化不敏感（它们断言的是 halo 带内容语义）
 
