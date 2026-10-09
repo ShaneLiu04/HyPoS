@@ -100,19 +100,20 @@ endExchange(subgrid, data):
 initialize(subgrid):
   comm_ = subgrid.comm()
   activeDirs_ = [d for d in 0..5 if neighbor(d) != MPI_PROC_NULL]
-  # send 侧按 d 序；recv 侧按 opposite(d) 序（D4：见 §4.3 平行边推导）
+  # sources 对称构造（与 destinations 同序同值）：入邻居多重集恒等（推导见下）；不可整体取 opposite 序（第 2 轮复审 Important）
   destinations = [neighbor(d) for d in activeDirs_]
-  sources      = [neighbor(opposite(d)) for d in activeDirs_]
+  sources      = [neighbor(d) for d in activeDirs_]
   MPI_Dist_graph_create_adjacent(comm_, n, sources, MPI_UNWEIGHTED,
                                  n, destinations, MPI_UNWEIGHTED,
                                  MPI_INFO_NULL, 0 /*reorder*/, &graphComm_)
-  for d in activeDirs_: 建 send/recv 型（复用 FP1 同款构造）+ commit
-  # alltoallw 参数数组按 activeDirs_ 序（D4：方向枚举序即邻居序）
+  for i, d_i in enumerate(activeDirs_):
+    sendTypes_[i] = send 型 of d_i + commit
+    f_i = (neighbor(d_i) == self_rank) ? opposite(d_i) : d_i   # 分情形落位（D4）
+    recvTypes_[i] = recv 型 of f_i + commit;  recvFace_[i] = f_i
+  # alltoallw 参数数组按 activeDirs_ 枚举序
   sendcounts_[i] = recvcounts_[i] = 1
-  sendTypes_[i]  = send 型 of d_i
-  recvTypes_[i]  = recv 型 of opposite(d_i)   # ← recv 侧按对侧方向落位
   sdispls_[i] = faceSendFirst(d_i) 相对 data 的字节偏移
-  rdispls_[i] = faceRecvFirst(opposite(d_i)) 同理    # 每次 exchange 时按当次 data 重算
+  rdispls_[i] = faceRecvFirst(recvFace_[i]) 同理    # 每次 exchange 时按当次 data 重算
 
 exchange(subgrid, data):
   MPI_Neighbor_alltoallw(data, sendcounts_, sdispls_, sendTypes_,
@@ -127,9 +128,16 @@ endExchange:    MPI_Wait(&req_)
 
 np=1：`activeDirs_` 空 → `MPI_Dist_graph_create_adjacent` 建空图（0 进 0 出，合法）→ alltoallw 无操作。不再输出委托 WARN（collective_exchanger.cpp:12-13 删除）。
 
-**平行边配对推导（design 门控第 1 轮 G3 修复，D4 核心依据）**：MPI 平行边按「边序」配对——我的 sources 中邻居 X 的第 a 次出现 ↔ X 的 destinations 中我的第 a 次出现。若对称构造（sources[i]=n(d_i)），自环（B5）下 recv 块 i 落 halo(d_i) 却收到 interior(d_i)，而正确语义是 **halo(d) ← interior(opposite(d))**（p2p 由 tag opposite(d) 保证，p2p_exchanger.cpp:119）。修法：recv 侧整体按 opposite 序——sources[i]=n(opposite(d_i))，recv 块 i 落 halo(opposite(d_i))，收到 send 块 i = interior(d_i)，即 halo(e) ← interior(opposite(e)) ✓。两情形验证：
-- 自环（全平行边）：recv 块 i（halo(opposite(d_i))）↔ send 块 i（interior(d_i)）——语义正确
-- 笛卡尔（唯一边）：R 的 sources 中 X 的第 a 次出现由「R 的方向序中 opposite(d) 指向 X 的 d」决定；X 的 destinations 中 R 的第 a 次出现由「X 的方向序中指向 R 的方向 e」决定；两侧方向枚举序一致（Left..Front 固定）且 opposite 对合，故第 a 次出现处的 d=opposite(e) 恒成立——配对正确
+**邻居配对与落位定律（design 门控第 2 轮 G3 修复，D4 核心依据）**：
+- 数据流恒等式（pack 版语义）：`interior_A(d) → halo_{n_A(d)}(opposite(d))`（p2p 由 tag=opposite(d) 保证，p2p_exchanger.cpp:119）；等价地 `halo_A(e) ← interior_{n_A(e)}(opposite(e))`
+- **sources 对称构造合法**：X 是我的入邻居 ⟺ 存在 e 使 n_X(e)=我 ⟺ opposite(e)∈activeDirs_ 且 n(opposite(e))=X——入邻居多重集 = {n(d) : d∈activeDirs_} 严格成立。**非周期笛卡尔边界 rank（activeDirs 不对合自反封闭，如 2×2×2 角点 active={Right,Up,Front}）同样成立**：封闭性来自「共享面被两端各自声明」，而非本 rank 方向集自反；对称序的 sources=[n(Right),n(Up),n(Front)] 恰为全部真实入邻居
+- **recv 块 i 分情形落位**（本地判定，不依赖对端枚举序——唯一边按邻居身份配对，天然免疫两侧 activeDirs 差异）：
+  - 唯一边（n(d_i)≠self）：对端 X=n(d_i) 面向我的一面是 X 的 opposite(d_i)，X 发来 interior_X(opposite(d_i))，落 **halo(d_i)**
+  - 平行边（n(d_i)==self；非周期笛卡尔下平行边仅自环，即该维 np=1）：MPI 按出现序配对——我 destinations 中 self 第 a 次出现（send 块=interior(d_i)）↔ sources 中 self 第 a 次出现（recv 块 i）；由恒等式落 **halo(opposite(d_i))**
+  - 统一式：`f_i = (n(d_i)==self) ? opposite(d_i) : d_i`，recvTypes_[i]/rdispls_[i] 取 f_i 面。自环时 n(d_i)=self ⟹ n(opposite(d_i))=self ⟹ opposite(d_i)∈activeDirs_，建型无缺失
+- 三情形复算：①唯一边（含边界角点）：rank(0,0,0) recv 块 0 收 n(Right) 的 interior(Left) 落 halo(Right) ✓；②自环（全平行边）：send 块 i=interior(d_i) 按位回到 recv 块 i 落 halo(opposite(d_i))——镜像语义 ✓；③混合（2×1 切分）：rank(0,0) active={Right,Down,Up}（n(Down)=n(Up)=self）：recv 块 0 落 halo(Right)，recv 块 1（self 第 1 次出现↔interior(Down)）落 halo(Up)，recv 块 2 落 halo(Down) ✓
+- 前置假设：非周期笛卡尔（本仓库 decomposition 现状）；周期 np=2 维会产生对同一真邻居的平行边（按出现序同法推导，本 AR 不涉及）
+- 教训记录：第 1 轮「recv 侧整体 opposite 序」修法只修复自环、破坏笛卡尔边界——sources 退化为 [PROC_NULL×n]，与对端 destinations 声明不一致且 halo 永不填充（第 2 轮复审 Important，B1-B4/collective_mpi 必挂）
 
 ### 4.4 FP4 CLI 接线
 
@@ -147,8 +155,8 @@ main.cpp :225-230 扩展：`commMode == "datatype"` → `std::make_unique<Dataty
 | U4 | DatatypeEquivalentToPack（**3D hw=2 配置**——同时覆盖 3D 多 halo，design 门控第 1 轮 G5-Minor 补强） | 同场两 exchanger 各自 exchange 后 halo 带逐元素一致（wire 布局不同但落位相同——等价性铁证） |
 | B1 | MpiNonUniform4RanksHalosDatatype | 沿 :151 模式 np4 非均匀切分，DatatypeExchanger |
 | B2 | MpiNonUniform8RanksHalos3DDatatype | 沿 :371 模式 np8 3D |
-| B3 | MpiNonUniform4RanksHalosCollective | np4 非均匀，CollectiveExchanger 真集合 |
-| B4 | MpiNonUniform8RanksHalos3DCollective | np8 3D 真集合 |
+| B3 | MpiNonUniform4RanksHalosCollective | np4 非均匀，CollectiveExchanger 真集合；沿 :151/:371 模式（含 `if (size!=np) GTEST_SKIP` 守卫——unit 全量跑时不误执行，第 2 轮复审 Minor 补注） |
+| B4 | MpiNonUniform8RanksHalos3DCollective | np8 3D 真集合；同 :371 模式（含 np 守卫） |
 | B5 | CollectiveExchangerIsTrueCollective | 改写 :129 委托断言：name()=="collective"、真集合路径下 halo 带与 p2p 等价（自环场景）——委托 WARN 退位不以日志断言（脆弱），以行为等价断言 |
 | E1 | NoNeighborNp1Safe（参数化三 exchanger） | np=1 全 PROC_NULL：exchange/begin+end 安全，halo 不变 |
 | E2 | BeginEndSplitEquivalent | beginExchange 后 endExchange 前 halo 未就绪不读（仅 end 后断言）；三 exchanger begin/end 与 exchange 结果一致 |
@@ -197,7 +205,7 @@ ctest 条目（CMakeLists，np>1 带 `HYPOS_EXPECT_NP`，gtest filter 追加 `:M
 | D1 | 切换机制：`--comm-mode` 扩展三值 `p2p\|datatype\|collective`，默认 `p2p` 不变 | 备选 a) 新 flag `--halo-pack`：两 flag 交叉语义（collective 恒 datatype）徒增解释成本，否决；备选 b) 默认改 datatype：违背「p2p 默认路径零变化」NFR 且 bench 未证，否决。回退条款：若 bench 实测 256² datatype 劣化超 2× 且可解释（小面 type setup 开销），记录数据但默认保持 p2p（本 AR 默认即 p2p，无需回退动作，未来 AR 依数据再议） |
 | D2 | DatatypeExchanger 用非持久 Isend/Irecv（type 持久、请求每次新建） | exchange 的 data 指针逐次可变（CG 传独立 p 缓冲，cg_solver.cpp:44），Send_init 绑定首指针是悬垂级缺陷；持久请求收益（省请求创建）相对 type 直传的通信收益是次要项，正确性优先 |
 | D3 | 三对面各用单一 subarray（参数表 §4.1） | 备选 hvector/hindexed 组合型描述 y 面：构建复杂、实现可能内部仍 pack，否决；y 面 wire 序 [k][h][i] 自洽（收发同型），无跨版本兼容负担（读方不存在——wire 只在本对收发间存在） |
-| D4 | 邻居图 send 侧按 `activeDirs_` 方向枚举序、**recv 侧按 opposite(d) 序**（sources[i]=n(opposite(d_i))，recv 块 i 落 halo(opposite(d_i))），alltoallw 数组同序 | 图邻居序 = 构造序是 MPI 保证，但**平行边按边序配对**（design 门控第 1 轮 G3 Important 修复）：对称构造下自环 halo(d) 会错收 interior(d)，正确语义 halo(d)←interior(opposite(d))；opposite 序修法在笛卡尔（唯一边，两侧方向枚举一致 + opposite 对合保证第 a 次出现对齐）与自环（平行边按位置序配对）两情形均验证正确（推导见 §4.3）；in/out 数组仍独立传入（标准要求） |
+| D4 | **sources 对称构造**（sources[i]=destinations[i]=n(d_i)，activeDirs_ 方向枚举序）+ **recv 块分情形落位** `f_i=(n(d_i)==self) ? opposite(d_i) : d_i`（唯一边落 halo(d_i)、自环平行边按出现序落 halo(opposite(d_i))）；in/out 数组独立传入（标准要求） | 入邻居多重集恒等（含 activeDirs 不对合自反的边界 rank——封闭性来自共享面两端各自声明）；落位全本地判定不依赖对端枚举序（第 1 轮对称+固定 halo(d_i) 在自环错配；第 1 轮修法「整体 opposite 序」又破坏笛卡尔边界——第 2 轮复审 Important，教训见 §4.3 推导节；三情形复算通过） |
 | D5 | 类型/图/请求生命周期：initialize 建立、析构释放、全部防御 `MPI_Finalized` | 沿 PointToPointExchanger 析构惯例（p2p_exchanger.cpp:82-95）；alltoallw 非阻塞 request 为成员、end 后归 MPI_REQUEST_NULL |
 | D6 | 性能判定记录式（无倍数门槛）：数据如实 + 劣化超 2× 触发默认值回退评审 | GUIDE C1 明言「小面 datatype 可能更慢」是领域已知；诚实优先（§6 底线） |
 | D7 | `CollectiveExchangerDelegatesToP2P` 改写为 `CollectiveExchangerIsTrueCollective`（行为等价断言），不以日志文本断言委托 WARN 消失 | 日志字符串断言脆弱（重构即碎）；行为等价 + WARN 代码物理删除（diff 可见）是更强证据 |

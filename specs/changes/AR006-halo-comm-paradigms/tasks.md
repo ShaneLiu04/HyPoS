@@ -47,3 +47,11 @@
 - 另 5 项 Minor（析构在途请求防御/3D hw=2 覆盖/四处行号勘误/E2 未点名/2D 措辞）——全部顺手修复
 - 修复：①recv 侧改 opposite 序（sources[i]=n(opposite(d_i))、recv 块落 halo(opposite(d_i))），笛卡尔与自环两情形推导验证入 §4.3 + D4 更新；②ctest filter 改专用点名式（沿 halo_2d_mpi 惯例）；③U4 定为 3D hw=2 配置兼覆盖 3D 多 halo；④DatatypeExchanger 析构补在途请求防御；⑤行号勘误（collective_mpi :182-185/unit :87/README :267）；⑥G1 六面参数表逐面核对全 OK（审查者逐行对照 packFace/unpackFace）
 - 审查代理：sdd-gate-reviewer
+
+### 2026-10-09 design 门控记录（第 2 轮）
+
+- 门控结果：FAIL（R2/R3 通过：filter 逐字符一致、np 守卫实测成立、5 Minor 全到位；R1/R4 Important）
+- 失败项：第 1 轮 G3 修法「recv 侧整体 opposite 序」只修复自环、**回归破坏非周期笛卡尔边界 rank**——activeDirs 不对合自反时（2×2×2 角点 active={Right,Up,Front}）sources 退化为 [PROC_NULL×3]，邻接声明与对端 destinations 不一致、halo 永不填充，B1-B4/collective_mpi 必挂
+- 修复（统一定律，主代理独立复算后采纳）：①sources 恢复**对称构造**（入邻居多重集恒等——封闭性来自共享面两端各自声明，边界 rank 成立）；②recv 块**分情形落位** `f_i=(n(d_i)==self) ? opposite(d_i) : d_i`（唯一边按邻居身份落 halo(d_i)、自环平行边按出现序落 halo(opposite(d_i))，全本地判定不依赖对端枚举序）；③三情形复算（唯一边含角点/自环/混合 2×1）入 §4.3 推导节 + D4 更新 + 前置假设（非周期笛卡尔）注记；④Minor：B3/B4 行补 np 守卫模式注
+- 教训：修 Important 时只复算了新修法覆盖的目标缺陷场景（自环），未回归复算第 1 轮已 PASS 的场景（笛卡尔边界）——修复推导必须覆盖全部场景矩阵
+- 审查代理：sdd-gate-reviewer
