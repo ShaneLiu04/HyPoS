@@ -1,0 +1,40 @@
+      Start 13: halo_3d_mpi
+13/30 Test #13: halo_3d_mpi ......................   Passed    0.47 sec
+      Start 14: solver_mpi
+14/30 Test #14: solver_mpi .......................   Passed   23.99 sec
+      Start 15: overlap_consistency
+15/30 Test #15: overlap_consistency ..............   Passed    4.26 sec
+      Start 16: solver_alt_mpi
+16/30 Test #16: solver_alt_mpi ...................   Passed   20.75 sec
+      Start 17: topology_consistency
+17/30 Test #17: topology_consistency .............   Passed    0.39 sec
+      Start 18: mpi_size_probe
+18/30 Test #18: mpi_size_probe ...................   Passed    0.40 sec
+      Start 19: collective_mpi
+19/30 Test #19: collective_mpi ...................   Passed    0.40 sec
+      Start 20: ranks3_smoke
+20/30 Test #20: ranks3_smoke .....................   Passed    0.38 sec
+      Start 21: mpiio_np1
+21/30 Test #21: mpiio_np1 ........................   Passed    0.36 sec
+      Start 22: mpiio_np4
+22/30 Test #22: mpiio_np4 ........................   Passed    0.42 sec
+      Start 23: mpiio_e2e
+23/30 Test #23: mpiio_e2e ........................   Passed    0.43 sec
+      Start 24: mpiio_e2e_verify
+24/30 Test #24: mpiio_e2e_verify .................   Passed    0.01 sec
+      Start 25: mpiio_e2e_final
+25/30 Test #25: mpiio_e2e_final ..................   Passed    0.42 sec
+      Start 26: mpiio_e2e_final_verify
+26/30 Test #26: mpiio_e2e_final_verify ...........   Passed    0.01 sec
+      Start 27: vtk_e2e
+27/30 Test #27: vtk_e2e ..........................   Passed    0.36 sec
+      Start 28: vtk_e2e_verify
+28/30 Test #28: vtk_e2e_verify ...................   Passed    0.01 sec
+      Start 29: binary_e2e
+29/30 Test #29: binary_e2e .......................   Passed    0.36 sec
+      Start 30: binary_e2e_verify
+30/30 Test #30: binary_e2e_verify ................   Passed    0.01 sec
+
+100% tests passed, 0 tests failed out of 30
+
+Total Test time (real) =  91.12 sec

@@ -1,0 +1,15 @@
+== exit: 0 ==
+solution_5_r0.vti
+solution_5_r1.vti
+solution_5_r2.vti
+solution_5_r3.vti
+4
+Extent="0 31 0 31 0 0"
+Extent="0 15 0 15 0 0"
+Extent="0 15 16 31 0 0"
+Extent="16 31 0 15 0 0"
+Extent="16 31 16 31 0 0"
+solution_5_r0.vti markers: 2
+solution_5_r1.vti markers: 2
+solution_5_r2.vti markers: 2
+solution_5_r3.vti markers: 2
