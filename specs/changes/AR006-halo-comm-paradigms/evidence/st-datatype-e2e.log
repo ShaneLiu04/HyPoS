@@ -1,0 +1,4 @@
+== datatype e2e np4 ==
+rc=0
+[2026-10-09 13:42:44.508] [RANK 0] [INFO] Solver finished in 20 iterations, time = 0.000251052 s
+[2026-10-09 13:42:44.508] [RANK 0] [INFO] Total time: 0.000303405 s, Iterations: 20, Est. FLOP/s: 5.40004e+08

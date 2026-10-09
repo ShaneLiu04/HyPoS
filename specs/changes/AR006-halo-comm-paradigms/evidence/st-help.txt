@@ -1,0 +1,3 @@
+== --help comm-mode ==
+  --comm-mode <string>         Communication mode: p2p, datatype, collective (default: p2p)
+                                datatype: p2p pattern with MPI derived datatypes (no pack buffers)

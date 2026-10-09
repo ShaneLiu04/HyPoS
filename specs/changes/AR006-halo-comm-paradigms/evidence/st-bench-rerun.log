@@ -1,0 +1,18 @@
+== bench re-run ==
+== AR006 halo comm benchmark (Jacobi 256^2, iter 200, OMP=1, median of 3) ==
+np comm_mode halo_exchange_sec
+1 p2p 0.000023
+1 datatype 0.000021
+1 collective 0.000149
+4 p2p 0.001494
+4 datatype 0.001895
+4 collective 0.001303
+== done ==
+np4 max-iter 2000, single-shot per mode:
+p2p 0.030566
+datatype 0.015243
+collective 0.017044
+np4 max-iter 2000, 3 reps median:
+p2p raw: 0.013856 0.015399 0.009856 median:0.013856
+datatype raw: 0.021381 0.014050 0.014757 median:0.014757
+collective raw: 0.015803 0.016881 0.011212 median:0.015803

@@ -71,7 +71,7 @@
 - 审查结果：FAIL（1 Important + 1 Minor；S/D/C 三维中实现本体全合规——六面参数表逐面复算、D4 统一定律落地、displs=0、生命周期防御、bench 数字复算全吻合）
 - Important：**E1（NoNeighborNp1Safe 参数化三 exchanger）未交付**——datatype/collective 的 np=1 全 PROC_NULL 路径无自动化测试；collective 空图路径（nEdges=0）无测试触达（仅 bench 一次性运行佐证）
 - Minor：E2 交付为 datatype 限定（design 表述为三 exchanger），collective 拆分由 B5 覆盖、p2p 拆分由既有 overlap_consistency 隐式覆盖——覆盖重分布未按 D4 记录授权
-- 修复：①E1 补齐（test_halo_exchange.cpp 末尾，沿 ProcNullKeepsHaloUnchanged 快照-不变模式：三 exchanger 各自 exchange + begin/end 拆分两场次断言 halo 逐元素不变；collective 分支触达空图路径）；②E2 覆盖重分布正式记录：E2(datatype)+B5(collective 拆分)+既有 overlap_consistency(p2p 拆分)=三 exchanger begin/end 语义全覆盖，作为授权偏离记入本节（E1 补齐后其三 exchanger begin/end 场次亦参与覆盖）
+- 修复：①E1 补齐（test_halo_exchange.cpp 末尾，沿 ProcNullKeepsHaloUnchanged 快照-不变模式：三 exchanger 各自 exchange + begin/end 拆分两场次断言 halo 逐元素不变；collective 分支触达空图路径）；②E2 覆盖重分布正式记录：E2(datatype)+B5(collective 拆分)+既有 overlap_consistency（`OverlapTest.SelfLoopOnOffConsistency`/`OverlapTest.MpiFourRanksOnOffConsistency`，test_overlap.cpp:36/:64，经 JacobiSolver overlap 路径行使 p2p begin/end 拆分）=三 exchanger begin/end 语义全覆盖，作为授权偏离记入本节（E1 补齐后其三 exchanger begin/end 场次亦参与覆盖）
 - 审查代理：sdd-implementation-reviewer
 
 ### 2026-10-09 design 门控记录（第 4 轮，终）

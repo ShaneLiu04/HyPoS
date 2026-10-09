@@ -1,0 +1,4 @@
+== collective e2e np4 no-WARN check ==
+NO-WARN (rc=1)
+[2026-10-09 13:42:44.114] [RANK 0] [INFO] Solver finished in 20 iterations, time = 0.000467131 s
+[2026-10-09 13:42:44.114] [RANK 0] [INFO] Total time: 0.000529692 s, Iterations: 20, Est. FLOP/s: 3.09312e+08

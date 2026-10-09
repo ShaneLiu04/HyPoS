@@ -1,0 +1,76 @@
+== ctest debug (ASan+UBSan leg) ==
+Test project /root/build-debug
+      Start  1: unit
+ 1/35 Test  #1: unit .............................   Passed    9.74 sec
+      Start  2: parse_error
+ 2/35 Test  #2: parse_error ......................   Passed    0.39 sec
+      Start  3: mpibin_bad_format
+ 3/35 Test  #3: mpibin_bad_format ................   Passed    0.46 sec
+      Start  4: ar004_interval_zero
+ 4/35 Test  #4: ar004_interval_zero ..............   Passed    0.46 sec
+      Start  5: ar004_interval_neg
+ 5/35 Test  #5: ar004_interval_neg ...............   Passed    0.46 sec
+      Start  6: ar004_interval_nan
+ 6/35 Test  #6: ar004_interval_nan ...............   Passed    0.38 sec
+      Start  7: ar004_interval_missing
+ 7/35 Test  #7: ar004_interval_missing ...........   Passed    0.38 sec
+      Start  8: ar004_cli_interval10
+ 8/35 Test  #8: ar004_cli_interval10 .............   Passed    0.42 sec
+      Start  9: ar004_cli_default
+ 9/35 Test  #9: ar004_cli_default ................   Passed    0.78 sec
+      Start 10: ar004_cli_cg_warn
+10/35 Test #10: ar004_cli_cg_warn ................   Passed    0.40 sec
+      Start 11: ar004_cli_help
+11/35 Test #11: ar004_cli_help ...................   Passed    0.39 sec
+      Start 12: halo_2d_mpi
+12/35 Test #12: halo_2d_mpi ......................   Passed    0.41 sec
+      Start 13: halo_3d_mpi
+13/35 Test #13: halo_3d_mpi ......................   Passed    0.48 sec
+      Start 14: datatype_np4
+14/35 Test #14: datatype_np4 .....................   Passed    0.41 sec
+      Start 15: datatype_np8
+15/35 Test #15: datatype_np8 .....................   Passed    0.48 sec
+      Start 16: collective_np4
+16/35 Test #16: collective_np4 ...................   Passed    0.41 sec
+      Start 17: collective_np8
+17/35 Test #17: collective_np8 ...................   Passed    0.48 sec
+      Start 18: solver_mpi
+18/35 Test #18: solver_mpi .......................   Passed    7.81 sec
+      Start 19: overlap_consistency
+19/35 Test #19: overlap_consistency ..............   Passed    1.67 sec
+      Start 20: solver_alt_mpi
+20/35 Test #20: solver_alt_mpi ...................   Passed    6.50 sec
+      Start 21: topology_consistency
+21/35 Test #21: topology_consistency .............   Passed    0.41 sec
+      Start 22: mpi_size_probe
+22/35 Test #22: mpi_size_probe ...................   Passed    0.40 sec
+      Start 23: collective_mpi
+23/35 Test #23: collective_mpi ...................   Passed    0.40 sec
+      Start 24: datatype_e2e
+24/35 Test #24: datatype_e2e .....................   Passed    0.41 sec
+      Start 25: ranks3_smoke
+25/35 Test #25: ranks3_smoke .....................   Passed    0.39 sec
+      Start 26: mpiio_np1
+26/35 Test #26: mpiio_np1 ........................   Passed    0.37 sec
+      Start 27: mpiio_np4
+27/35 Test #27: mpiio_np4 ........................   Passed    0.43 sec
+      Start 28: mpiio_e2e
+28/35 Test #28: mpiio_e2e ........................   Passed    0.42 sec
+      Start 29: mpiio_e2e_verify
+29/35 Test #29: mpiio_e2e_verify .................   Passed    0.02 sec
+      Start 30: mpiio_e2e_final
+30/35 Test #30: mpiio_e2e_final ..................   Passed    0.42 sec
+      Start 31: mpiio_e2e_final_verify
+31/35 Test #31: mpiio_e2e_final_verify ...........   Passed    0.01 sec
+      Start 32: vtk_e2e
+32/35 Test #32: vtk_e2e ..........................   Passed    0.37 sec
+      Start 33: vtk_e2e_verify
+33/35 Test #33: vtk_e2e_verify ...................   Passed    0.02 sec
+      Start 34: binary_e2e
+34/35 Test #34: binary_e2e .......................   Passed    0.38 sec
+      Start 35: binary_e2e_verify
+35/35 Test #35: binary_e2e_verify ................   Passed    0.02 sec
+
+100% tests passed, 0 tests failed out of 35
+
+Total Test time (real) =  37.38 sec

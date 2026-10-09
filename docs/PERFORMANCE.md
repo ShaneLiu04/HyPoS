@@ -302,7 +302,11 @@ struct Good {
 
 ## 13. AR006 halo 通信范式基准（pack p2p vs datatype 直传 vs 真集合 alltoallw）
 
-取数口径：Jacobi 256²、`--max-iter 200 --tol 0.0 --residual-check-interval 10000`（残差开销旁路）、`halo_exchange` 剖面区段（默认非 overlap 路径：begin+end 均在区段内；`halo_wait` 仅 overlap 路径存在，本表为 0 不列）、np=1/4（np4 = 2×2 切分，OMP=1 per rank）、WSL 单机、Release 构建、每组合 3 次取中位数。复测：`scripts/bench_ar006.sh`（记录式判定，design D6——无通过门槛，劣化如实记录）。
+取数口径：Jacobi 256²、`--tol 0.0 --residual-check-interval 10000`（残差开销旁路）、`halo_exchange` 剖面区段（默认非 overlap 路径：begin+end 均在区段内）、np=1/4（np4 = 2×2 切分，OMP=1 per rank）、WSL 单机、Release 构建。复测：`scripts/bench_ar006.sh`（200 迭代口径）。
+
+**测量稳定性声明（诚实优先）**：本负载单次交换仅 ~5-15µs，与 WSL 单机运行间漂移同量级——三轮测量（下表）排序不稳定，**不下「谁更快」的结论**；2000 迭代大负载 ×3 中位为最稳定口径。
+
+第 1 轮（T006 首测，`bench_ar006.sh` 200 迭代 ×3 中位）：
 
 | np | comm_mode | halo_exchange sec（200 迭代累计） | 相对 p2p |
 |----|-----------|-----------------------------------|----------|
@@ -311,12 +315,21 @@ struct Good {
 | 1 | collective | 0.000148 | 4.93× |
 | 4 | p2p | 0.000936 | 1.00× |
 | 4 | datatype | 0.001340 | 1.43× |
-| 4 | collective | 0.002195 | **2.34×** |
+| 4 | collective | 0.002195 | 2.34× |
 
-- **如实记录：本负载下两种新范式都不占优。** 每次交换均摊：np4 p2p ≈ 4.7µs——小面（256/2=128 列 × hw=1）下 pack 路径一次 memcpy 的成本低于派生数据类型路径的型解释/非连续段抓取，也低于 alltoallw 的图邻居查表与分块派发；collective 劣化 2.34× 触发 D6 的「劣化超 2×」评审条款。
-- **评审结论（D6 → D1 回退条款）**：默认值本就保持 `p2p` 未动，无需回退动作；datatype/collective 定位为**范式可选与正交性验证**（`--comm-mode` 三值，正确性由 B/U 系列与 e2e 全绿保证），非默认提速手段。GUIDE C1「小面 datatype 可能更慢」的领域预告在本机得到印证；更大面/更大 halo 宽度下的收益空间未测，不作失实外推。
-- np=1 为无面对照（所有邻居 PROC_NULL）：p2p 与 datatype 接近零开销，collective 的 148µs 来自每迭代对空图 alltoallw 的固定调用开销（200 次 × ~0.74µs）。
-- 正确性对照：U4（3D hw=2，P2P vs Datatype 双 exchanger halo 带逐元素一致）、B1-B4（np4 非均匀/np8 3D 两新范式）、B5（collective 与 p2p 自环等价 + begin/end 拆分）全绿——三范式行为等价，性能差异纯属实现路径。
+第 2 轮（ST 复测，同脚本同口径）——np4 排序与第 1 轮不同：p2p 0.001494 / datatype 0.001895（1.27×）/ collective 0.001303（**0.87×**）；np1 三模式与第 1 轮一致（collective 空图固定开销 149µs 两轮稳定）。
+
+第 3 轮（ST 稳定性口径，2000 迭代 ×3 中位，np4）：
+
+| comm_mode | halo_exchange sec（2000 迭代累计） | 相对 p2p |
+|-----------|-----------------------------------|----------|
+| p2p | 0.013856（raw 9.9-15.4ms） | 1.00× |
+| datatype | 0.014757（raw 14.1-21.4ms） | 1.06× |
+| collective | 0.015803（raw 11.2-16.9ms） | 1.14× |
+
+- **结论（记录式，D6）**：本机该负载（小面 128 列 × hw=1）下三范式 halo 交换耗时**同量级且无稳定优劣**——范式间差异（≤~15%）与单机运行间漂移（rep 间 ±30%）不可区分，第 1 轮 2.34× 触发的 D6「劣化超 2×」评审经复测判定为噪声，无回退动作（默认 `p2p` 本就未动，D1）；datatype/collective 定位为**范式可选与正交性验证**（`--comm-mode` 三值），不作收益宣称。GUIDE C1「小面 datatype 可能更慢」在本机未获稳定印证，也未反转出稳定优势——更大面/更大 halo 宽度未测，不外推。
+- np=1 为无面对照（全 PROC_NULL）：p2p 与 datatype 接近零开销；collective 的 ~150µs/200 迭代为每迭代对空图 alltoallw 的固定调用开销（两轮一致，稳定可测）。
+- 正确性对照：U4（3D hw=2，P2P vs Datatype 双 exchanger halo 带逐元素一致）、B1-B4（np4 非均匀/np8 3D 两新范式）、B5/E1/E2（collective 与 p2p 等价、三 exchanger np=1 安全、begin/end 拆分）全绿——三范式行为等价，性能差异纯属实现路径。
 
 ---
 
