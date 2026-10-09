@@ -83,6 +83,43 @@ private:
 };
 
 /**
+ * @brief Halo exchange via MPI derived datatypes (direct placement).
+ * Each active face gets one MPI_Type_create_subarray describing the interior
+ * send strip and the halo receive strip inside the padded buffer, so data
+ * moves without pack/unpack staging buffers. Requests are non-persistent
+ * because the data pointer may differ between exchanges (e.g. CG's p buffer).
+ * Tags match the p2p convention: send tag = face index, receive tag =
+ * opposite face index.
+ */
+class DatatypeExchanger : public HaloExchanger {
+public:
+    using HaloExchanger::exchange;
+    using HaloExchanger::beginExchange;
+    using HaloExchanger::endExchange;
+
+    DatatypeExchanger();
+    ~DatatypeExchanger() override;
+
+    void initialize(Subgrid& subgrid) override;
+    void exchange(Subgrid& subgrid, Real* data) override;
+    void beginExchange(Subgrid& subgrid, Real* data) override;
+    void endExchange(Subgrid& subgrid, Real* data) override;
+    std::string name() const override { return "datatype"; }
+
+private:
+    static constexpr int kNumDirections = 6;
+
+    MPI_Comm comm_ = MPI_COMM_NULL;
+    bool initialized_ = false;
+    std::vector<int> activeDirs_;
+    std::vector<MPI_Request> pendingReqs_;
+    std::array<MPI_Datatype, kNumDirections> sendTypes_;
+    std::array<MPI_Datatype, kNumDirections> recvTypes_;
+
+    void releaseResources() noexcept;
+};
+
+/**
  * @brief Collective halo exchange placeholder.
  * In this version it delegates to PointToPointExchanger; a true
  * MPI_Neighbor_allgatherv implementation remains a roadmap item.

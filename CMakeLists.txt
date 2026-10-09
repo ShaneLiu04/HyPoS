@@ -30,6 +30,7 @@ set(HYPOS_CORE_SOURCES
     src/solver/red_black_gs_solver.cpp
     src/solver/cg_solver.cpp
     src/comm/p2p_exchanger.cpp
+    src/comm/datatype_exchanger.cpp
     src/comm/collective_exchanger.cpp
     src/perf/timer.cpp
     src/perf/profiler.cpp
