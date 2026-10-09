@@ -155,6 +155,21 @@ if(GTest_FOUND)
         add_test(NAME halo_3d_mpi
             COMMAND ${HYPOS_MPIEXEC} ${HYPOS_MPIEXEC_FLAGS} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} 8
                     $<TARGET_FILE:test_hypos> --gtest_filter=HaloExchangeTest.MpiNonUniform8RanksHalos3D:MpiEnvTest.*)
+        # AR006 (design §4.5): named-filter entries for the datatype and true
+        # collective halo paths, mirroring halo_2d_mpi/halo_3d_mpi so the
+        # np-hardcoded cases only run at their intended world size.
+        add_test(NAME datatype_np4
+            COMMAND ${HYPOS_MPIEXEC} ${HYPOS_MPIEXEC_FLAGS} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} 4
+                    $<TARGET_FILE:test_hypos> --gtest_filter=HaloExchangeTest.MpiNonUniform4RanksHalosDatatype:MpiEnvTest.*)
+        add_test(NAME datatype_np8
+            COMMAND ${HYPOS_MPIEXEC} ${HYPOS_MPIEXEC_FLAGS} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} 8
+                    $<TARGET_FILE:test_hypos> --gtest_filter=HaloExchangeTest.MpiNonUniform8RanksHalos3DDatatype:MpiEnvTest.*)
+        add_test(NAME collective_np4
+            COMMAND ${HYPOS_MPIEXEC} ${HYPOS_MPIEXEC_FLAGS} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} 4
+                    $<TARGET_FILE:test_hypos> --gtest_filter=HaloExchangeTest.MpiNonUniform4RanksHalosCollective:MpiEnvTest.*)
+        add_test(NAME collective_np8
+            COMMAND ${HYPOS_MPIEXEC} ${HYPOS_MPIEXEC_FLAGS} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} 8
+                    $<TARGET_FILE:test_hypos> --gtest_filter=HaloExchangeTest.MpiNonUniform8RanksHalos3DCollective:MpiEnvTest.*)
         add_test(NAME solver_mpi
             COMMAND ${HYPOS_MPIEXEC} ${HYPOS_MPIEXEC_FLAGS} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} 4
                     $<TARGET_FILE:test_hypos> --gtest_filter=SolverMpiTest.*:MpiEnvTest.*)
@@ -184,6 +199,11 @@ if(GTest_FOUND)
             COMMAND ${HYPOS_MPIEXEC} ${HYPOS_MPIEXEC_FLAGS} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} 4
                     $<TARGET_FILE:hypos> --comm-mode collective --nx 32 --ny 32 --max-iter 20
                     --output-dir ${CMAKE_BINARY_DIR}/ctest_collective)
+        # AR006 (design §4.5): e2e through the datatype halo path.
+        add_test(NAME datatype_e2e
+            COMMAND ${HYPOS_MPIEXEC} ${HYPOS_MPIEXEC_FLAGS} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} 4
+                    $<TARGET_FILE:hypos> --comm-mode datatype --nx 32 --ny 32 --max-iter 20
+                    --output-dir ${CMAKE_BINARY_DIR}/ctest_datatype)
         add_test(NAME ranks3_smoke
             COMMAND ${HYPOS_MPIEXEC} ${HYPOS_MPIEXEC_FLAGS} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} 3
                     $<TARGET_FILE:hypos> --nx 24 --ny 24 --max-iter 20
@@ -256,11 +276,15 @@ if(GTest_FOUND)
             PROPERTIES ENVIRONMENT "${HYPOS_TEST_ENV_MPI};HYPOS_EXPECT_NP=4" TIMEOUT 600)
         set_tests_properties(halo_3d_mpi
             PROPERTIES ENVIRONMENT "${HYPOS_TEST_ENV_MPI};HYPOS_EXPECT_NP=8" TIMEOUT 600)
+        set_tests_properties(datatype_np4 collective_np4
+            PROPERTIES ENVIRONMENT "${HYPOS_TEST_ENV_MPI};HYPOS_EXPECT_NP=4" TIMEOUT 600)
+        set_tests_properties(datatype_np8 collective_np8
+            PROPERTIES ENVIRONMENT "${HYPOS_TEST_ENV_MPI};HYPOS_EXPECT_NP=8" TIMEOUT 600)
         # Heavy multi-iteration suites get extra headroom for the slow
         # Debug+ASan CI leg; they finish in seconds on normal hardware.
         set_tests_properties(solver_mpi overlap_consistency solver_alt_mpi
             PROPERTIES ENVIRONMENT "${HYPOS_TEST_ENV_MPI};HYPOS_EXPECT_NP=4" TIMEOUT 900)
-        set_tests_properties(collective_mpi
+        set_tests_properties(collective_mpi datatype_e2e
             mpiio_e2e mpiio_e2e_final
             PROPERTIES ENVIRONMENT "${HYPOS_TEST_ENV_MPI};HYPOS_EXPECT_NP=4" TIMEOUT 600)
         set_tests_properties(mpiio_np4

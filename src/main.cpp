@@ -46,7 +46,8 @@ void printUsage(const std::string& programName) {
               << "  --bc <string>                Physical BC: dirichlet, neumann (default: dirichlet)\n\n"
               << "Parallel Options:\n"
               << "  --omp-threads <int>          OpenMP threads per process (default: all cores)\n"
-              << "  --comm-mode <string>         Communication mode: p2p, collective (default: p2p)\n\n"
+              << "  --comm-mode <string>         Communication mode: p2p, datatype, collective (default: p2p)\n"
+              << "                                datatype: p2p pattern with MPI derived datatypes (no pack buffers)\n\n"
               << "Performance Options:\n"
               << "  --enable-profiling           Enable detailed performance profiling\n"
               << "  --overlap-comm               Enable communication-computation overlap\n"
@@ -224,6 +225,8 @@ int main(int argc, char* argv[]) {
     std::unique_ptr<HaloExchanger> exchanger;
     if (commMode == "p2p") {
         exchanger = std::make_unique<PointToPointExchanger>();
+    } else if (commMode == "datatype") {
+        exchanger = std::make_unique<DatatypeExchanger>();
     } else if (commMode == "collective") {
         exchanger = std::make_unique<CollectiveExchanger>();
     } else {
