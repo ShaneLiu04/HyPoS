@@ -11,7 +11,7 @@
 
 | ID | 任务描述 | 依赖 | 状态 | 备注 |
 |----|---------|------|------|------|
-| T001 | C1 Red：datatype halo 测试先行——2D/3D 方向语义自环 + 多 halo + PROC_NULL + 与 pack 路径的 halo 带等价性断言（含 begin/end 拆分等价用例 E2，design §4.5；测试矩阵以「datatype 路径」跑；实现缺席时编译挂或 FAIL 即 Red） | - | pending | |
+| T001 | C1 Red：datatype halo 测试先行——2D/3D 方向语义自环 + 多 halo + PROC_NULL + 与 pack 路径的 halo 带等价性断言（含 begin/end 拆分等价用例 E2，design §4.5；测试矩阵以「datatype 路径」跑；实现缺席时编译挂或 FAIL 即 Red） | - | done（Red） | 2026-10-09：U1-U4+E2 落盘 test_halo_exchange.cpp :504-735；统一 MPI_COMM_SELF 自环（世界大小无关，无需 np 守卫）；U4=3D hw=2 双 exchanger（P2P vs Datatype）六面 halo 带逐元素等价对比（绝对正确性由 U1-U3 承担，避开「两者同错」盲区）；Red 证据=5 处 'DatatypeExchanger' was not declared 编译错（/root/build-release） |
 | T002 | C1 Green：DatatypeP2P halo 实现——六方向 subarray 型（发送型指向 interior 边带/接收型指向 halo 带）、非阻塞收发直传计算缓冲、datatype/请求生命周期管理（data 指针逐次不同的请求策略按 design 决策）；既有 halo 测试矩阵以 datatype 路径复跑全绿 | T001 | pending | |
 | T003 | C2 Red：真集合测试先行——collective 语义断言（np4 非均匀/np8 3D 用例以 collective 跑 + 无委托 WARN 断言 + `CollectiveExchangerDelegatesToP2P` 改写为真集合断言） | T002 | pending | |
 | T004 | C2 Green：CollectiveExchanger 真实现——`MPI_Dist_graph_create_adjacent` 邻居图 + `MPI_(I)Neighbor_alltoallw`（复用 T002 面 datatype，**sdispls=rdispls=0 型自述定位**——design 第 3 轮 P1），begin/end 语义走非阻塞变体（**MPI-4.0 符号，缺符号即编译期暴露、不得退化为阻塞版**——E2 拆分语义依赖）；图通信子/alltoallw 资源生命周期 | T003 | pending | |
