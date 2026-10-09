@@ -219,4 +219,4 @@ ctest 条目（CMakeLists，np>1 带 `HYPOS_EXPECT_NP`，gtest filter 追加 `:M
 | alltoallw displs 字节偏移算错 | **sdispls=rdispls=0**：块位置由绝对定位型自述（第 3 轮 P1 双重偏移修复）；U/B 系列 halo 带内容断言（非均匀切分下错位必现） |
 | Ineighbor_alltoallw 平台支持 | **MPI-4.0 新增**（OpenMPI ≥4.0 / MPICH ≥3.4 系；第 3 轮 P2 勘误——非 MPI-3）；WSL OpenMPI 4.1.6 实测含符号；若目标 MPI 缺符号编译期即暴露，begin/end 拆分语义不可退化为阻塞版（E2 依赖），需回设计再议 |
 | np4 本机漂移 | bench 沿 ±15% 惯例注记；np=1 作锚 |
-| 行数预算 | 净增估算 ~500 行（实现 ~300 + 测试 ~200 + 脚本/文档），≤800 预算 |
+| 行数预算 | 实测净增 1245 行（实现 447 + 测试 739 + 脚本/cmake 88），超 §6.4 ~800 建议——论证：①测试占 59%，9 新用例中 B1-B4 沿既有 np 守卫非均匀模板（单用例 ~120 行，语义独立断言无共享可抽）；②face_datatype.hpp 133 行为跨 exchanger 复用抽取（否则 datatype/collective 各持副本实现侧反增 133）；③C1/C2 验收判据（B1-B4 + U4 逐面断言）要求该覆盖面，删减即损验收 |
