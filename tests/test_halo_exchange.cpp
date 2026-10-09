@@ -126,25 +126,65 @@ TEST(HaloExchangeTest, ProcNullKeepsHaloUnchanged) {
     }
 }
 
-TEST(HaloExchangeTest, CollectiveExchangerDelegatesToP2P) {
-    int rank = 0;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+// B5（design §4.5/D7）：CollectiveExchanger 真集合行为断言——改写旧
+// CollectiveExchangerDelegatesToP2P 委托用例。①name()=="collective"；
+// ②2D 自环场景 halo 带与 P2PExchanger 等价（独立场副本）；③begin/end
+// 拆分语义可用，end 后结果与一次性 exchange() 一致。委托 WARN 的退位
+// 不以日志字符串断言（脆弱），证据链 = WARN 代码物理删除（diff 可见）
+// + 本用例行为等价（design D7）。
+TEST(HaloExchangeTest, CollectiveExchangerIsTrueCollective) {
+    CollectiveExchanger probe;
+    EXPECT_EQ(probe.name(), "collective");
 
-    Subgrid sg(4, 4, 1, 1, MPI_COMM_WORLD);
-    sg.setNeighbors(rank, rank, rank, rank);
-    fillPadded2D(sg);
+    Subgrid sgP2p(4, 4, 1, 1, MPI_COMM_SELF);
+    sgP2p.setNeighbors(0, 0, 0, 0);
+    fillPadded2D(sgP2p);
 
-    CollectiveExchanger ex;
-    ex.initialize(sg);
-    ex.exchange(sg);
+    Subgrid sgWhole(4, 4, 1, 1, MPI_COMM_SELF);
+    sgWhole.setNeighbors(0, 0, 0, 0);
+    fillPadded2D(sgWhole);
 
-    for (Index j = sg.jBegin(); j < sg.jEnd(); ++j) {
-        EXPECT_DOUBLE_EQ(sg.at(sg.iEnd(), j),
-                         expectedValue(static_cast<long long>(sg.iBegin()), static_cast<long long>(j)))
+    Subgrid sgSplit(4, 4, 1, 1, MPI_COMM_SELF);
+    sgSplit.setNeighbors(0, 0, 0, 0);
+    fillPadded2D(sgSplit);
+
+    PointToPointExchanger p2pEx;
+    p2pEx.initialize(sgP2p);
+    p2pEx.exchange(sgP2p);
+
+    CollectiveExchanger wholeEx;
+    wholeEx.initialize(sgWhole);
+    wholeEx.exchange(sgWhole);
+
+    CollectiveExchanger splitEx;
+    splitEx.initialize(sgSplit);
+    splitEx.beginExchange(sgSplit);
+    splitEx.endExchange(sgSplit);
+
+    for (Index j = sgWhole.jBegin(); j < sgWhole.jEnd(); ++j) {
+        EXPECT_DOUBLE_EQ(sgWhole.at(sgWhole.iEnd(), j), sgP2p.at(sgP2p.iEnd(), j))
             << "right halo at (iEnd, " << j << ")";
-        EXPECT_DOUBLE_EQ(sg.at(0, j),
-                         expectedValue(static_cast<long long>(sg.iEnd() - 1), static_cast<long long>(j)))
+        EXPECT_DOUBLE_EQ(sgWhole.at(0, j), sgP2p.at(0, j))
             << "left halo at (0, " << j << ")";
+    }
+    for (Index i = sgWhole.iBegin(); i < sgWhole.iEnd(); ++i) {
+        EXPECT_DOUBLE_EQ(sgWhole.at(i, sgWhole.jEnd()), sgP2p.at(i, sgP2p.jEnd()))
+            << "up halo at (" << i << ", jEnd)";
+        EXPECT_DOUBLE_EQ(sgWhole.at(i, 0), sgP2p.at(i, 0))
+            << "down halo at (" << i << ", 0)";
+    }
+
+    for (Index j = sgSplit.jBegin(); j < sgSplit.jEnd(); ++j) {
+        EXPECT_DOUBLE_EQ(sgSplit.at(sgSplit.iEnd(), j), sgWhole.at(sgWhole.iEnd(), j))
+            << "split right halo at (iEnd, " << j << ")";
+        EXPECT_DOUBLE_EQ(sgSplit.at(0, j), sgWhole.at(0, j))
+            << "split left halo at (0, " << j << ")";
+    }
+    for (Index i = sgSplit.iBegin(); i < sgSplit.iEnd(); ++i) {
+        EXPECT_DOUBLE_EQ(sgSplit.at(i, sgSplit.jEnd()), sgWhole.at(i, sgWhole.jEnd()))
+            << "split up halo at (" << i << ", jEnd)";
+        EXPECT_DOUBLE_EQ(sgSplit.at(i, 0), sgWhole.at(i, 0))
+            << "split down halo at (" << i << ", 0)";
     }
 }
 
@@ -730,4 +770,437 @@ TEST(HaloExchangeTest, BeginEndSplitEquivalent) {
                 << "back halo at (" << i << ", " << j << ", 0)";
         }
     }
+}
+
+// ---------------------------------------------------------------------------
+// AR006 (design §4.5) B 系列：非均匀多进程 halo（np4 2D / np8 3D）×
+// {DatatypeExchanger, CollectiveExchanger}。严格沿既有 MpiNonUniform4RanksHalos
+// / MpiNonUniform8RanksHalos3D 模式（np 守卫 + 同款断言结构），既有 p2p
+// 对照基线用例保持原样。Red 阶段说明：CollectiveExchanger 现为委托 P2P
+// 的旧实现（行为透明），B3/B4 在委托路径下的 PASS 构成「委托基线记录」，
+// 作为 T004 真集合实现后的回归契约（转真路径后必须继续全绿）。
+// ---------------------------------------------------------------------------
+
+// B1：np4 非均匀 2D，DatatypeExchanger。
+TEST(HaloExchangeTest, MpiNonUniform4RanksHalosDatatype) {
+    int rank = 0;
+    int size = 1;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    if (size != 4) {
+        GTEST_SKIP() << "MpiNonUniform4RanksHalosDatatype requires exactly 4 processes";
+    }
+
+    int dims[2] = {2, 2};
+    int periods[2] = {0, 0};
+    MPI_Comm cart = MPI_COMM_NULL;
+    MPI_Cart_create(MPI_COMM_WORLD, 2, dims, periods, 0, &cart);
+
+    int left = MPI_PROC_NULL;
+    int right = MPI_PROC_NULL;
+    int down = MPI_PROC_NULL;
+    int up = MPI_PROC_NULL;
+    MPI_Cart_shift(cart, 0, 1, &left, &right);
+    MPI_Cart_shift(cart, 1, 1, &down, &up);
+
+    int coords[2] = {0, 0};
+    MPI_Cart_coords(cart, rank, 2, coords);
+    const int offsetX = coords[0] * 4;
+    const int offsetY = coords[1] * 4;
+
+    Subgrid sg(4, 4, 1, 1, cart);
+    sg.setNeighbors(left, right, down, up);
+
+    const Real sentinel = -777777.0;
+    for (Index j = 0; j < sg.nyTotal(); ++j) {
+        for (Index i = 0; i < sg.nxTotal(); ++i) {
+            const bool interior = i >= sg.iBegin() && i < sg.iEnd() &&
+                                  j >= sg.jBegin() && j < sg.jEnd();
+            if (interior) {
+                const long long gI = static_cast<long long>(offsetX) + static_cast<long long>(i) - 1;
+                const long long gJ = static_cast<long long>(offsetY) + static_cast<long long>(j) - 1;
+                sg.at(i, j) = expectedValue(gI, gJ);
+            } else {
+                sg.at(i, j) = sentinel;
+            }
+        }
+    }
+
+    DatatypeExchanger ex;
+    ex.initialize(sg);
+    ex.exchange(sg);
+
+    // Exchanged halo cells must hold the neighbor's interior values; halo
+    // cells owned by a physical boundary (PROC_NULL) must keep the sentinel.
+    for (Index j = sg.jBegin(); j < sg.jEnd(); ++j) {
+        const long long gJ = static_cast<long long>(offsetY) + static_cast<long long>(j) - 1;
+        if (left != MPI_PROC_NULL) {
+            EXPECT_DOUBLE_EQ(sg.at(0, j), expectedValue(offsetX - 1, gJ))
+                << "rank " << rank << " left halo j=" << j;
+        } else {
+            EXPECT_DOUBLE_EQ(sg.at(0, j), sentinel) << "rank " << rank << " left halo j=" << j;
+        }
+        if (right != MPI_PROC_NULL) {
+            EXPECT_DOUBLE_EQ(sg.at(sg.iEnd(), j), expectedValue(offsetX + 4, gJ))
+                << "rank " << rank << " right halo j=" << j;
+        } else {
+            EXPECT_DOUBLE_EQ(sg.at(sg.iEnd(), j), sentinel) << "rank " << rank << " right halo j=" << j;
+        }
+    }
+    for (Index i = sg.iBegin(); i < sg.iEnd(); ++i) {
+        const long long gI = static_cast<long long>(offsetX) + static_cast<long long>(i) - 1;
+        if (down != MPI_PROC_NULL) {
+            EXPECT_DOUBLE_EQ(sg.at(i, 0), expectedValue(gI, offsetY - 1))
+                << "rank " << rank << " down halo i=" << i;
+        } else {
+            EXPECT_DOUBLE_EQ(sg.at(i, 0), sentinel) << "rank " << rank << " down halo i=" << i;
+        }
+        if (up != MPI_PROC_NULL) {
+            EXPECT_DOUBLE_EQ(sg.at(i, sg.jEnd()), expectedValue(gI, offsetY + 4))
+                << "rank " << rank << " up halo i=" << i;
+        } else {
+            EXPECT_DOUBLE_EQ(sg.at(i, sg.jEnd()), sentinel) << "rank " << rank << " up halo i=" << i;
+        }
+    }
+
+    MPI_Comm_free(&cart);
+}
+
+// B2：np8 非均匀 3D，DatatypeExchanger。
+TEST(HaloExchangeTest, MpiNonUniform8RanksHalos3DDatatype) {
+    int rank = 0;
+    int size = 1;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    if (size != 8) {
+        GTEST_SKIP() << "MpiNonUniform8RanksHalos3DDatatype requires exactly 8 processes";
+    }
+
+    int dims[3] = {2, 2, 2};
+    int periods[3] = {0, 0, 0};
+    MPI_Comm cart = MPI_COMM_NULL;
+    MPI_Cart_create(MPI_COMM_WORLD, 3, dims, periods, 0, &cart);
+
+    int left = MPI_PROC_NULL;
+    int right = MPI_PROC_NULL;
+    int down = MPI_PROC_NULL;
+    int up = MPI_PROC_NULL;
+    int back = MPI_PROC_NULL;
+    int front = MPI_PROC_NULL;
+    MPI_Cart_shift(cart, 0, 1, &left, &right);
+    MPI_Cart_shift(cart, 1, 1, &down, &up);
+    MPI_Cart_shift(cart, 2, 1, &back, &front);
+
+    int coords[3] = {0, 0, 0};
+    MPI_Cart_coords(cart, rank, 3, coords);
+    const int offsetX = coords[0] * 2;
+    const int offsetY = coords[1] * 2;
+    const int offsetZ = coords[2] * 2;
+
+    Subgrid sg(2, 2, 2, 1, cart);
+    sg.setNeighbors(left, right, down, up, back, front);
+
+    const long long llOffsetX = static_cast<long long>(offsetX);
+    const long long llOffsetY = static_cast<long long>(offsetY);
+    const long long llOffsetZ = static_cast<long long>(offsetZ);
+
+    const Real sentinel = -777777.0;
+    for (Index k = 0; k < sg.nzTotal(); ++k) {
+        for (Index j = 0; j < sg.nyTotal(); ++j) {
+            for (Index i = 0; i < sg.nxTotal(); ++i) {
+                const bool interior = i >= sg.iBegin() && i < sg.iEnd() &&
+                                      j >= sg.jBegin() && j < sg.jEnd() &&
+                                      k >= sg.kBegin() && k < sg.kEnd();
+                if (interior) {
+                    const long long gI = llOffsetX + static_cast<long long>(i) - 1;
+                    const long long gJ = llOffsetY + static_cast<long long>(j) - 1;
+                    const long long gK = llOffsetZ + static_cast<long long>(k) - 1;
+                    sg.at(i, j, k) = expectedValue3D(gI, gJ, gK);
+                } else {
+                    sg.at(i, j, k) = sentinel;
+                }
+            }
+        }
+    }
+
+    DatatypeExchanger ex;
+    ex.initialize(sg);
+    ex.exchange(sg);
+
+    // Exchanged halo cells must hold the neighbor's interior values; halo
+    // cells owned by a physical boundary (PROC_NULL) must keep the sentinel.
+    for (Index j = sg.jBegin(); j < sg.jEnd(); ++j) {
+        for (Index k = sg.kBegin(); k < sg.kEnd(); ++k) {
+            const long long gJ = llOffsetY + static_cast<long long>(j) - 1;
+            const long long gK = llOffsetZ + static_cast<long long>(k) - 1;
+            if (left != MPI_PROC_NULL) {
+                EXPECT_DOUBLE_EQ(sg.at(0, j, k), expectedValue3D(llOffsetX - 1, gJ, gK))
+                    << "rank " << rank << " left halo j=" << j << " k=" << k;
+            } else {
+                EXPECT_DOUBLE_EQ(sg.at(0, j, k), sentinel)
+                    << "rank " << rank << " left halo j=" << j << " k=" << k;
+            }
+            if (right != MPI_PROC_NULL) {
+                EXPECT_DOUBLE_EQ(sg.at(sg.iEnd(), j, k), expectedValue3D(llOffsetX + 2, gJ, gK))
+                    << "rank " << rank << " right halo j=" << j << " k=" << k;
+            } else {
+                EXPECT_DOUBLE_EQ(sg.at(sg.iEnd(), j, k), sentinel)
+                    << "rank " << rank << " right halo j=" << j << " k=" << k;
+            }
+        }
+    }
+    for (Index i = sg.iBegin(); i < sg.iEnd(); ++i) {
+        for (Index k = sg.kBegin(); k < sg.kEnd(); ++k) {
+            const long long gI = llOffsetX + static_cast<long long>(i) - 1;
+            const long long gK = llOffsetZ + static_cast<long long>(k) - 1;
+            if (down != MPI_PROC_NULL) {
+                EXPECT_DOUBLE_EQ(sg.at(i, 0, k), expectedValue3D(gI, llOffsetY - 1, gK))
+                    << "rank " << rank << " down halo i=" << i << " k=" << k;
+            } else {
+                EXPECT_DOUBLE_EQ(sg.at(i, 0, k), sentinel)
+                    << "rank " << rank << " down halo i=" << i << " k=" << k;
+            }
+            if (up != MPI_PROC_NULL) {
+                EXPECT_DOUBLE_EQ(sg.at(i, sg.jEnd(), k), expectedValue3D(gI, llOffsetY + 2, gK))
+                    << "rank " << rank << " up halo i=" << i << " k=" << k;
+            } else {
+                EXPECT_DOUBLE_EQ(sg.at(i, sg.jEnd(), k), sentinel)
+                    << "rank " << rank << " up halo i=" << i << " k=" << k;
+            }
+        }
+    }
+    for (Index i = sg.iBegin(); i < sg.iEnd(); ++i) {
+        for (Index j = sg.jBegin(); j < sg.jEnd(); ++j) {
+            const long long gI = llOffsetX + static_cast<long long>(i) - 1;
+            const long long gJ = llOffsetY + static_cast<long long>(j) - 1;
+            if (back != MPI_PROC_NULL) {
+                EXPECT_DOUBLE_EQ(sg.at(i, j, 0), expectedValue3D(gI, gJ, llOffsetZ - 1))
+                    << "rank " << rank << " back halo i=" << i << " j=" << j;
+            } else {
+                EXPECT_DOUBLE_EQ(sg.at(i, j, 0), sentinel)
+                    << "rank " << rank << " back halo i=" << i << " j=" << j;
+            }
+            if (front != MPI_PROC_NULL) {
+                EXPECT_DOUBLE_EQ(sg.at(i, j, sg.kEnd()), expectedValue3D(gI, gJ, llOffsetZ + 2))
+                    << "rank " << rank << " front halo i=" << i << " j=" << j;
+            } else {
+                EXPECT_DOUBLE_EQ(sg.at(i, j, sg.kEnd()), sentinel)
+                    << "rank " << rank << " front halo i=" << i << " j=" << j;
+            }
+        }
+    }
+
+    MPI_Comm_free(&cart);
+}
+
+// B3：np4 非均匀 2D，CollectiveExchanger。
+TEST(HaloExchangeTest, MpiNonUniform4RanksHalosCollective) {
+    int rank = 0;
+    int size = 1;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    if (size != 4) {
+        GTEST_SKIP() << "MpiNonUniform4RanksHalosCollective requires exactly 4 processes";
+    }
+
+    int dims[2] = {2, 2};
+    int periods[2] = {0, 0};
+    MPI_Comm cart = MPI_COMM_NULL;
+    MPI_Cart_create(MPI_COMM_WORLD, 2, dims, periods, 0, &cart);
+
+    int left = MPI_PROC_NULL;
+    int right = MPI_PROC_NULL;
+    int down = MPI_PROC_NULL;
+    int up = MPI_PROC_NULL;
+    MPI_Cart_shift(cart, 0, 1, &left, &right);
+    MPI_Cart_shift(cart, 1, 1, &down, &up);
+
+    int coords[2] = {0, 0};
+    MPI_Cart_coords(cart, rank, 2, coords);
+    const int offsetX = coords[0] * 4;
+    const int offsetY = coords[1] * 4;
+
+    Subgrid sg(4, 4, 1, 1, cart);
+    sg.setNeighbors(left, right, down, up);
+
+    const Real sentinel = -777777.0;
+    for (Index j = 0; j < sg.nyTotal(); ++j) {
+        for (Index i = 0; i < sg.nxTotal(); ++i) {
+            const bool interior = i >= sg.iBegin() && i < sg.iEnd() &&
+                                  j >= sg.jBegin() && j < sg.jEnd();
+            if (interior) {
+                const long long gI = static_cast<long long>(offsetX) + static_cast<long long>(i) - 1;
+                const long long gJ = static_cast<long long>(offsetY) + static_cast<long long>(j) - 1;
+                sg.at(i, j) = expectedValue(gI, gJ);
+            } else {
+                sg.at(i, j) = sentinel;
+            }
+        }
+    }
+
+    CollectiveExchanger ex;
+    ex.initialize(sg);
+    ex.exchange(sg);
+
+    // Exchanged halo cells must hold the neighbor's interior values; halo
+    // cells owned by a physical boundary (PROC_NULL) must keep the sentinel.
+    for (Index j = sg.jBegin(); j < sg.jEnd(); ++j) {
+        const long long gJ = static_cast<long long>(offsetY) + static_cast<long long>(j) - 1;
+        if (left != MPI_PROC_NULL) {
+            EXPECT_DOUBLE_EQ(sg.at(0, j), expectedValue(offsetX - 1, gJ))
+                << "rank " << rank << " left halo j=" << j;
+        } else {
+            EXPECT_DOUBLE_EQ(sg.at(0, j), sentinel) << "rank " << rank << " left halo j=" << j;
+        }
+        if (right != MPI_PROC_NULL) {
+            EXPECT_DOUBLE_EQ(sg.at(sg.iEnd(), j), expectedValue(offsetX + 4, gJ))
+                << "rank " << rank << " right halo j=" << j;
+        } else {
+            EXPECT_DOUBLE_EQ(sg.at(sg.iEnd(), j), sentinel) << "rank " << rank << " right halo j=" << j;
+        }
+    }
+    for (Index i = sg.iBegin(); i < sg.iEnd(); ++i) {
+        const long long gI = static_cast<long long>(offsetX) + static_cast<long long>(i) - 1;
+        if (down != MPI_PROC_NULL) {
+            EXPECT_DOUBLE_EQ(sg.at(i, 0), expectedValue(gI, offsetY - 1))
+                << "rank " << rank << " down halo i=" << i;
+        } else {
+            EXPECT_DOUBLE_EQ(sg.at(i, 0), sentinel) << "rank " << rank << " down halo i=" << i;
+        }
+        if (up != MPI_PROC_NULL) {
+            EXPECT_DOUBLE_EQ(sg.at(i, sg.jEnd()), expectedValue(gI, offsetY + 4))
+                << "rank " << rank << " up halo i=" << i;
+        } else {
+            EXPECT_DOUBLE_EQ(sg.at(i, sg.jEnd()), sentinel) << "rank " << rank << " up halo i=" << i;
+        }
+    }
+
+    MPI_Comm_free(&cart);
+}
+
+// B4：np8 非均匀 3D，CollectiveExchanger。
+TEST(HaloExchangeTest, MpiNonUniform8RanksHalos3DCollective) {
+    int rank = 0;
+    int size = 1;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    if (size != 8) {
+        GTEST_SKIP() << "MpiNonUniform8RanksHalos3DCollective requires exactly 8 processes";
+    }
+
+    int dims[3] = {2, 2, 2};
+    int periods[3] = {0, 0, 0};
+    MPI_Comm cart = MPI_COMM_NULL;
+    MPI_Cart_create(MPI_COMM_WORLD, 3, dims, periods, 0, &cart);
+
+    int left = MPI_PROC_NULL;
+    int right = MPI_PROC_NULL;
+    int down = MPI_PROC_NULL;
+    int up = MPI_PROC_NULL;
+    int back = MPI_PROC_NULL;
+    int front = MPI_PROC_NULL;
+    MPI_Cart_shift(cart, 0, 1, &left, &right);
+    MPI_Cart_shift(cart, 1, 1, &down, &up);
+    MPI_Cart_shift(cart, 2, 1, &back, &front);
+
+    int coords[3] = {0, 0, 0};
+    MPI_Cart_coords(cart, rank, 3, coords);
+    const int offsetX = coords[0] * 2;
+    const int offsetY = coords[1] * 2;
+    const int offsetZ = coords[2] * 2;
+
+    Subgrid sg(2, 2, 2, 1, cart);
+    sg.setNeighbors(left, right, down, up, back, front);
+
+    const long long llOffsetX = static_cast<long long>(offsetX);
+    const long long llOffsetY = static_cast<long long>(offsetY);
+    const long long llOffsetZ = static_cast<long long>(offsetZ);
+
+    const Real sentinel = -777777.0;
+    for (Index k = 0; k < sg.nzTotal(); ++k) {
+        for (Index j = 0; j < sg.nyTotal(); ++j) {
+            for (Index i = 0; i < sg.nxTotal(); ++i) {
+                const bool interior = i >= sg.iBegin() && i < sg.iEnd() &&
+                                      j >= sg.jBegin() && j < sg.jEnd() &&
+                                      k >= sg.kBegin() && k < sg.kEnd();
+                if (interior) {
+                    const long long gI = llOffsetX + static_cast<long long>(i) - 1;
+                    const long long gJ = llOffsetY + static_cast<long long>(j) - 1;
+                    const long long gK = llOffsetZ + static_cast<long long>(k) - 1;
+                    sg.at(i, j, k) = expectedValue3D(gI, gJ, gK);
+                } else {
+                    sg.at(i, j, k) = sentinel;
+                }
+            }
+        }
+    }
+
+    CollectiveExchanger ex;
+    ex.initialize(sg);
+    ex.exchange(sg);
+
+    // Exchanged halo cells must hold the neighbor's interior values; halo
+    // cells owned by a physical boundary (PROC_NULL) must keep the sentinel.
+    for (Index j = sg.jBegin(); j < sg.jEnd(); ++j) {
+        for (Index k = sg.kBegin(); k < sg.kEnd(); ++k) {
+            const long long gJ = llOffsetY + static_cast<long long>(j) - 1;
+            const long long gK = llOffsetZ + static_cast<long long>(k) - 1;
+            if (left != MPI_PROC_NULL) {
+                EXPECT_DOUBLE_EQ(sg.at(0, j, k), expectedValue3D(llOffsetX - 1, gJ, gK))
+                    << "rank " << rank << " left halo j=" << j << " k=" << k;
+            } else {
+                EXPECT_DOUBLE_EQ(sg.at(0, j, k), sentinel)
+                    << "rank " << rank << " left halo j=" << j << " k=" << k;
+            }
+            if (right != MPI_PROC_NULL) {
+                EXPECT_DOUBLE_EQ(sg.at(sg.iEnd(), j, k), expectedValue3D(llOffsetX + 2, gJ, gK))
+                    << "rank " << rank << " right halo j=" << j << " k=" << k;
+            } else {
+                EXPECT_DOUBLE_EQ(sg.at(sg.iEnd(), j, k), sentinel)
+                    << "rank " << rank << " right halo j=" << j << " k=" << k;
+            }
+        }
+    }
+    for (Index i = sg.iBegin(); i < sg.iEnd(); ++i) {
+        for (Index k = sg.kBegin(); k < sg.kEnd(); ++k) {
+            const long long gI = llOffsetX + static_cast<long long>(i) - 1;
+            const long long gK = llOffsetZ + static_cast<long long>(k) - 1;
+            if (down != MPI_PROC_NULL) {
+                EXPECT_DOUBLE_EQ(sg.at(i, 0, k), expectedValue3D(gI, llOffsetY - 1, gK))
+                    << "rank " << rank << " down halo i=" << i << " k=" << k;
+            } else {
+                EXPECT_DOUBLE_EQ(sg.at(i, 0, k), sentinel)
+                    << "rank " << rank << " down halo i=" << i << " k=" << k;
+            }
+            if (up != MPI_PROC_NULL) {
+                EXPECT_DOUBLE_EQ(sg.at(i, sg.jEnd(), k), expectedValue3D(gI, llOffsetY + 2, gK))
+                    << "rank " << rank << " up halo i=" << i << " k=" << k;
+            } else {
+                EXPECT_DOUBLE_EQ(sg.at(i, sg.jEnd(), k), sentinel)
+                    << "rank " << rank << " up halo i=" << i << " k=" << k;
+            }
+        }
+    }
+    for (Index i = sg.iBegin(); i < sg.iEnd(); ++i) {
+        for (Index j = sg.jBegin(); j < sg.jEnd(); ++j) {
+            const long long gI = llOffsetX + static_cast<long long>(i) - 1;
+            const long long gJ = llOffsetY + static_cast<long long>(j) - 1;
+            if (back != MPI_PROC_NULL) {
+                EXPECT_DOUBLE_EQ(sg.at(i, j, 0), expectedValue3D(gI, gJ, llOffsetZ - 1))
+                    << "rank " << rank << " back halo i=" << i << " j=" << j;
+            } else {
+                EXPECT_DOUBLE_EQ(sg.at(i, j, 0), sentinel)
+                    << "rank " << rank << " back halo i=" << i << " j=" << j;
+            }
+            if (front != MPI_PROC_NULL) {
+                EXPECT_DOUBLE_EQ(sg.at(i, j, sg.kEnd()), expectedValue3D(gI, gJ, llOffsetZ + 2))
+                    << "rank " << rank << " front halo i=" << i << " j=" << j;
+            } else {
+                EXPECT_DOUBLE_EQ(sg.at(i, j, sg.kEnd()), sentinel)
+                    << "rank " << rank << " front halo i=" << i << " j=" << j;
+            }
+        }
+    }
+
+    MPI_Comm_free(&cart);
 }
