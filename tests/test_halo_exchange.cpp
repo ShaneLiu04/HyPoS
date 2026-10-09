@@ -1204,3 +1204,58 @@ TEST(HaloExchangeTest, MpiNonUniform8RanksHalos3DCollective) {
 
     MPI_Comm_free(&cart);
 }
+
+// E1（design §4.5，实现审查 Important 补齐）：np=1 全 PROC_NULL——三
+// exchanger 参数化安全用例。exchange 与 begin/end 拆分均安全且 halo 不变；
+// collective 侧同时触达 nEdges=0 空图路径（activeDirs 空 →
+// MPI_Dist_graph_create_adjacent 0 进 0 出合法 → alltoallw 无操作）。
+TEST(HaloExchangeTest, NoNeighborNp1Safe) {
+    auto runCase = [](HaloExchanger& ex, Subgrid& sg) {
+        fillPadded2D(sg);
+        std::vector<Real> snapshot(sg.nxTotal() * sg.nyTotal());
+        for (Index j = 0; j < sg.nyTotal(); ++j) {
+            for (Index i = 0; i < sg.nxTotal(); ++i) {
+                snapshot[sg.index(i, j)] = sg.at(i, j);
+            }
+        }
+
+        ex.initialize(sg);
+        ex.exchange(sg);
+        for (Index j = 0; j < sg.nyTotal(); ++j) {
+            for (Index i = 0; i < sg.nxTotal(); ++i) {
+                const Index idx = sg.index(i, j);
+                EXPECT_DOUBLE_EQ(sg.u().data()[idx], snapshot[idx])
+                    << "exchange changed cell at i=" << i << " j=" << j;
+            }
+        }
+
+        ex.beginExchange(sg);
+        ex.endExchange(sg);
+        for (Index j = 0; j < sg.nyTotal(); ++j) {
+            for (Index i = 0; i < sg.nxTotal(); ++i) {
+                const Index idx = sg.index(i, j);
+                EXPECT_DOUBLE_EQ(sg.u().data()[idx], snapshot[idx])
+                    << "begin/end changed cell at i=" << i << " j=" << j;
+            }
+        }
+    };
+
+    {
+        Subgrid sg(4, 4, 1, 1, MPI_COMM_SELF);
+        sg.setNeighbors(MPI_PROC_NULL, MPI_PROC_NULL, MPI_PROC_NULL, MPI_PROC_NULL);
+        PointToPointExchanger ex;
+        runCase(ex, sg);
+    }
+    {
+        Subgrid sg(4, 4, 1, 1, MPI_COMM_SELF);
+        sg.setNeighbors(MPI_PROC_NULL, MPI_PROC_NULL, MPI_PROC_NULL, MPI_PROC_NULL);
+        DatatypeExchanger ex;
+        runCase(ex, sg);
+    }
+    {
+        Subgrid sg(4, 4, 1, 1, MPI_COMM_SELF);
+        sg.setNeighbors(MPI_PROC_NULL, MPI_PROC_NULL, MPI_PROC_NULL, MPI_PROC_NULL);
+        CollectiveExchanger ex;
+        runCase(ex, sg);
+    }
+}
