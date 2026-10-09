@@ -120,15 +120,22 @@ private:
 };
 
 /**
- * @brief Collective halo exchange placeholder.
- * In this version it delegates to PointToPointExchanger; a true
- * MPI_Neighbor_allgatherv implementation remains a roadmap item.
+ * @brief True collective halo exchange via a distributed graph communicator.
+ * Builds the neighbor graph from the six face directions and moves face data
+ * with MPI_(I)Neighbor_alltoallw using the same face subarray types as
+ * DatatypeExchanger (block positions are self-described by the types, so all
+ * displacements are zero). Receive blocks land case-wise: halo(d) for a
+ * unique edge to a real neighbor, halo(opposite(d)) for a self edge (the
+ * k-th occurrence pairs by order).
  */
 class CollectiveExchanger : public HaloExchanger {
 public:
     using HaloExchanger::exchange;
     using HaloExchanger::beginExchange;
     using HaloExchanger::endExchange;
+
+    CollectiveExchanger();
+    ~CollectiveExchanger() override;
 
     void initialize(Subgrid& subgrid) override;
     void exchange(Subgrid& subgrid, Real* data) override;
@@ -137,7 +144,19 @@ public:
     std::string name() const override { return "collective"; }
 
 private:
-    PointToPointExchanger delegate_;
+    MPI_Comm comm_ = MPI_COMM_NULL;
+    MPI_Comm graphComm_ = MPI_COMM_NULL;
+    bool initialized_ = false;
+    std::vector<int> activeDirs_;
+    std::vector<MPI_Datatype> sendTypes_;
+    std::vector<MPI_Datatype> recvTypes_;
+    std::vector<int> sendCounts_;
+    std::vector<int> recvCounts_;
+    std::vector<MPI_Aint> sendDispls_;
+    std::vector<MPI_Aint> recvDispls_;
+    MPI_Request pendingReq_ = MPI_REQUEST_NULL;
+
+    void releaseResources() noexcept;
 };
 
 } // namespace hypo
