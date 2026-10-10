@@ -1,4 +1,5 @@
 #include "solver/solver.hpp"
+#include "solver/cg_kernels.hpp"
 #include "comm/halo_exchanger.hpp"
 #include "perf/profiler.hpp"
 #include "utils/logger.hpp"
@@ -6,7 +7,11 @@
 
 namespace hypo {
 
-Real CGSolver::dotGlobal(const Subgrid& subgrid, const Real* a, const Real* b) const {
+// FP4 (AR008 design D5): kernel bodies moved verbatim from the CGSolver
+// members below; the members are now thin forwarders so CGSolver call
+// sites stay bit-identical (U6 golden guard).
+
+Real cgDotLocal(const Subgrid& subgrid, const Real* a, const Real* b) {
     const Index nxT = subgrid.nxTotal();
     const Index nyT = subgrid.nyTotal();
     Real local = 0.0;
@@ -32,13 +37,40 @@ Real CGSolver::dotGlobal(const Subgrid& subgrid, const Real* a, const Real* b) c
             }
         }
     }
+    return local;
+}
 
+Real cgBlockingAllreduce(const Subgrid& subgrid, Real local) {
+    HYPOS_PROFILE("cg_blocking_allreduce");
     Real global = 0.0;
     MPI_Allreduce(&local, &global, 1, MPI_DOUBLE, MPI_SUM, subgrid.comm());
     return global;
 }
 
-void CGSolver::matvec(Subgrid& subgrid, HaloExchanger& exchanger, Real* p, Real* ap) {
+Real cgDotGlobal(const Subgrid& subgrid, const Real* a, const Real* b) {
+    // FP2 (AR009 design D2): split into cgDotLocal + cgBlockingAllreduce;
+    // the composition is bit-identical to the pre-split body (U6 golden).
+    return cgBlockingAllreduce(subgrid, cgDotLocal(subgrid, a, b));
+}
+
+void cgIallreduce2Start(const Subgrid& subgrid, const Real local[2], Real global[2], MPI_Request* req) {
+    // FP3 (AR009 design §4.3): one packed count=2 Iallreduce behind the
+    // "pcg_iallreduce" region. The recvbuf is a caller-provided buffer —
+    // MPI forbids aliasing send/recv, and an MPI_Request cannot carry the
+    // pointer across to the Wait side, so the design signature gains an
+    // explicit `global` out-param (implementation-level deviation, logged
+    // in tasks.md T002; the algorithm/timing/region contract is unchanged).
+    HYPOS_PROFILE("pcg_iallreduce");
+    MPI_Iallreduce(local, global, 2, MPI_DOUBLE, MPI_SUM, subgrid.comm(), req);
+}
+
+void cgIallreduce2Wait(MPI_Request* req) {
+    // The global sums are already in the caller's buffer once the request
+    // completes (issue-then-immediately-Wait; no true overlap — D1).
+    MPI_Wait(req, MPI_STATUS_IGNORE);
+}
+
+void cgMatvec(Subgrid& subgrid, HaloExchanger& exchanger, Real* p, Real* ap) {
     {
         HYPOS_PROFILE("halo_exchange");
         exchanger.exchange(subgrid, p);
@@ -78,7 +110,7 @@ void CGSolver::matvec(Subgrid& subgrid, HaloExchanger& exchanger, Real* p, Real*
     }
 }
 
-void CGSolver::axpyInterior(Subgrid& subgrid, Real alpha, const Real* x, Real* y) const {
+void cgAxpyInterior(const Subgrid& subgrid, Real alpha, const Real* x, Real* y) {
     const Index nxT = subgrid.nxTotal();
     const Index nyT = subgrid.nyTotal();
 
@@ -105,11 +137,11 @@ void CGSolver::axpyInterior(Subgrid& subgrid, Real alpha, const Real* x, Real* y
     }
 }
 
-void CGSolver::updatePInterior(Subgrid& subgrid, Real beta) {
+void cgUpdatePInterior(const Subgrid& subgrid, const Real* v, Real* p, Real beta) {
     const Index nxT = subgrid.nxTotal();
     const Index nyT = subgrid.nyTotal();
-    const Real* rp = r_.data();
-    Real* pp = p_.data();
+    const Real* rp = v;
+    Real* pp = p;
 
     if (subgrid.nzLocal() == 1) {
         #pragma omp parallel for schedule(static)
@@ -132,6 +164,22 @@ void CGSolver::updatePInterior(Subgrid& subgrid, Real beta) {
             }
         }
     }
+}
+
+Real CGSolver::dotGlobal(const Subgrid& subgrid, const Real* a, const Real* b) const {
+    return cgDotGlobal(subgrid, a, b);
+}
+
+void CGSolver::matvec(Subgrid& subgrid, HaloExchanger& exchanger, Real* p, Real* ap) {
+    cgMatvec(subgrid, exchanger, p, ap);
+}
+
+void CGSolver::axpyInterior(Subgrid& subgrid, Real alpha, const Real* x, Real* y) const {
+    cgAxpyInterior(subgrid, alpha, x, y);
+}
+
+void CGSolver::updatePInterior(Subgrid& subgrid, Real beta) {
+    cgUpdatePInterior(subgrid, r_.data(), p_.data(), beta);
 }
 
 Index CGSolver::solve(Subgrid& subgrid,

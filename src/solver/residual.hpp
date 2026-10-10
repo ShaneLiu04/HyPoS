@@ -33,4 +33,19 @@ Real trueResidualSquaredLocal(const Subgrid& subgrid) noexcept;
  */
 Real globalTrueResidual(Subgrid& subgrid, HaloExchanger& exchanger) noexcept;
 
+/**
+ * @brief Field version of the true residual: writes rho = b - A*u into
+ *        `residual` over the interior points,
+ *        rho = sum(u_neighbors) - D*u - rhs  (b = -rhs, A = D*I - S).
+ *
+ * Same kernel expression as trueResidualSquaredLocal, returning the field
+ * instead of its squared norm (used by multigrid restriction). Halo cells
+ * are not written; the caller contract is the same — u halos must already
+ * be synchronized. Synchronizing the residual field's own halos (face
+ * exchange + corner exchange + physical fill) is the caller's job.
+ *
+ * Thread-safe, no exception paths.
+ */
+void residualFieldLocal(const Subgrid& subgrid, Real* residual) noexcept;
+
 } // namespace hypo

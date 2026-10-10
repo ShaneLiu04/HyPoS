@@ -59,4 +59,39 @@ Real globalTrueResidual(Subgrid& subgrid, HaloExchanger& exchanger) noexcept {
     return std::sqrt(globalSquared);
 }
 
+void residualFieldLocal(const Subgrid& subgrid, Real* residual) noexcept {
+    const Index nxT = subgrid.nxTotal();
+    const Index nyT = subgrid.nyTotal();
+    const Real* __restrict__ u = subgrid.u().data();
+    const Real* __restrict__ rhs = subgrid.rhs().data();
+
+    if (subgrid.nzLocal() == 1) {
+        #pragma omp parallel for schedule(static)
+        for (Index j = subgrid.jBegin(); j < subgrid.jEnd(); ++j) {
+            #pragma omp simd
+            for (Index i = subgrid.iBegin(); i < subgrid.iEnd(); ++i) {
+                const Index idx = j * nxT + i;
+                const Real neighborSum = u[idx - 1] + u[idx + 1] +
+                                         u[idx - nxT] + u[idx + nxT];
+                residual[idx] = neighborSum - 4.0 * u[idx] - rhs[idx];
+            }
+        }
+    } else {
+        #pragma omp parallel for schedule(static)
+        for (Index k = subgrid.kBegin(); k < subgrid.kEnd(); ++k) {
+            for (Index j = subgrid.jBegin(); j < subgrid.jEnd(); ++j) {
+                #pragma omp simd
+                for (Index i = subgrid.iBegin(); i < subgrid.iEnd(); ++i) {
+                    const Index idx = (k * nyT + j) * nxT + i;
+                    const Real neighborSum = u[idx - 1] + u[idx + 1] +
+                                             u[idx - nxT] + u[idx + nxT] +
+                                             u[idx - nxT * nyT] +
+                                             u[idx + nxT * nyT];
+                    residual[idx] = neighborSum - 6.0 * u[idx] - rhs[idx];
+                }
+            }
+        }
+    }
+}
+
 } // namespace hypo

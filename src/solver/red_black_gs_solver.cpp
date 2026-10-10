@@ -98,6 +98,14 @@ Real RedBlackGSSolver::iterate(Subgrid& subgrid, HaloExchanger& exchanger) {
     return globalTrueResidual(subgrid, exchanger);
 }
 
+void RedBlackGSSolver::smooth(Subgrid& subgrid,
+                              HaloExchanger& exchanger,
+                              Index sweeps) const {
+    for (Index k = 0; k < sweeps; ++k) {
+        iterateCore(subgrid, exchanger);
+    }
+}
+
 Index RedBlackGSSolver::solve(Subgrid& subgrid,
                               HaloExchanger& exchanger,
                               Index maxIter,

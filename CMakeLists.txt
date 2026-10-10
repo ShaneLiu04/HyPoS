@@ -29,6 +29,10 @@ set(HYPOS_CORE_SOURCES
     src/solver/residual.cpp
     src/solver/red_black_gs_solver.cpp
     src/solver/cg_solver.cpp
+    src/solver/pipelined_cg_solver.cpp
+    src/solver/mg_two_level_solver.cpp
+    src/solver/mg_hierarchy.cpp
+    src/solver/mg_pcg.cpp
     src/comm/p2p_exchanger.cpp
     src/comm/datatype_exchanger.cpp
     src/comm/collective_exchanger.cpp
@@ -72,6 +76,9 @@ if(GTest_FOUND)
         tests/test_overlap.cpp
         tests/test_halo_exchange.cpp
         tests/test_solver_mpi.cpp
+        tests/test_mg_two_level.cpp
+        tests/test_mg_vcycle.cpp
+        tests/test_pipelined_cg.cpp
         tests/test_performance.cpp
         tests/test_mpiio_output.cpp
     )
@@ -199,6 +206,123 @@ if(GTest_FOUND)
             COMMAND ${HYPOS_MPIEXEC} ${HYPOS_MPIEXEC_FLAGS} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} 4
                     $<TARGET_FILE:hypos> --comm-mode collective --nx 32 --ny 32 --max-iter 20
                     --output-dir ${CMAKE_BINARY_DIR}/ctest_collective)
+        # AR007 (design §4.5): mg2 solver paths at their intended world sizes.
+        add_test(NAME mg2_np1
+            COMMAND $<TARGET_FILE:test_hypos> --gtest_filter=TwoLevelMGUnitTest.*:MpiEnvTest.*)
+        add_test(NAME mg2_np4
+            COMMAND ${HYPOS_MPIEXEC} ${HYPOS_MPIEXEC_FLAGS} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} 4
+                    $<TARGET_FILE:test_hypos> --gtest_filter=TwoLevelMGMpiTest.*:MpiEnvTest.*)
+        add_test(NAME mg2_e2e
+            COMMAND ${HYPOS_MPIEXEC} ${HYPOS_MPIEXEC_FLAGS} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} 4
+                    $<TARGET_FILE:hypos> --solver mg2 --nx 32 --ny 32 --max-iter 20
+                    --output-dir ${CMAKE_BINARY_DIR}/ctest_mg2)
+        # AR008 (design §4.5): mgv/mgcg solver paths at their intended world
+        # sizes. mgcg's np1/np4 gtest cases live inside the VCycleMG* filters
+        # below (no separate entries — entry-count control, mirroring mg2).
+        add_test(NAME mgv_np1
+            COMMAND $<TARGET_FILE:test_hypos> --gtest_filter=VCycleMGUnitTest.*:MpiEnvTest.*)
+        add_test(NAME mgv_np4
+            COMMAND ${HYPOS_MPIEXEC} ${HYPOS_MPIEXEC_FLAGS} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} 4
+                    $<TARGET_FILE:test_hypos> --gtest_filter=VCycleMGMpiTest.*:MpiEnvTest.*)
+        add_test(NAME mgv_e2e
+            COMMAND ${HYPOS_MPIEXEC} ${HYPOS_MPIEXEC_FLAGS} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} 4
+                    $<TARGET_FILE:hypos> --solver mgv --nx 32 --ny 32 --max-iter 20
+                    --output-dir ${CMAKE_BINARY_DIR}/ctest_mgv)
+        add_test(NAME mgcg_e2e
+            COMMAND ${HYPOS_MPIEXEC} ${HYPOS_MPIEXEC_FLAGS} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} 4
+                    $<TARGET_FILE:hypos> --solver mgcg --nx 32 --ny 32 --max-iter 20
+                    --output-dir ${CMAKE_BINARY_DIR}/ctest_mgcg)
+        # AR009 (design §4.5/§6): pipelined CG (pcg) + residual history.
+        # P-series unit tests live in test_pipelined_cg.cpp behind the
+        # PipelinedCG* gtest filters; E-series artifact verifiers are the
+        # ResidualHistory* / PipelinedE2E gtest suites reading the fixture
+        # directories populated by the residual_history_* entries below.
+        add_test(NAME pcg_np1
+            COMMAND $<TARGET_FILE:test_hypos> --gtest_filter=PipelinedCGUnitTest.*:MpiEnvTest.*)
+        add_test(NAME pcg_np4
+            COMMAND ${HYPOS_MPIEXEC} ${HYPOS_MPIEXEC_FLAGS} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} 4
+                    $<TARGET_FILE:test_hypos> --gtest_filter=PipelinedCGMpiTest.*:MpiEnvTest.*)
+        # E5 (design §6): exit code + "PipelinedCG finished" line + report
+        # presence via the script; the float clause (final_residual <=
+        # tol*(1+5e-4)) runs in the gtest verifier below.
+        add_test(NAME pcg_e2e
+            COMMAND ${CMAKE_COMMAND} -Dexe=$<TARGET_FILE:hypos>
+                    -Ddir=${CMAKE_BINARY_DIR}/ar009_pcg_e2e -Dmode=pcg_e2e
+                    -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/VerifyAr009Cli.cmake)
+        add_test(NAME pcg_e2e_verify
+            COMMAND $<TARGET_FILE:test_hypos> --gtest_filter=PipelinedE2ETest.*:MpiEnvTest.*)
+        # E1/E2 (design §6): per-solver residual-history runs (np1, 32x32,
+        # tol 1e-6). jacobi goes through the script so its stdout (the
+        # "Converged at iteration" line) is captured for the E2① 6-digit
+        # comparison; the other solvers run directly.
+        add_test(NAME residual_history_jacobi
+            COMMAND ${CMAKE_COMMAND} -Dexe=$<TARGET_FILE:hypos>
+                    -Ddir=${CMAKE_BINARY_DIR}/ar009_residual_history/jacobi -Dmode=rh_jacobi
+                    -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/VerifyAr009Cli.cmake)
+        add_test(NAME residual_history_red_black_gs
+            COMMAND $<TARGET_FILE:hypos> --solver red_black_gs --nx 32 --ny 32 --tol 1e-6
+                    --output-dir ${CMAKE_BINARY_DIR}/ar009_residual_history/red_black_gs
+                    --residual-history ${CMAKE_BINARY_DIR}/ar009_residual_history/red_black_gs/residual_red_black_gs.csv)
+        add_test(NAME residual_history_cg
+            COMMAND $<TARGET_FILE:hypos> --solver cg --nx 32 --ny 32 --tol 1e-6
+                    --output-dir ${CMAKE_BINARY_DIR}/ar009_residual_history/cg
+                    --residual-history ${CMAKE_BINARY_DIR}/ar009_residual_history/cg/residual_cg.csv)
+        add_test(NAME residual_history_mg2
+            COMMAND $<TARGET_FILE:hypos> --solver mg2 --nx 32 --ny 32 --tol 1e-6
+                    --output-dir ${CMAKE_BINARY_DIR}/ar009_residual_history/mg2
+                    --residual-history ${CMAKE_BINARY_DIR}/ar009_residual_history/mg2/residual_mg2.csv)
+        add_test(NAME residual_history_mgv
+            COMMAND $<TARGET_FILE:hypos> --solver mgv --nx 32 --ny 32 --tol 1e-6
+                    --output-dir ${CMAKE_BINARY_DIR}/ar009_residual_history/mgv
+                    --residual-history ${CMAKE_BINARY_DIR}/ar009_residual_history/mgv/residual_mgv.csv)
+        add_test(NAME residual_history_mgcg
+            COMMAND $<TARGET_FILE:hypos> --solver mgcg --nx 32 --ny 32 --tol 1e-6
+                    --output-dir ${CMAKE_BINARY_DIR}/ar009_residual_history/mgcg
+                    --residual-history ${CMAKE_BINARY_DIR}/ar009_residual_history/mgcg/residual_mgcg.csv)
+        add_test(NAME residual_history_pcg
+            COMMAND $<TARGET_FILE:hypos> --solver pcg --nx 32 --ny 32 --tol 1e-6
+                    --output-dir ${CMAKE_BINARY_DIR}/ar009_residual_history/pcg
+                    --residual-history ${CMAKE_BINARY_DIR}/ar009_residual_history/pcg/residual_pcg.csv)
+        # E4 (design §6): interval k=10 row-count semantics; max-iter 100
+        # truncation keeps the iteration count deterministic (rows =
+        # floor(100/10) = 10).
+        add_test(NAME residual_history_interval
+            COMMAND $<TARGET_FILE:hypos> --solver jacobi --nx 32 --ny 32 --tol 1e-8 --max-iter 100
+                    --residual-check-interval 10
+                    --output-dir ${CMAKE_BINARY_DIR}/ar009_residual_history/interval
+                    --residual-history ${CMAKE_BINARY_DIR}/ar009_residual_history/interval/residual_interval.csv)
+        # E7 (design §6): --save-interval + --residual-history combo (both
+        # branches of the composed single-slot callback); the binary
+        # backend makes the k-spaced snapshots land on disk.
+        add_test(NAME residual_history_save_combo
+            COMMAND $<TARGET_FILE:hypos> --solver jacobi --nx 32 --ny 32 --tol 1e-8 --max-iter 20
+                    --output-format binary --save-interval 10
+                    --output-dir ${CMAKE_BINARY_DIR}/ar009_residual_history/save_combo
+                    --residual-history ${CMAKE_BINARY_DIR}/ar009_residual_history/save_combo/residual_save_combo.csv)
+        add_test(NAME residual_history_e2e_verify
+            COMMAND $<TARGET_FILE:test_hypos> --gtest_filter=ResidualHistoryE2ETest.*:MpiEnvTest.*)
+        # E3 (design §6): np4 residual history — single rank0 CSV, np1
+        # trajectory agreement (the residual_history_cg entry above is the
+        # np1 reference: identical loadout).
+        add_test(NAME residual_history_np4
+            COMMAND ${HYPOS_MPIEXEC} ${HYPOS_MPIEXEC_FLAGS} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} 4
+                    $<TARGET_FILE:hypos> --solver cg --nx 32 --ny 32 --tol 1e-6
+                    --output-dir ${CMAKE_BINARY_DIR}/ar009_residual_history_np4
+                    --residual-history ${CMAKE_BINARY_DIR}/ar009_residual_history_np4/residual_cg.csv)
+        add_test(NAME residual_history_np4_verify
+            COMMAND $<TARGET_FILE:test_hypos> --gtest_filter=ResidualHistoryNp4E2ETest.*:MpiEnvTest.*)
+        # E6 (design §6): unwritable --residual-history paths (nonexistent
+        # parent dir + file-as-parent) — non-zero exit with an [ERROR] line.
+        add_test(NAME residual_history_badpath
+            COMMAND ${CMAKE_COMMAND} -Dexe=$<TARGET_FILE:hypos>
+                    -Ddir=${CMAKE_BINARY_DIR}/ar009_badpath -Dmode=badpath
+                    -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/VerifyAr009Cli.cmake)
+        # W2 (design §6): --help lists pcg (pipelined wording) and
+        # --residual-history.
+        add_test(NAME pcg_help_check
+            COMMAND ${CMAKE_COMMAND} -Dexe=$<TARGET_FILE:hypos>
+                    -Ddir=${CMAKE_BINARY_DIR}/ar009_help -Dmode=help
+                    -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/VerifyAr009Cli.cmake)
         # AR006 (design §4.5): e2e through the datatype halo path.
         add_test(NAME datatype_e2e
             COMMAND ${HYPOS_MPIEXEC} ${HYPOS_MPIEXEC_FLAGS} ${MPIEXEC_PREFLAGS} ${MPIEXEC_NUMPROC_FLAG} 4
@@ -287,6 +411,66 @@ if(GTest_FOUND)
         set_tests_properties(collective_mpi datatype_e2e
             mpiio_e2e mpiio_e2e_final
             PROPERTIES ENVIRONMENT "${HYPOS_TEST_ENV_MPI};HYPOS_EXPECT_NP=4" TIMEOUT 600)
+        set_tests_properties(mg2_np1
+            PROPERTIES ENVIRONMENT "${HYPOS_TEST_ENV}" TIMEOUT 900)
+        set_tests_properties(mg2_np4 mg2_e2e
+            PROPERTIES ENVIRONMENT "${HYPOS_TEST_ENV_MPI};HYPOS_EXPECT_NP=4" TIMEOUT 900)
+        # AR008 (design §4.5): same ENV/TIMEOUT pattern as the mg2 entries.
+        set_tests_properties(mgv_np1
+            PROPERTIES ENVIRONMENT "${HYPOS_TEST_ENV}" TIMEOUT 900)
+        set_tests_properties(mgv_np4 mgv_e2e mgcg_e2e
+            PROPERTIES ENVIRONMENT "${HYPOS_TEST_ENV_MPI};HYPOS_EXPECT_NP=4" TIMEOUT 900)
+        # AR009 (design §4.5): same ENV/TIMEOUT pattern as the mg2/mgv
+        # entries. The e2e run entries FIXTURES_SETUP the artifact
+        # directories consumed by the *_verify gtest entries (mpiio
+        # fixture pattern); the verify entries carry the artifact path via
+        # HYPOS_AR009_* env vars and SKIP when those are unset (plain
+        # `unit` entry).
+        set_tests_properties(pcg_np1
+            PROPERTIES ENVIRONMENT "${HYPOS_TEST_ENV}" TIMEOUT 900)
+        set_tests_properties(pcg_np4
+            PROPERTIES ENVIRONMENT "${HYPOS_TEST_ENV_MPI};HYPOS_EXPECT_NP=4" TIMEOUT 900)
+        set_tests_properties(pcg_e2e residual_history_jacobi
+            residual_history_badpath pcg_help_check
+            PROPERTIES ENVIRONMENT "${HYPOS_TEST_ENV}" TIMEOUT 300
+                WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+        set_tests_properties(pcg_e2e
+            PROPERTIES FIXTURES_SETUP ar009_pcg_e2e_files)
+        set_tests_properties(pcg_e2e_verify
+            PROPERTIES ENVIRONMENT "${HYPOS_TEST_ENV};HYPOS_AR009_PCG_E2E_DIR=${CMAKE_BINARY_DIR}/ar009_pcg_e2e"
+                FIXTURES_REQUIRED ar009_pcg_e2e_files TIMEOUT 60)
+        set_tests_properties(residual_history_jacobi
+            PROPERTIES FIXTURES_SETUP ar009_rh_jacobi_files)
+        set_tests_properties(residual_history_red_black_gs
+            PROPERTIES FIXTURES_SETUP ar009_rh_red_black_gs_files)
+        set_tests_properties(residual_history_cg
+            PROPERTIES FIXTURES_SETUP ar009_rh_cg_files)
+        set_tests_properties(residual_history_mg2
+            PROPERTIES FIXTURES_SETUP ar009_rh_mg2_files)
+        set_tests_properties(residual_history_mgv
+            PROPERTIES FIXTURES_SETUP ar009_rh_mgv_files)
+        set_tests_properties(residual_history_mgcg
+            PROPERTIES FIXTURES_SETUP ar009_rh_mgcg_files)
+        set_tests_properties(residual_history_pcg
+            PROPERTIES FIXTURES_SETUP ar009_rh_pcg_files)
+        set_tests_properties(residual_history_interval
+            PROPERTIES FIXTURES_SETUP ar009_rh_interval_files)
+        set_tests_properties(residual_history_save_combo
+            PROPERTIES FIXTURES_SETUP ar009_rh_save_combo_files)
+        set_tests_properties(residual_history_red_black_gs residual_history_cg
+            residual_history_mg2 residual_history_mgv residual_history_mgcg
+            residual_history_pcg residual_history_interval residual_history_save_combo
+            PROPERTIES ENVIRONMENT "${HYPOS_TEST_ENV}" TIMEOUT 300)
+        set_tests_properties(residual_history_e2e_verify
+            PROPERTIES ENVIRONMENT "${HYPOS_TEST_ENV};HYPOS_AR009_RH_BASE=${CMAKE_BINARY_DIR}/ar009_residual_history"
+                FIXTURES_REQUIRED "ar009_rh_jacobi_files;ar009_rh_red_black_gs_files;ar009_rh_cg_files;ar009_rh_mg2_files;ar009_rh_mgv_files;ar009_rh_mgcg_files;ar009_rh_pcg_files;ar009_rh_interval_files;ar009_rh_save_combo_files"
+                TIMEOUT 120)
+        set_tests_properties(residual_history_np4
+            PROPERTIES ENVIRONMENT "${HYPOS_TEST_ENV_MPI};HYPOS_EXPECT_NP=4" TIMEOUT 300
+                FIXTURES_SETUP ar009_rh_np4_files)
+        set_tests_properties(residual_history_np4_verify
+            PROPERTIES ENVIRONMENT "${HYPOS_TEST_ENV};HYPOS_AR009_RH_NP4_DIR=${CMAKE_BINARY_DIR}/ar009_residual_history_np4;HYPOS_AR009_RH_BASE=${CMAKE_BINARY_DIR}/ar009_residual_history"
+                FIXTURES_REQUIRED "ar009_rh_np4_files;ar009_rh_cg_files" TIMEOUT 60)
         set_tests_properties(mpiio_np4
             PROPERTIES ENVIRONMENT "${HYPOS_TEST_ENV_MPI};HYPOS_EXPECT_NP=4" TIMEOUT 600)
         set_tests_properties(ranks3_smoke

@@ -4,6 +4,7 @@
 #include "grid/subgrid.hpp"
 #include "grid/partition.hpp"
 #include "solver/solver.hpp"
+#include "solver/mg_hierarchy.hpp"
 #include "comm/halo_exchanger.hpp"
 #include "perf/timer.hpp"
 #include "perf/profiler.hpp"
@@ -15,6 +16,7 @@
 #include <mpi.h>
 #include <algorithm>
 #include <cmath>
+#include <cstdio>
 #include <filesystem>
 #include <iostream>
 #include <memory>
@@ -40,7 +42,10 @@ void printUsage(const std::string& programName) {
               << "  --nx, --ny, --nz <int>       Global grid dimensions (default: 1024 1024 1)\n"
               << "  --halo-width <int>           Halo layer width (default: 1)\n\n"
               << "Solver Options:\n"
-              << "  --solver <string>            Solver type: jacobi, red_black_gs, cg (default: jacobi)\n"
+              << "  --solver <string>            Solver type: jacobi, red_black_gs, cg, pcg (pipelined\n"
+              << "                                conjugate gradient — single packed Iallreduce per\n"
+              << "                                iteration; not preconditioned CG, see mgcg), mg2, mgv,\n"
+              << "                                mgcg (default: jacobi)\n"
               << "  --max-iter <int>             Maximum iterations (default: 10000)\n"
               << "  --tol <double>               Convergence tolerance (default: 1e-6)\n"
               << "  --bc <string>                Physical BC: dirichlet, neumann (default: dirichlet)\n\n"
@@ -51,11 +56,14 @@ void printUsage(const std::string& programName) {
               << "Performance Options:\n"
               << "  --enable-profiling           Enable detailed performance profiling\n"
               << "  --overlap-comm               Enable communication-computation overlap\n"
-              << "  --residual-check-interval <int>  Check convergence every N iterations (jacobi/red_black_gs; default: 1)\n\n"
+              << "  --residual-check-interval <int>  Check convergence every N iterations (jacobi/red_black_gs/mg2/mgv outer cycles; default: 1)\n\n"
               << "I/O Options:\n"
               << "  --output-format <string>     Output format: json, csv, vtk, binary, mpibin (default: json)\n"
               << "  --output-dir <path>          Output directory (default: ./output)\n"
-              << "  --save-interval <int>        Save intermediate results every N steps (0=none)\n\n"
+              << "  --save-interval <int>        Save intermediate results every N steps (0=none)\n"
+              << "  --residual-history <path>    Write per-iteration residuals to a CSV file\n"
+              << "                                (iteration,residual; rank 0 only; relative paths\n"
+              << "                                resolve against the working directory)\n\n"
               << "Other:\n"
               << "  --help, -h                   Show this help message\n";
 }
@@ -137,6 +145,7 @@ int main(int argc, char* argv[]) {
     std::string bcType = parser.get<std::string>("bc", "dirichlet");
     int saveInterval = parser.get<int>("save-interval", 0);
     int residualCheckInterval = parser.get<int>("residual-check-interval", 1);
+    std::string residualHistoryPath = parser.get<std::string>("residual-history", "");
     bool enableProfiling = parser.has("enable-profiling");
     bool overlapComm = parser.has("overlap-comm");
 
@@ -191,9 +200,41 @@ int main(int argc, char* argv[]) {
         solver = std::make_unique<RedBlackGSSolver>();
     } else if (solverName == "cg") {
         solver = std::make_unique<CGSolver>();
+    } else if (solverName == "pcg") {
+        solver = std::make_unique<PipelinedCGSolver>();
+    } else if (solverName == "mg2") {
+        solver = std::make_unique<TwoLevelMGSolver>();
+    } else if (solverName == "mgv") {
+        solver = std::make_unique<VCycleMGSolver>();
+    } else if (solverName == "mgcg") {
+        solver = std::make_unique<MGPreconditionedCGSolver>();
     } else {
         HYPOS_ERROR("Unknown solver: " << solverName);
         return 1;
+    }
+
+    // Multigrid family pre-checks (mgv/mgcg repeat them inside the
+    // hierarchy gate — the chain generator also rejects coarse roots
+    // below 4x4, which only it can see).
+    const bool isMgFamily =
+        solverName == "mg2" || solverName == "mgv" || solverName == "mgcg";
+    if (isMgFamily) {
+        if (bcType == "neumann") {
+            HYPOS_ERROR("--solver " << solverName
+                        << " requires --bc dirichlet (the rediscretized "
+                           "Neumann coarse operator is singular)");
+            return 1;
+        }
+        if (grid.nx % 2 != 0 || grid.ny % 2 != 0) {
+            HYPOS_ERROR("--solver " << solverName
+                        << " requires even --nx/--ny for coarsening");
+            return 1;
+        }
+        if (grid.nz > 1) {
+            HYPOS_ERROR("--solver " << solverName
+                        << " requires 2D grids (--nz 1)");
+            return 1;
+        }
     }
 
     if (overlapComm && solverName != "jacobi" && rank == 0) {
@@ -204,10 +245,12 @@ int main(int argc, char* argv[]) {
         HYPOS_ERROR("--residual-check-interval must be >= 1, got " << residualCheckInterval);
         return 1;
     }
-    if (solverName == "cg" && residualCheckInterval != 1 && rank == 0) {
-        HYPOS_WARN("--residual-check-interval is only supported by the jacobi and red_black_gs solvers; ignored");
+    if ((solverName == "cg" || solverName == "pcg" || solverName == "mgcg") &&
+        residualCheckInterval != 1 && rank == 0) {
+        HYPOS_WARN("--residual-check-interval is only supported by the "
+                   "jacobi, red_black_gs, mg2 and mgv solvers; ignored");
     }
-    if (solverName != "cg") {
+    if (solverName != "cg" && solverName != "pcg" && solverName != "mgcg") {
         solver->setResidualCheckInterval(static_cast<Index>(residualCheckInterval));
     }
 
@@ -289,12 +332,50 @@ int main(int argc, char* argv[]) {
         }
     };
 
-    if (saveInterval > 0 && io) {
-        solver->setProgressCallback([&writeSolution, saveInterval](Index iteration) {
-            if (iteration % static_cast<Index>(saveInterval) == 0) {
-                writeSolution(iteration);
-            }
-        });
+    // FP4/FP5 (AR009 design §4.1): residual history CSV. The progress
+    // callback is a single slot (the saveInterval writer above used to be
+    // its only consumer), so both channels are composed into ONE lambda.
+    // Only rank 0 writes — the residual is a globally reduced value and
+    // the callback itself performs no MPI calls.
+    std::FILE* residualHistoryFile = nullptr;
+    if (!residualHistoryPath.empty() && rank == 0) {
+        residualHistoryFile = std::fopen(residualHistoryPath.c_str(), "w");
+        if (residualHistoryFile == nullptr) {
+            HYPOS_ERROR("Cannot open --residual-history file: " << residualHistoryPath);
+            return 1;
+        }
+        std::fprintf(residualHistoryFile, "iteration,residual\n");
+    }
+
+    // Composed-callback channel flags. Both channels share the single
+    // progressCallback slot (saveInterval writer + history writer); the
+    // row condition iteration % k == 0 uses k aligned to the real
+    // residual-update cadence — stationary solvers honor
+    // residualCheckInterval; the CG-family recurrences need a reduction
+    // every iteration, so their k is 1 (design D7).
+    const bool saveChannel = saveInterval > 0 && io;
+    const bool historyChannel = residualHistoryFile != nullptr;
+    const bool intervalHonored = solverName != "cg" && solverName != "pcg" &&
+                                 solverName != "mgcg";
+    const Index historyInterval = intervalHonored
+                                      ? static_cast<Index>(residualCheckInterval)
+                                      : Index(1);
+
+    {
+        // The captured flags must outlive this block: the callback runs
+        // inside solve() below, so they are declared next to the file
+        // handle above (value semantics; no dangling references).
+        if (saveChannel || historyChannel) {
+            solver->setProgressCallback([&](Index iteration) {
+                if (saveChannel && iteration % static_cast<Index>(saveInterval) == 0) {
+                    writeSolution(iteration);
+                }
+                if (historyChannel && iteration % historyInterval == 0) {
+                    std::fprintf(residualHistoryFile, "%d,%.17g\n",
+                                 static_cast<int>(iteration), solver->lastResidual());
+                }
+            });
+        }
     }
 
     // Performance tracking
@@ -392,6 +473,11 @@ int main(int argc, char* argv[]) {
 
     // Output final field (all ranks write their piece; rank 0 writes the index)
     writeSolution(actualIter);
+
+    // Close the residual history CSV (rank 0 only; opened before solve).
+    if (residualHistoryFile != nullptr) {
+        std::fclose(residualHistoryFile);
+    }
 
     // Shut down resources owned by the run before MPI is finalized:
     // persistent exchange requests must be freed while MPI is still active.

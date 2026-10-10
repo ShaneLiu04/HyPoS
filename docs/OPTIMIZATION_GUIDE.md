@@ -63,7 +63,7 @@ HyPoS 的本质定位是**「HPC 工程教学/参考样板」**：用一个小�
 | ID | 问题 | 证据 | 状态 |
 |----|------|------|------|
 | P1 | **CG 的 p/r/u 更新循环是单线程标量循环**（无 OpenMP、无 SIMD）——CG 是"快 1-2 个量级"的招牌（tests/test_alt_solvers.cpp:449），但每迭代最规整的 axpy 循环未并行 | cg_solver.cpp:194-216, 251-273 | ✅ 已完成（AR004/T004：updatePInterior 并行化 + 初始化循环并行；np=4 实测 −7.3%，U6 golden 位级守护） |
-| P2 | **CG 每迭代 3 次全局 Allreduce**（dot(r,r)/dot(p,Ap)/dot(r,r)），无 pipelined 化、无 `MPI_Iallreduce` 重叠 | cg_solver.cpp:159,169,178 | 未开始（对应 B2b） |
+| P2 | **CG 每迭代 2 次全局阻塞 Allreduce**（实测口径：dot(p,Ap)/dot(r,r)——原记「3 次」系把一次性 init rho 计入），无 pipelined 化、无 `MPI_Iallreduce` 融合 | cg_solver.cpp（FP2 拆分后 cgBlockingAllreduce） | ✅ 已完成（AR009/T002：`--solver pcg` CG-1 管线——ν-递推+每迭代 1 次 [ρ,m] 打包 Iallreduce、阻塞归约 0（profiler 双向断言）；迭代数与 cg 精确相同（±5% 判据零差异），PERFORMANCE §16） |
 | P3 | **RBGS 内层 stride-2 循环无 `omp simd`**；每 sweep 2 次 halo 交换且无重叠——通信翻倍抵消部分收益 | red_black_gs_solver.cpp:30,50,71-81 | 未开始（对应 B4） |
 | P4 | **残差 Allreduce 每迭代一次，无检查频率参数**——归约开销管理是 HPC 经典课题，项目把它写死 | jacobi_solver.cpp:169-175 | ✅ 已完成（AR004/T003：`--residual-check-interval N`（Jacobi/RBGS），RunConfig/JSON 透出；Jacobi k=10 np4 实测 −27%/iter） |
 | P5 | **VTK 输出为 ASCII Float64**（512² 一次输出数百 MB 文本）；binary 后端逐元素 `ofstream.write` 非块写 | vtk_io.cpp:50-60；binary_io.cpp:44-52 | ✅ 已完成（AR005/T002-T004：.vti 改 appended raw binary（vtk 36-49×/体积 -58%）、.bin 块写（3.4-3.8×，字节布局不变）；U2/U3 位级守护 + pvti 零变更） |
@@ -72,7 +72,7 @@ HyPoS 的本质定位是**「HPC 工程教学/参考样板」**：用一个小�
 
 ### 3.4 架构层"深度天花板"
 
-- **算法复杂度天花板**：Jacobi/GS 类迭代法对低频误差收敛慢（O(N²) 型迭代数），项目没有任何 O(N) 级算法（多重网格）。当前全部优化压"每步多快"，MG 改变"需要多少步"。
+- **算法复杂度天花板**：~~Jacobi/GS 类迭代法对低频误差收敛慢（O(N²) 型迭代数），项目没有任何 O(N) 级算法（多重网格）。~~ **完整突破（AR007 两层 mg2 + AR008 多层 mgv/mgcg：`--solver mgv` W-cycle 15/14 cycles 于 256²/512² 规模无关；`--solver mgcg` 8 迭代恒定 vs 裸 CG 700/1378，PERFORMANCE §14/§15）**。MG 改变"需要多少步"的叙事已兑现。
 - **重叠深度 = 1**：流水线只藏一次通信；无时间分块（temporal blocking）。
 - **单机叙事**：实测全部在 WSL 单机；跨节点网络行为（大消息聚合、RMA、真集合的收益曲线）无数据。
 - **`--overlap-comm` 仅 Jacobi 支持**（main.cpp:198-199 打 WARN 忽略）——RBGS/CG 无重叠路径。
@@ -117,19 +117,19 @@ HyPoS 的本质定位是**「HPC 工程教学/参考样板」**：用一个小�
 #### B1 几何多重网格（旗舰，拆两步）
 
 - **现状**：项目已有 RBGS（现成 smoother）、均匀分解（现成 restriction/prolongation 权重结构）、CG（现成粗网格解法器）——离 MG 只差粗网格生成与限制/延拓算子。
-- **B1a 两层校正格式（验证正确性）**：细网格 RBGS 预平滑 → 残差限制到粗网格 → 粗网格 CG 精解 → 延拓校正 → 后平滑。收敛理论（2 层即消除全部可分辨高频）可直接对比实测迭代数。
-- **B1b 完整 V-cycle + MG-CG 预条件**：多层粗化（到 ≤8³ 粗根），粗层间通信用现有 exchanger 泛化；把 V-cycle 作为 CG 预条件子（对标 DESIGN §6 路线图"CG 预条件子"）。
-- **收益**：算法叙事质变（O(N) vs O(N²) 迭代数，泊松 HPC 科研第一课）；256² 场景迭代数预计从数千降至数十 cycle。
+- **B1a 两层校正格式（验证正确性）——已完成（AR007，`--solver mg2`：256² 制造解 14 cycles 且规模无关 vs RBGS 85540 迭代，PERFORMANCE §14）**。原始定义：细网格 RBGS 预平滑 → 残差限制到粗网格 → 粗网格 CG 精解 → 延拓校正 → 后平滑。收敛理论（2 层即消除全部可分辨高频）可直接对比实测迭代数。
+- **B1b 完整 V-cycle + MG-CG 预条件——已完成（AR008，`--solver mgv` / `--solver mgcg`）**。原始定义：多层粗化（到每维 ≤8 粗根——注：原记号「≤8³」按 2D 语义澄清为「每维 ≤8」），粗层间通信用复制式 COMM_SELF 全网格（l≥1 无新通信模式）；V-cycle（实证为 W-cycle：单 V 下逐层 ×4 补偿对插值杂散过补偿而深层发散，见 PERFORMANCE §15 结构注记）作为 CG 预条件子。验收②已入 PERFORMANCE §15（mgcg 8 迭代恒定 vs cg 700/1378）。
+- **收益**：算法叙事质变（O(N) vs O(N²) 迭代数，泊松 HPC 科研第一课）；256² 场景迭代数预计从数千降至数十 cycle。**（B1a 已实测兑现：见 PERFORMANCE §14）**
 - **成本/风险**：B1a M-L / 中（新通信模式：粗层 gather/broadcast 与残差归约）；B1b L / 中。
 - **验收判据**：①B1a：同 tol 下总迭代数（平滑步计）与 2 层理论定性一致，制造解收敛；②B1b：256²/512² 下 MG-CG 迭代数 vs 裸 CG 对比入 PERFORMANCE；③RBGS smoother 复用不改其位级一致测试；④新增粗层通信的 np=1/4 正确性测试。
 
 #### B2 CG 修补（最紧急性能修复 + 深化）
 
-- **B2a 向量循环并行化（修复 P1）**：p/r/u/ap 更新全部 `omp parallel for + omp simd`（结构同 `axpyInterior`，cg_solver.cpp:85-105 已有正确范式可复制）。
-- **B2b Pipelined CG（P2）**：Gropp 管线化（每迭代 1 次全局同步），`MPI_Iallreduce` 与向量运算重叠。与"每步 Allreduce 的 Jacobi"形成同步成本对照实验。
-- **收益**：B2a 立竿见影（CG 每 iter 的串行部分占比高，预期 256² np=1 迭代时间下降，待实测入 PERFORMANCE）；B2b 在 np>1 时同步开销 3→1。
-- **成本/风险**：B2a S / 极低；B2b M / 中（管线 CG 数值稳定性略降，需文档注明）。
-- **验收判据**：①B2a：CG 256² np=1/np=4 iter_time 中位数对比入 PERFORMANCE（无回退门槛：np=1 不劣于现状）；②B2b：3 归约/iter → 1 归约/iter（profiler 计数断言），制造解收敛迭代数与裸 CG 一致（±5%）。
+- **B2a 向量循环并行化（修复 P1）——已完成（AR004）**。
+- **B2b Pipelined CG（P2）——已完成（AR009，`--solver pcg`）**。Gropp 式管线化（CG-1/Chronopoulos–Gear 单步形式）：ν-递推 α 分母（p·Ap≠r·Ar，m≥1 差 −β²ν 项）+ 每迭代 1 次 [ρ,m] 双标量**打包 MPI_Iallreduce**（发出即 Wait）。**诚实口径（D1）**：单步结构下 p/q 依赖新鲜 ρ 算 β，归约窗口内无可用向量工作——**无真实计算重叠**；实际收益=同步 2 阻塞→1 非阻塞融合（次数/消息数减半）+ 非阻塞语义。真正重叠需 CG-2 两步前瞻（稳定性劣化，列后续）。
+- **收益**：B2a 已实测（PERFORMANCE §11）；B2b 同步开销 **2 阻塞→1 非阻塞融合**（原「3→1」系把一次性 init rho 计入的口径偏差，实测 cg 每迭代 2 次阻塞归约）；**单机下 wall 无收益（诚实记录：5 向量工作集+ν-递推开销抵消 µs 级同步减半，PERFORMANCE §16）**，跨节点未测不外推。
+- **成本/风险**：B2a S / 极低；B2b M / 中（已兑现：ν-递推累积舍入漂移经 ±5% 判据实测零迭代数差异）。
+- **验收判据**：①B2a：已兑现（§11）；②B2b：**已兑现（AR009）**——阻塞归约==0+pcg_iallreduce==iters+1（profiler 双向断言含 cg 阳性对照 2·iters+1）、制造解迭代数与裸 CG 一致（±5%——实测 256²/512²×np1/4 四组**精确相同**，PERFORMANCE §16）。
 
 #### B3 Chebyshev 半迭代
 
@@ -198,11 +198,11 @@ HyPoS 的本质定位是**「HPC 工程教学/参考样板」**：用一个小�
 - **方案**：可选依赖（CMake `find_package(PAPI)`，缺席优雅降级）：FLOPS + 内存带宽计数器入 performance_report；回答 PERFORMANCE §1 roofline "目标 60-80% 带宽"的无实测背书问题。
 - **验收判据**：①PAPI 缺席时行为不变（CI 无 PAPI 路径全绿）；②有 PAPI 环境下 stencil 区段实测带宽 vs 理论值入 PERFORMANCE；③README:265 路线图条目移除。
 
-#### E2 残差历史输出
+#### E2 残差历史输出——已完成（AR009/T003-T004）
 
-- **方案**：`--residual-history <file>` 每步（或每 k 步）残差写 CSV；配 plot 脚本画收敛曲线。
-- **收益**：成本极小的"放大器"——B 系列任何算法改动的效果即刻可视化；也是 E1/基准叙事的基础设施。
-- **验收判据**：Jacobi/RBGS/CG 三求解器均可输出；plot 脚本出 PNG；AR002 §9 的对比图可复现。
+- **方案（已兑现）**：`--residual-history <file>` 每 `--save-interval k` 步写 CSV（rank0 单写，%.17g 全精度保留）；配 `scripts/plot_residual_history.py`（matplotlib Agg，多 CSV 叠加 log 收敛曲线）。
+- **收益（已兑现）**：六求解器全接入（jacobi/rbgs/mg2/mgv/cg/pcg/mgcg），E1/基准叙事基础设施就位。
+- **验收判据兑现口径**：①Jacobi/RBGS/CG（及全部 MG 族）可输出——E2 契约测试六分支全绿（末行 vs JSON/Converged 行闭环断言，`tests/test_pipelined_cg.cpp`）；②plot 脚本 PNG——**环境受限诚实注记**：WSL 无 python3/matplotlib，脚本资产交付+CSV 契约测试为验收主体（代码走查替代运行演示，srs S1 口径）；③AR002 §9 对比图可复现——同 ②限制，CSV 全精度（%.17g）保证数据侧可复现。
 
 #### E3 性能回归门禁
 
@@ -239,8 +239,10 @@ HyPoS 的本质定位是**「HPC 工程教学/参考样板」**：用一个小�
 | ★1 | AR004 | 诚实性修复包：A1 first-touch + A2 真实残差/检查频率 + A3 拓扑 + A4 观测自愈 + B2a CG 并行化 | M | 消灭全部宣称缺口；CG 性能修复立竿见影 |
 | ★2 | AR005 | I/O 快赢 + CI 可信度：D1 VTK 二进制/块写 + F1（**含 CI mpich 假通过紧急排查**） | S-M | 输出提速 1-2 量级；CI 数据可信 |
 | ★3 | ~~AR006 通信范式三部曲 I：C1 派生数据类型直传 + C2 真集合 halo~~ **已完成**（PERFORMANCE §13：小面下 p2p 仍最优，datatype/collective 为范式可选） | M | 收尾半成品示范；pack vs datatype 实测 |
-| ★4 | AR007 | 算法深水区第一步：B1a 两层 MG 校正 | M-L | O(N) 算法叙事开局 |
-| 后续 | AR008+ | B1b V-cycle/MG-CG、B2b pipelined CG、B3 Chebyshev、B4 RBGS 通信、C3 RMA、D2 VTI 单文件、E1 PAPI、E2 残差历史、E3 性能门禁、F2/F3；工程卫生：test_alt_solvers.cpp 拆分（AR005 review 遗留，IO 用例拆至 test_io_layout.cpp） | — | 按依赖与资源排入 |
+| ★4 | ~~AR007 算法深水区第一步：B1a 两层 MG 校正~~ **已完成**（PERFORMANCE §14：mg2 56 平滑步 vs RBGS 85540 迭代，cycle 数规模无关） | M-L | O(N) 算法叙事开局 |
+| ★5 | ~~AR008 多层多重网格：B1b W-cycle mgv + MG-CG 预条件 mgcg~~ **已完成**（PERFORMANCE §15：mgv 15/14 cycles 规模无关、mgcg 8 迭代恒定 vs cg 700/1378；W-cycle 结构注记=单 V 发散根因） | L | O(N) 叙事完整兑现 |
+| ★6 | ~~AR009 管线化 CG pcg + 残差历史 E2~~ **已完成**（PERFORMANCE §16：pcg/cg 四组迭代数精确相同（700/834/1378/1697）、归约 2 阻塞→1 非阻塞融合、单机 wall 无收益诚实记录；`--residual-history` CSV 出口+`plot_residual_history.py`） | M | B2b+E2 兑现；同步口径诚实修正 |
+| 后续 | AR010+ | B3 Chebyshev、B4 RBGS 通信、C3 RMA、D2 VTI 单文件、E1 PAPI、E3 性能门禁、F2/F3；CG-2 两步前瞻（真归约-计算重叠，AR009 D1 列后续）；MG 深化候选（AR007 srs 遗留承诺，待排期）：**Neumann-MG**（Neumann 粗算子奇异性需约束/伪逆处理）、**3D-MG**（7 点 stencil 粗化链与 W-cycle 复用 MGHierarchy 泛化）；工程卫生：test_alt_solvers.cpp 拆分（AR005 review 遗留，IO 用例拆至 test_io_layout.cpp） | — | 按依赖与资源排入 |
 
 依赖关系（简化）：
 

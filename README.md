@@ -4,10 +4,6 @@
 >
 > HyPoS 是一个基于 Jacobi 迭代的混合并行（MPI + OpenMP）泊松方程求解器，展示分布式并行计算、域分解、通信优化、内存管理和性能可观测性等核心 AI Infra 技能。
 
-<p align="center">
-  <img src="docs/assets/cover-v2.png" alt="HyPoS — Hybrid Poisson Solver" width="100%">
-</p>
-
 ---
 
 ## 项目亮点
@@ -20,7 +16,7 @@
 | **OpenMP 加速** | 多线程 Kernel | SIMD 向量化、First-touch 策略 |
 | **内存管理** | 高效内存管理 | 64 字节对齐 RAII（AlignedBuffer）、关键路径零动态分配 |
 | **性能可观测性** | Profiling & Tracing | 分层计时、JSON/CSV 报告、自动化扩展性测试 |
-| **求解器可扩展** | 算法与框架解耦 | Jacobi / Red-Black GS / CG（`--solver` 切换，策略模式接口） |
+| **求解器可扩展** | 算法与框架解耦 | Jacobi / Red-Black GS / CG / 管线化 CG pcg（单打包非阻塞归约）/ 两层多重网格 mg2 / 多层 W-cycle mgv / MG-CG 预条件 mgcg（`--solver` 切换，策略模式接口） |
 
 ---
 
@@ -65,7 +61,7 @@ mpirun -np 16 ./build/hypos --nx 2048 --ny 2048 --max-iter 10000 --enable-profil
 |---|---|---|
 | `--nx, --ny, --nz` | 1024, 1024, 1 | 全局网格尺寸 |
 | `--halo-width` | 1 | 幽灵层宽度 |
-| `--solver` | jacobi | 求解器类型（jacobi / red_black_gs / cg） |
+| `--solver` | jacobi | 求解器类型（jacobi / red_black_gs / cg / pcg / mg2 / mgv / mgcg）。pcg=管线化共轭梯度（CG-1/Chronopoulos–Gear 单步管线：ν-递推 α 分母 + 每迭代 1 次打包 [ρ,m] 非阻塞 Iallreduce、0 次阻塞归约——裸 cg 为 2 次阻塞；与 cg 同 Krylov 空间同收敛迭代数；**非**预条件 CG，预条件见 mgcg）。mg2=两层几何多重网格校正格式（2D、偶数维、Dirichlet 限定）：RBGS 预/后平滑（各 2 sweeps）+ 残差全权重限制 + 粗层复制式 CG 精解 + 双线性延拓；256² 制造解迭代数规模无关（PERFORMANCE §14，含适用 tol 范围注记：tol ≳ ~1e-8）。mgv=多层 W-cycle（同 2D/偶维/Dirichlet 限定；粗化链至每维 ≤8 粗根 CG 精解，逐层 ×4 尺度补偿；每层 2 次粗修正——单 V-cycle 深层链发散，结构注记见 PERFORMANCE §15）。mgcg=MG-CG 预条件（每 PCG 迭代 1 个 W-cycle 预条件步，Fletcher-Reeves β）；256²/512² 制造解 8 迭代恒定 vs 裸 CG 700/1378（PERFORMANCE §15） |
 | `--max-iter` | 10000 | 最大迭代次数 |
 | `--tol` | 1e-6 | 收敛容差（真实残差 ‖Au−f‖₂ 口径；`final_residual` 报告同口径） |
 | `--bc` | dirichlet | 物理边界条件（dirichlet / neumann） |
@@ -73,7 +69,8 @@ mpirun -np 16 ./build/hypos --nx 2048 --ny 2048 --max-iter 10000 --enable-profil
 | `--comm-mode` | p2p | 通信模式（p2p / datatype / collective；datatype=派生数据类型直传，collective=真集合 Dist graph + alltoallw） |
 | `--enable-profiling` | false | 启用详细性能分析 |
 | `--overlap-comm` | false | 启用通信-计算重叠 |
-| `--residual-check-interval` | 1 | 每 N 次迭代检查一次收敛（jacobi / red_black_gs；N≥1，默认每迭代；CG 不支持并警告忽略）。判据为真实残差 ‖Au−f‖₂ |
+| `--residual-check-interval` | 1 | 每 N 次迭代检查一次收敛（jacobi / red_black_gs / mg2 / mgv 外层 cycle；N≥1，默认每迭代；CG / pcg 与 mgcg 不支持并警告忽略）。判据为真实残差 ‖Au−f‖₂ |
+| `--residual-history` | 空 | 残差历史 CSV 输出路径（首行 `iteration,residual`，数据行 %.17g 全精度；rank0 单写；采样对齐 residual-check-interval 的真实更新时刻，CG 族每迭代一行；`scripts/plot_residual_history.py` 可叠加绘图；空=不写） |
 | `--output-format` | json | 输出格式（json / csv / vtk / binary / mpibin；vtk=每 rank `.vti` 分片+rank0 `.pvti` 索引，`.vti` 为 appended raw binary（`header_type="UInt64"`，数据区=interior 行主序小端 Float64 镜像，可被 ParaView 直接加载），binary=每 rank `.bin` 含真实 offsets，mpibin=MPI-IO 单文件 `solution_<step>.bin`：72 字节自描述头+全局行主序数据区，全 rank 集体写，小端） |
 | `--output-dir` | ./output | 输出目录（启动时自动创建） |
 | `--save-interval` | 0 | 每 N 次迭代输出中间解（文件名含步号；0=不保存） |
@@ -100,8 +97,15 @@ HyPoS/
 │   ├── solver/
 │   │   ├── solver.hpp          # 求解器策略接口（含进度回调/lastResidual）
 │   │   ├── jacobi_solver.cpp   # Jacobi（融合残差、重叠、SIMD）
-│   │   ├── red_black_gs_solver.cpp # Red-Black GS
-│   │   └── cg_solver.cpp       # 共轭梯度（CG）
+│   │   ├── red_black_gs_solver.cpp # Red-Black GS（含 mg 平滑入口 smooth）
+│   │   ├── cg_solver.cpp       # 共轭梯度（CG；含 FP2 拆分内核 cgDotLocal/cgBlockingAllreduce）
+│   │   ├── pipelined_cg_solver.cpp # pcg 管线化 CG（CG-1：ν-递推+融合单 Iallreduce）
+│   │   ├── residual.cpp/.hpp   # 真残差范数/残差场内核
+│   │   ├── mg_operators.hpp    # 两层 MG 算子（限制/延拓/角交换/粗层归属）
+│   │   ├── cg_kernels.hpp      # CG 内核自由函数（FP4，CG/PCG 共用；FP2/FP3 归约内核）
+│   │   ├── mg_hierarchy.hpp/.cpp # 多层 MG 层级（粗化链 + W-cycle 递归引擎）
+│   │   ├── mg_pcg.cpp          # mgcg MG-CG 预条件主体
+│   │   └── mg_two_level_solver.cpp # mg2 两层校正格式（复制式粗层）
 │   ├── comm/
 │   │   ├── halo_exchanger.hpp  # 通信抽象接口
 │   │   ├── p2p_exchanger.cpp   # 点对点非阻塞通信
