@@ -5,7 +5,7 @@
 > HyPoS 是一个基于 Jacobi 迭代的混合并行（MPI + OpenMP）泊松方程求解器，展示分布式并行计算、域分解、通信优化、内存管理和性能可观测性等核心 AI Infra 技能。
 
 <p align="center">
-  <img src="docs/assets/cover-v3.png" alt="HyPoS — Hybrid Poisson Solver" width="100%">
+  <img src="docs/assets/cover-v4.png" alt="HyPoS — Hybrid Poisson Solver" width="100%">
 </p>
 
 ---
